@@ -12,7 +12,7 @@ build-backend = "setuptools.build_meta"
 name = "openenv-aws_rl_env"
 version = "0.1.0"
 description = "Aws Rl Env environment for OpenEnv"
-requires-python = ">=3.12"
+requires-python = "==3.12.*"
 dependencies = [
     # Core OpenEnv runtime (provides FastAPI server + HTTP client types)
     # install from github
