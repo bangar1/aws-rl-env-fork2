@@ -1,5 +1,5 @@
 ---
-title: Aws Rl Env Environment Server
+title: AWS RL Environment Server
 emoji: 🥇
 colorFrom: pink
 colorTo: pink
@@ -11,188 +11,165 @@ tags:
   - openenv
 ---
 
-# Aws Rl Env Environment
+# AWS RL Environment
 
-A simple test environment that echoes back messages. Perfect for testing the env APIs as well as demonstrating environment usage patterns.
+An RL environment backed by a **simulated AWS cloud** powered by [MiniStack](https://github.com/Nahuel990/ministack). The agent sends AWS API calls as actions and receives API responses as observations. MiniStack runs inside the same Docker container, emulating 34 AWS services locally.
 
 ## Quick Start
-
-The simplest way to use the Aws Rl Env environment is through the `AwsRlEnv` class:
 
 ```python
 from aws_rl_env import AwsRlAction, AwsRlEnv
 
 try:
     # Create environment from Docker image
-    aws_rl_envenv = AwsRlEnv.from_docker_image("aws_rl_env-env:latest")
+    env = AwsRlEnv.from_docker_image("aws_rl_env-env:latest")
 
     # Reset
-    result = aws_rl_envenv.reset()
-    print(f"Reset: {result.observation.echoed_message}")
+    result = env.reset()
+    print(f"Reset: {result.observation.success}")
+    print(f"Supported services: {result.observation.metadata['supported_services']}")
 
-    # Send multiple messages
-    messages = ["Hello, World!", "Testing echo", "Final message"]
+    # Create an S3 bucket
+    result = env.step(AwsRlAction(
+        service="s3",
+        operation="create_bucket",
+        parameters={"Bucket": "my-rl-bucket"}
+    ))
+    print(f"Create bucket success: {result.observation.success}")
 
-    for msg in messages:
-        result = aws_rl_envenv.step(AwsRlAction(message=msg))
-        print(f"Sent: '{msg}'")
-        print(f"  → Echoed: '{result.observation.echoed_message}'")
-        print(f"  → Length: {result.observation.message_length}")
-        print(f"  → Reward: {result.reward}")
+    # Put an object in the bucket
+    result = env.step(AwsRlAction(
+        service="s3",
+        operation="put_object",
+        parameters={"Bucket": "my-rl-bucket", "Key": "hello.txt", "Body": "world"}
+    ))
+    print(f"Put object success: {result.observation.success}")
+
+    # List buckets
+    result = env.step(AwsRlAction(
+        service="s3",
+        operation="list_buckets",
+        parameters={}
+    ))
+    print(f"Buckets: {result.observation.response}")
+
+    # Create an SQS queue
+    result = env.step(AwsRlAction(
+        service="sqs",
+        operation="create_queue",
+        parameters={"QueueName": "my-queue"}
+    ))
+    print(f"Queue URL: {result.observation.response.get('QueueUrl')}")
 
 finally:
-    # Always clean up
-    aws_rl_envenv.close()
+    env.close()
 ```
 
-That's it! The `AwsRlEnv.from_docker_image()` method handles:
-- Starting the Docker container
-- Waiting for the server to be ready
-- Connecting to the environment
-- Container cleanup when you call `close()`
+## Supported AWS Services
+
+The environment supports **34 AWS services** via MiniStack:
+
+| Category | Services |
+|----------|----------|
+| **Storage & DB** | S3, DynamoDB, RDS, ElastiCache, EFS |
+| **Compute** | Lambda, ECS, EC2, Step Functions |
+| **Messaging** | SQS, SNS, Kinesis, EventBridge, Firehose |
+| **API** | API Gateway v1/v2, ALB/ELBv2 |
+| **Security** | IAM, STS, Cognito, ACM, WAF v2, Secrets Manager |
+| **Monitoring** | CloudWatch, CloudWatch Logs, SSM |
+| **Infrastructure** | CloudFormation, Route53 |
+| **Other** | SES, Athena, Glue, EMR |
 
 ## Building the Docker Image
 
-Before using the environment, you need to build the Docker image:
-
 ```bash
-# From project root
-docker build -t aws_rl_env-env:latest -f server/Dockerfile .
+docker build -t aws_rl_env-env:latest -f Dockerfile .
 ```
 
-## Deploying to Hugging Face Spaces
-
-You can easily deploy your OpenEnv environment to Hugging Face Spaces using the `openenv push` command:
-
-```bash
-# From the environment directory (where openenv.yaml is located)
-openenv push
-
-# Or specify options
-openenv push --namespace my-org --private
-```
-
-The `openenv push` command will:
-1. Validate that the directory is an OpenEnv environment (checks for `openenv.yaml`)
-2. Prepare a custom build for Hugging Face Docker space (enables web interface)
-3. Upload to Hugging Face (ensuring you're logged in)
-
-### Prerequisites
-
-- Authenticate with Hugging Face: The command will prompt for login if not already authenticated
-
-### Options
-
-- `--directory`, `-d`: Directory containing the OpenEnv environment (defaults to current directory)
-- `--repo-id`, `-r`: Repository ID in format 'username/repo-name' (defaults to 'username/env-name' from openenv.yaml)
-- `--base-image`, `-b`: Base Docker image to use (overrides Dockerfile FROM)
-- `--private`: Deploy the space as private (default: public)
-
-### Examples
-
-```bash
-# Push to your personal namespace (defaults to username/env-name from openenv.yaml)
-openenv push
-
-# Push to a specific repository
-openenv push --repo-id my-org/my-env
-
-# Push with a custom base image
-openenv push --base-image ghcr.io/meta-pytorch/openenv-base:latest
-
-# Push as a private space
-openenv push --private
-
-# Combine options
-openenv push --repo-id my-org/my-env --base-image custom-base:latest --private
-```
-
-After deployment, your space will be available at:
-`https://huggingface.co/spaces/<repo-id>`
-
-The deployed space includes:
-- **Web Interface** at `/web` - Interactive UI for exploring the environment
-- **API Documentation** at `/docs` - Full OpenAPI/Swagger interface
-- **Health Check** at `/health` - Container health monitoring
-- **WebSocket** at `/ws` - Persistent session endpoint for low-latency interactions
+The Docker image bundles:
+- The RL environment server (port 8000)
+- MiniStack AWS emulator (port 4566)
+- boto3 for AWS SDK access
+- All MiniStack dependencies
 
 ## Environment Details
 
 ### Action
-**AwsRlAction**: Contains a single field
-- `message` (str) - The message to echo back
+
+**AwsRlAction**: An AWS API call to execute
+- `service` (str) - AWS service name (e.g. `"s3"`, `"sqs"`, `"dynamodb"`)
+- `operation` (str) - boto3 client method (e.g. `"create_bucket"`, `"send_message"`)
+- `parameters` (dict) - kwargs passed to the boto3 method
 
 ### Observation
-**AwsRlObservation**: Contains the echo response and metadata
-- `echoed_message` (str) - The message echoed back
-- `message_length` (int) - Length of the message
-- `reward` (float) - Reward based on message length (length × 0.1)
-- `done` (bool) - Always False for echo environment
-- `metadata` (dict) - Additional info like step count
 
-### Reward
-The reward is calculated as: `message_length × 0.1`
-- "Hi" → reward: 0.2
-- "Hello, World!" → reward: 1.3
-- Empty message → reward: 0.0
+**AwsRlObservation**: The result of the AWS API call
+- `success` (bool) - Whether the call succeeded
+- `response` (dict) - The AWS API response data
+- `error` (str) - Error message if the call failed
+- `service` (str) - Service that was called
+- `operation` (str) - Operation that was executed
+- `reward` (float) - +1.0 for success, -0.5 for client errors, -1.0 for invalid service/unexpected errors
+- `done` (bool) - Always False (infinite episode)
+- `metadata` (dict) - Step count and other info
+
+### Reward Structure
+
+| Outcome | Reward |
+|---------|--------|
+| Successful API call | +1.0 |
+| AWS ClientError (e.g. bucket already exists) | -0.5 |
+| Invalid parameter validation | -0.5 |
+| Unsupported service | -1.0 |
+| Unexpected error | -1.0 |
+
+## Architecture
+
+```
+┌─────────────────────────────────────────┐
+│           Docker Container              │
+│                                         │
+│  ┌──────────────┐   ┌───────────────┐   │
+│  │  RL Server   │   │  MiniStack    │   │
+│  │  (port 8000) │──▶│  (port 4566)  │   │
+│  │  FastAPI +   │   │  34 AWS       │   │
+│  │  WebSocket   │   │  services     │   │
+│  └──────────────┘   └───────────────┘   │
+│         │                    │           │
+│         │    boto3 calls     │           │
+│         └────────────────────┘           │
+└─────────────────────────────────────────┘
+        ▲
+        │ WebSocket / HTTP
+        │
+   RL Agent (client)
+```
 
 ## Advanced Usage
 
 ### Connecting to an Existing Server
 
-If you already have a Aws Rl Env environment server running, you can connect directly:
-
-```python
-from aws_rl_env import AwsRlEnv
-
-# Connect to existing server
-aws_rl_envenv = AwsRlEnv(base_url="<ENV_HTTP_URL_HERE>")
-
-# Use as normal
-result = aws_rl_envenv.reset()
-result = aws_rl_envenv.step(AwsRlAction(message="Hello!"))
-```
-
-Note: When connecting to an existing server, `aws_rl_envenv.close()` will NOT stop the server.
-
-### Using the Context Manager
-
-The client supports context manager usage for automatic connection management:
-
 ```python
 from aws_rl_env import AwsRlAction, AwsRlEnv
 
-# Connect with context manager (auto-connects and closes)
-with AwsRlEnv(base_url="http://localhost:8000") as env:
-    result = env.reset()
-    print(f"Reset: {result.observation.echoed_message}")
-    # Multiple steps with low latency
-    for msg in ["Hello", "World", "!"]:
-        result = env.step(AwsRlAction(message=msg))
-        print(f"Echoed: {result.observation.echoed_message}")
+env = AwsRlEnv(base_url="http://localhost:8000")
+result = env.reset()
+
+# Create a DynamoDB table
+result = env.step(AwsRlAction(
+    service="dynamodb",
+    operation="create_table",
+    parameters={
+        "TableName": "my-table",
+        "KeySchema": [{"AttributeName": "id", "KeyType": "HASH"}],
+        "AttributeDefinitions": [{"AttributeName": "id", "AttributeType": "S"}],
+        "BillingMode": "PAY_PER_REQUEST",
+    }
+))
+print(f"Table created: {result.observation.success}")
 ```
 
-The client uses WebSocket connections for:
-- **Lower latency**: No HTTP connection overhead per request
-- **Persistent session**: Server maintains your environment state
-- **Efficient for episodes**: Better for many sequential steps
-
-### Concurrent WebSocket Sessions
-
-The server supports multiple concurrent WebSocket connections. To enable this,
-modify `server/app.py` to use factory mode:
-
-```python
-# In server/app.py - use factory mode for concurrent sessions
-app = create_app(
-    AwsRlEnvironment,  # Pass class, not instance
-    AwsRlAction,
-    AwsRlObservation,
-    max_concurrent_envs=4,  # Allow 4 concurrent sessions
-)
-```
-
-Then multiple clients can connect simultaneously:
+### Concurrent Sessions
 
 ```python
 from aws_rl_env import AwsRlAction, AwsRlEnv
@@ -202,54 +179,56 @@ def run_episode(client_id: int):
     with AwsRlEnv(base_url="http://localhost:8000") as env:
         result = env.reset()
         for i in range(10):
-            result = env.step(AwsRlAction(message=f"Client {client_id}, step {i}"))
-        return client_id, result.observation.message_length
+            result = env.step(AwsRlAction(
+                service="s3",
+                operation="put_object",
+                parameters={
+                    "Bucket": f"client-{client_id}",
+                    "Key": f"step-{i}.txt",
+                    "Body": f"data from step {i}"
+                }
+            ))
+        return client_id, result.observation.success
 
-# Run 4 episodes concurrently
 with ThreadPoolExecutor(max_workers=4) as executor:
     results = list(executor.map(run_episode, range(4)))
 ```
 
-## Development & Testing
+### Running Locally (without Docker)
 
-### Direct Environment Testing
-
-Test the environment logic directly without starting the HTTP server:
+Start MiniStack and the RL server separately:
 
 ```bash
-# From the server directory
-python3 server/aws_rl_env_environment.py
-```
+# Terminal 1: Start MiniStack
+pip install ministack
+ministack  # Runs on port 4566
 
-This verifies that:
-- Environment resets correctly
-- Step executes actions properly
-- State tracking works
-- Rewards are calculated correctly
-
-### Running Locally
-
-Run the server locally for development:
-
-```bash
-uvicorn server.app:app --reload
+# Terminal 2: Start RL server
+export AWS_ENDPOINT_URL=http://localhost:4566
+export AWS_ACCESS_KEY_ID=test
+export AWS_SECRET_ACCESS_KEY=test
+uvicorn server.app:app --reload --host 0.0.0.0 --port 8000
 ```
 
 ## Project Structure
 
 ```
 aws_rl_env/
-├── .dockerignore         # Docker build exclusions
 ├── __init__.py            # Module exports
 ├── README.md              # This file
+├── Dockerfile             # Container image (bundles RL server + MiniStack)
+├── entrypoint.sh          # Starts MiniStack then RL server
 ├── openenv.yaml           # OpenEnv manifest
 ├── pyproject.toml         # Project metadata and dependencies
-├── uv.lock                # Locked dependencies (generated)
+├── uv.lock                # Locked dependencies
 ├── client.py              # AwsRlEnv client
-├── models.py              # Action and Observation models
+├── models.py              # AwsRlAction and AwsRlObservation models
+├── ministack/             # MiniStack AWS emulator (bundled)
+│   ├── app.py             # MiniStack ASGI application
+│   ├── core/              # Routing, persistence, responses
+│   └── services/          # 34 AWS service implementations
 └── server/
-    ├── __init__.py        # Server module exports
-    ├── aws_rl_env_environment.py  # Core environment logic
-    ├── app.py             # FastAPI application (HTTP + WebSocket endpoints)
-    └── Dockerfile         # Container image definition
+    ├── __init__.py
+    ├── aws_rl_env_environment.py  # Core RL environment (uses boto3 → MiniStack)
+    └── app.py             # FastAPI application
 ```

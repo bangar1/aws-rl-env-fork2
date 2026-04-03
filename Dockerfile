@@ -33,25 +33,25 @@ WORKDIR /app/env
 
 # Ensure uv is available (for local builds where base image lacks it)
 RUN if ! command -v uv >/dev/null 2>&1; then \
-        curl -LsSf https://astral.sh/uv/install.sh | sh && \
-        mv /root/.local/bin/uv /usr/local/bin/uv && \
-        mv /root/.local/bin/uvx /usr/local/bin/uvx; \
+    curl -LsSf https://astral.sh/uv/install.sh | sh && \
+    mv /root/.local/bin/uv /usr/local/bin/uv && \
+    mv /root/.local/bin/uvx /usr/local/bin/uvx; \
     fi
-    
+
 # Install dependencies using uv sync
 # If uv.lock exists, use it; otherwise resolve on the fly
 RUN --mount=type=cache,target=/root/.cache/uv \
     if [ -f uv.lock ]; then \
-        uv sync --frozen --no-install-project --no-editable; \
+    uv sync --frozen --no-install-project --no-editable; \
     else \
-        uv sync --no-install-project --no-editable; \
+    uv sync --no-install-project --no-editable; \
     fi
 
 RUN --mount=type=cache,target=/root/.cache/uv \
     if [ -f uv.lock ]; then \
-        uv sync --frozen --no-editable; \
+    uv sync --frozen --no-editable; \
     else \
-        uv sync --no-editable; \
+    uv sync --no-editable; \
     fi
 
 # Final runtime stage
@@ -62,7 +62,7 @@ WORKDIR /app
 # Copy the virtual environment from builder
 COPY --from=builder /app/env/.venv /app/.venv
 
-# Copy the environment code
+# Copy the environment code (includes ministack/)
 COPY --from=builder /app/env /app/env
 
 # Set PATH to use the virtual environment
@@ -71,10 +71,12 @@ ENV PATH="/app/.venv/bin:$PATH"
 # Set PYTHONPATH so imports work correctly
 ENV PYTHONPATH="/app/env:$PYTHONPATH"
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+# Health check against the RL environment server
+HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
     CMD curl -f http://localhost:8000/health || exit 1
 
-# Run the FastAPI server
-# The module path is constructed to work with the /app/env structure
-CMD ["sh", "-c", "cd /app/env && uvicorn server.app:app --host 0.0.0.0 --port 8000"]
+# Use entrypoint script to start both MiniStack and the RL server
+COPY entrypoint.sh /app/entrypoint.sh
+RUN chmod +x /app/entrypoint.sh
+
+CMD ["/app/entrypoint.sh"]
