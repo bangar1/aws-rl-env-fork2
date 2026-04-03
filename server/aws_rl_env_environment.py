@@ -106,7 +106,7 @@ class AwsRlEnvironment(Environment[AwsRlAction, AwsRlObservation, State]):
 
         if task_achieved:
             self._curriculum.record_result(
-                self._current_task, achieved=True
+                self._current_task, achieved=True, reward=reward
             )
 
         return AwsRlObservation(

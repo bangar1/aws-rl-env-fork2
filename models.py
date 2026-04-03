@@ -41,6 +41,30 @@ class TaskDifficulty(str, Enum):
     EXPERT = "expert"
 
 
+class TierConfig(BaseModel):
+    """Configuration for a single difficulty tier's promotion and mastery rules."""
+
+    min_episodes: int = Field(..., ge=0, description="Minimum episodes before promotion eligible")
+    advance_rate: float = Field(..., ge=0.0, le=1.0, description="Tier success rate to advance")
+    mastery_window: int = Field(default=10, ge=1, description="Sliding window size for success rate")
+    mastery_threshold: float = Field(
+        default=0.7, ge=0.0, le=1.0, description="Per-task graduation threshold"
+    )
+    fast_track_rate: float = Field(
+        default=0.9, ge=0.0, le=1.0,
+        description="Success rate for early promotion after 3 episodes",
+    )
+
+
+class SpacedRepState(BaseModel):
+    """Tracks spaced repetition schedule for a graduated task."""
+
+    interval: int = Field(default=3, ge=1, description="Episodes until next re-test")
+    last_graduated_episode: int = Field(
+        default=0, ge=0, description="Episode number when task was last graduated"
+    )
+
+
 class SetupCommand(BaseModel):
     """A single AWS CLI command executed during environment setup before the agent acts."""
 
