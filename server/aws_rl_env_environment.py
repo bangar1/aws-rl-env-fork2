@@ -23,6 +23,9 @@ from openenv.core.env_server.types import State
 from models import AwsRlAction, AwsRlObservation, EpisodeID, StepCount, Task
 from server.services.aws_backend import AwsBackend
 from server.services.curriculum import Curriculum
+from server.services.environment_designer import EnvironmentDesigner
+from server.services.episode_tracker import EpisodeTracker
+from server.services.task_grader import TaskGrader
 
 logger = logging.getLogger(__name__)
 
@@ -35,6 +38,9 @@ class AwsRlEnvironment(Environment[AwsRlAction, AwsRlObservation, State]):
         self._state = State(episode_id=str(uuid4()), step_count=0)
         self._backend = AwsBackend()
         self._curriculum = Curriculum()
+        self._grader = TaskGrader(self._backend)
+        self._designer = EnvironmentDesigner(self._backend)
+        self._tracker = EpisodeTracker()
         self._current_task: Task | None = None
 
     def reset(
@@ -45,7 +51,10 @@ class AwsRlEnvironment(Environment[AwsRlAction, AwsRlObservation, State]):
     ) -> AwsRlObservation:
         self._backend.reset_environment()
         self._state = State(episode_id=episode_id or str(uuid4()), step_count=0)
+        self._tracker.reset()
         self._current_task = self._curriculum.next_task()
+
+        self._designer.apply(self._current_task)
 
         return AwsRlObservation(
             episode_id=EpisodeID(self._state.episode_id or ""),
@@ -63,16 +72,42 @@ class AwsRlEnvironment(Environment[AwsRlAction, AwsRlObservation, State]):
         timeout_s: Optional[float] = None,
         **kwargs: Any,
     ) -> AwsRlObservation:
+        assert self._current_task is not None, "Call reset() before step()"
         self._state.step_count += 1
 
-        success, stdout, stderr = self._backend.execute_command(action.command)
-        reward = 1.0 if success else -1.0
+        # Anti-hack: only allow AWS CLI commands
+        command = action.command.strip()
+        if not command.startswith("aws "):
+            return AwsRlObservation(
+                episode_id=EpisodeID(self._state.episode_id or ""),
+                step_count=StepCount(self._state.step_count),
+                command_success=False,
+                command_output="",
+                error="Only AWS CLI commands (starting with 'aws') are allowed.",
+                task=self._current_task,
+                task_achieved=False,
+                done=False,
+                reward=0.0,
+            )
 
-        # TODO: evaluate success_criteria to determine task_achieved
+        success, stdout, stderr = self._backend.execute_command(command)
+
+        # Record in tracker
+        latest_step = self._tracker.record_step(command, success, stdout, stderr)
+
+        # Grade the task
         task_achieved = False
 
-        if self._current_task and task_achieved:
-            self._curriculum.record_result(self._current_task, achieved=True)
+        grade_result = self._grader.grade(
+            self._current_task, self._tracker, latest_step
+        )
+        task_achieved = grade_result.task_achieved
+        reward = grade_result.reward
+
+        if task_achieved:
+            self._curriculum.record_result(
+                self._current_task, achieved=True
+            )
 
         return AwsRlObservation(
             episode_id=EpisodeID(self._state.episode_id or ""),

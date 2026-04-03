@@ -21,3 +21,15 @@
   success_criteria:
     command_contains: lambda
     operation: list-functions
+
+- task_id: 4
+  description: List all SQS queues in the environment.
+  success_criteria:
+    command_contains: sqs
+    operation: list-queues
+
+- task_id: 5
+  description: List all SNS topics in the environment.
+  success_criteria:
+    command_contains: sns
+    operation: list-topics

@@ -1,17 +1,43 @@
-- task_id: 7
-  description: Create an S3 bucket 'data-bucket' and upload a file to it.
+- task_id: 11
+  description: Create an S3 bucket named 'data-pipeline' and upload a file to it.
   success_criteria:
     steps:
       - operation: create-bucket
-        resource: data-bucket
+        resource: data-pipeline
       - operation: put-object
-        resource: data-bucket
+        resource: data-pipeline
 
-- task_id: 8
-  description: Create a DynamoDB table 'orders' and insert an item with order_id '001'.
+- task_id: 12
+  description: >
+    Create a DynamoDB table named 'orders' with partition key 'order_id' (S),
+    then insert an item with order_id '001' and status 'pending'.
   success_criteria:
     steps:
       - operation: create-table
         resource: orders
       - operation: put-item
         resource: orders
+
+- task_id: 13
+  description: >
+    Create an SNS topic named 'alerts', then create an SQS queue named
+    'alert-inbox' and subscribe the queue to the topic.
+  success_criteria:
+    steps:
+      - operation: create-topic
+        resource: alerts
+      - operation: create-queue
+        resource: alert-inbox
+      - operation: subscribe
+        resource: alerts
+
+- task_id: 14
+  description: >
+    Create an IAM role named 'lambda-exec-role' with an assume-role policy
+    for Lambda, then attach the AWSLambdaBasicExecutionRole managed policy to it.
+  success_criteria:
+    steps:
+      - operation: create-role
+        resource: lambda-exec-role
+      - operation: attach-role-policy
+        resource: lambda-exec-role

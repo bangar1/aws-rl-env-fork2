@@ -6,8 +6,8 @@
 
 """Aws Rl Env Environment."""
 
-from client import AwsRlEnv
-from models import AwsRlAction, AwsRlObservation
+from .client import AwsRlEnv
+from .models import AwsRlAction, AwsRlObservation
 
 __all__ = [
     "AwsRlAction",

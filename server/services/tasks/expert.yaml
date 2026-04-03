@@ -1,18 +1,97 @@
-- task_id: 10
+- task_id: 18
   description: >
-    Deploy a serverless API: create a DynamoDB table 'items',
-    a Lambda function 'api-handler' that reads from it,
-    and an API Gateway REST API routing GET /items to the Lambda.
+    SRE Incident: A Lambda function 'order-processor' exists but its IAM role
+    is missing the required SQS permissions. The function's event source mapping
+    to the 'incoming-orders' SQS queue is failing. Diagnose the issue, attach
+    the correct SQS policy to the role, and create the event source mapping.
+  setup_commands:
+    - >-
+      aws iam create-role --role-name broken-lambda-role
+      --assume-role-policy-document '{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":{"Service":"lambda.amazonaws.com"},"Action":"sts:AssumeRole"}]}'
+    - >-
+      aws iam attach-role-policy --role-name broken-lambda-role
+      --policy-arn arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+    - >-
+      aws lambda create-function --function-name order-processor
+      --runtime python3.12 --handler index.handler
+      --role arn:aws:iam::000000000000:role/broken-lambda-role
+      --zip-file fileb:///tmp/dummy.zip
+    - aws sqs create-queue --queue-name incoming-orders
+  success_criteria:
+    services:
+      - iam
+      - lambda
+      - sqs
+    state_checks:
+      - command: aws iam list-attached-role-policies --role-name broken-lambda-role
+        output_contains: "SQS"
+      - command: aws lambda list-event-source-mappings --function-name order-processor
+        output_contains: "incoming-orders"
+    steps:
+      - operation: attach-role-policy
+        resource: broken-lambda-role
+      - operation: create-event-source-mapping
+
+- task_id: 19
+  description: >
+    SRE Incident: An S3 bucket 'app-config-store' was created to host
+    configuration files, but versioning was never enabled. A recent
+    accidental overwrite lost critical config. Enable versioning on the
+    bucket and add a lifecycle rule named 'cleanup-old-versions' that
+    expires non-current object versions after 30 days.
+  setup_commands:
+    - aws s3api create-bucket --bucket app-config-store
+    - >-
+      aws s3api put-object --bucket app-config-store
+      --key config/app.json --body /dev/null
+  success_criteria:
+    services:
+      - s3
+    state_checks:
+      - command: aws s3api get-bucket-versioning --bucket app-config-store
+        output_contains: "Enabled"
+      - command: aws s3api get-bucket-lifecycle-configuration --bucket app-config-store
+        output_contains: "cleanup-old-versions"
+    steps:
+      - operation: put-bucket-versioning
+        resource: app-config-store
+      - operation: put-bucket-lifecycle-configuration
+        resource: app-config-store
+
+- task_id: 20
+  description: >
+    SRE Incident: A DynamoDB table 'session-store' is experiencing throttling
+    because it was provisioned with only 1 RCU and 1 WCU. An SNS topic
+    'ops-alerts' exists but has no subscriptions, so no one is being notified.
+    Fix the table by updating its throughput to 50 RCU and 50 WCU, then create
+    an SQS queue 'ops-alert-inbox' and subscribe it to the SNS topic.
+  setup_commands:
+    - >-
+      aws dynamodb create-table --table-name session-store
+      --attribute-definitions AttributeName=session_id,AttributeType=S
+      --key-schema AttributeName=session_id,KeyType=HASH
+      --provisioned-throughput ReadCapacityUnits=1,WriteCapacityUnits=1
+    - aws sns create-topic --name ops-alerts
   success_criteria:
     services:
       - dynamodb
-      - lambda
-      - iam
-      - apigateway
+      - sns
+      - sqs
+    state_checks:
+      - command: aws dynamodb describe-table --table-name session-store
+        json_path: "$.Table.ProvisionedThroughput.ReadCapacityUnits"
+        expected: 50
+      - command: aws dynamodb describe-table --table-name session-store
+        json_path: "$.Table.ProvisionedThroughput.WriteCapacityUnits"
+        expected: 50
+      - command: >-
+          aws sns list-subscriptions-by-topic
+          --topic-arn arn:aws:sns:us-east-1:000000000000:ops-alerts
+        output_contains: "sqs"
     steps:
-      - operation: create-table
-        resource: items
-      - operation: create-role
-      - operation: create-function
-        resource: api-handler
-      - operation: create-rest-api
+      - operation: update-table
+        resource: session-store
+      - operation: create-queue
+        resource: ops-alert-inbox
+      - operation: subscribe
+        resource: ops-alerts

@@ -5,7 +5,7 @@ from pathlib import Path
 
 import yaml
 
-from models import Task, TaskDifficulty, TaskID
+from models import SetupCommand, SuccessCriteria, Task, TaskDifficulty, TaskID
 
 logger = logging.getLogger(__name__)
 
@@ -49,7 +49,11 @@ def load_tier(difficulty: TaskDifficulty, tasks_dir: Path = TASKS_DIR) -> list[T
             task_id=TaskID(entry["task_id"]),
             difficulty=difficulty,
             description=entry["description"],
-            success_criteria=entry.get("success_criteria", {}),
+            success_criteria=SuccessCriteria(**entry.get("success_criteria", {})),
+            setup_commands=[
+                SetupCommand(command=cmd) if isinstance(cmd, str) else SetupCommand(**cmd)
+                for cmd in entry.get("setup_commands", [])
+            ],
         )
         for entry in entries
     ]

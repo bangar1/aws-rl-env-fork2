@@ -1,16 +1,60 @@
-- task_id: 9
+- task_id: 15
   description: >
-    Create a Lambda function 'processor' with an IAM role,
-    then create an SQS queue 'tasks' as an event source.
+    Create a Lambda function 'processor' with an IAM execution role,
+    then create an SQS queue 'work-items' and configure it as an
+    event source for the Lambda function.
   success_criteria:
     services:
-      - lambda
       - iam
+      - lambda
       - sqs
     steps:
       - operation: create-role
       - operation: create-function
         resource: processor
       - operation: create-queue
-        resource: tasks
+        resource: work-items
       - operation: create-event-source-mapping
+
+- task_id: 16
+  description: >
+    Deploy a serverless API: create a DynamoDB table 'products',
+    create an IAM role for Lambda, create a Lambda function 'product-api',
+    and set up an API Gateway REST API with a GET method on /products
+    integrated with the Lambda.
+  success_criteria:
+    services:
+      - dynamodb
+      - iam
+      - lambda
+      - apigateway
+    steps:
+      - operation: create-table
+        resource: products
+      - operation: create-role
+      - operation: create-function
+        resource: product-api
+      - operation: create-rest-api
+      - operation: create-resource
+      - operation: put-method
+      - operation: put-integration
+
+- task_id: 17
+  description: >
+    Build a fan-out notification system: create an SNS topic 'order-events',
+    create two SQS queues 'shipping-queue' and 'billing-queue',
+    subscribe both queues to the SNS topic, then publish a test message.
+  success_criteria:
+    services:
+      - sns
+      - sqs
+    steps:
+      - operation: create-topic
+        resource: order-events
+      - operation: create-queue
+        resource: shipping-queue
+      - operation: create-queue
+        resource: billing-queue
+      - operation: subscribe
+      - operation: subscribe
+      - operation: publish

@@ -1,4 +1,4 @@
-- task_id: 4
+- task_id: 6
   description: Create an S3 bucket named 'my-test-bucket'.
   success_criteria:
     command_contains: s3api
@@ -7,8 +7,8 @@
       service: s3
       name: my-test-bucket
 
-- task_id: 5
-  description: Create a DynamoDB table named 'users' with a partition key 'user_id' (S).
+- task_id: 7
+  description: Create a DynamoDB table named 'users' with a partition key 'user_id' (String type).
   success_criteria:
     command_contains: dynamodb
     operation: create-table
@@ -16,8 +16,26 @@
       service: dynamodb
       name: users
 
-- task_id: 6
-  description: Create a Lambda function named 'hello-world'.
+- task_id: 8
+  description: Create an SQS queue named 'task-queue'.
+  success_criteria:
+    command_contains: sqs
+    operation: create-queue
+    resource_exists:
+      service: sqs
+      name: task-queue
+
+- task_id: 9
+  description: Create an SNS topic named 'notifications'.
+  success_criteria:
+    command_contains: sns
+    operation: create-topic
+    resource_exists:
+      service: sns
+      name: notifications
+
+- task_id: 10
+  description: Create a Lambda function named 'hello-world' using the python3.12 runtime.
   success_criteria:
     command_contains: lambda
     operation: create-function
