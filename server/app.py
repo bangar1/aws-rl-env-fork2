@@ -35,12 +35,9 @@ except Exception as e:  # pragma: no cover
         "openenv is required for the web interface. Install dependencies with '\n    uv sync\n'"
     ) from e
 
-try:
-    from ..models import AwsRlAction, AwsRlObservation
-    from .aws_rl_env_environment import AwsRlEnvironment
-except ModuleNotFoundError:
-    from models import AwsRlAction, AwsRlObservation
-    from server.aws_rl_env_environment import AwsRlEnvironment
+
+from models import AwsRlAction, AwsRlObservation
+from server.aws_rl_env_environment import AwsRlEnvironment
 
 
 # Create the app with web interface and README integration

@@ -16,10 +16,7 @@ from uuid import uuid4
 from openenv.core.env_server.interfaces import Environment
 from openenv.core.env_server.types import State
 
-try:
-    from ..models import AwsRlAction, AwsRlObservation
-except ImportError:
-    from models import AwsRlAction, AwsRlObservation
+from models import AwsRlAction, AwsRlObservation
 
 
 class AwsRlEnvironment(Environment):

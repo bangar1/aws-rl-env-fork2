@@ -59,11 +59,25 @@ FROM ${BASE_IMAGE}
 
 WORKDIR /app
 
+# Copy the uv-managed Python interpreter from builder
+COPY --from=builder /root/.local/share/uv/python /root/.local/share/uv/python
+
 # Copy the virtual environment from builder
 COPY --from=builder /app/env/.venv /app/.venv
 
-# Copy the environment code (includes ministack/)
+# Copy the environment code
 COPY --from=builder /app/env /app/env
+
+# Install AWS CLI
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends awscli && \
+    rm -rf /var/lib/apt/lists/*
+
+# Configure AWS CLI to point to MiniStack
+RUN mkdir -p /root/.aws && \
+    printf '[default]\nregion = us-east-1\noutput = json\n' > /root/.aws/config && \
+    printf '[default]\naws_access_key_id = test\naws_secret_access_key = test\n' > /root/.aws/credentials
+ENV AWS_ENDPOINT_URL=http://localhost:4566
 
 # Set PATH to use the virtual environment
 ENV PATH="/app/.venv/bin:$PATH"
@@ -71,12 +85,9 @@ ENV PATH="/app/.venv/bin:$PATH"
 # Set PYTHONPATH so imports work correctly
 ENV PYTHONPATH="/app/env:$PYTHONPATH"
 
-# Health check against the RL environment server
-HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:8000/health || exit 1
 
-# Use entrypoint script to start both MiniStack and the RL server
-COPY entrypoint.sh /app/entrypoint.sh
-RUN chmod +x /app/entrypoint.sh
-
-CMD ["/app/entrypoint.sh"]
+# Entrypoint: start MiniStack in background, then run the FastAPI server
+CMD ["sh", "-c", "ministack & sleep 2 && uvicorn server.app:app --host 0.0.0.0 --port 8000"]

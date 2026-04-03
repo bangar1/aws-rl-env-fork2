@@ -12,7 +12,7 @@ build-backend = "setuptools.build_meta"
 name = "openenv-aws_rl_env"
 version = "0.1.0"
 description = "Aws Rl Env environment for OpenEnv"
-requires-python = ">=3.10"
+requires-python = ">=3.12"
 dependencies = [
     # Core OpenEnv runtime (provides FastAPI server + HTTP client types)
     # install from github
@@ -26,6 +26,7 @@ dependencies = [
     # "gymnasium>=0.29.0",
     # "openspiel>=1.0.0",
     # "smolagents>=1.22.0,<2",
+    "ministack>=1.1.24",
 ]
 
 [project.optional-dependencies]
