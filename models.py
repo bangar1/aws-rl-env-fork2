@@ -29,7 +29,7 @@ class AwsService(str, Enum):
 # ---------------------------------------------------------------------------
 
 
-class TaskDifficulty(Enum):
+class TaskDifficulty(str, Enum):
     WARMUP = "warmup"
     BEGINNER = "beginner"
     INTERMEDIATE = "intermediate"

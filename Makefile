@@ -88,6 +88,10 @@ docker-logs: ## Tail logs from the running Docker container
 docker-shell: ## Open a shell in the running Docker container
 	docker exec -it $(DOCKER_IMAGE) /bin/bash
 
+.PHONY: docker-clean
+docker-clean: ## Stop and remove all running containers for this image
+	@docker ps -q --filter ancestor=$(DOCKER_IMAGE):$(DOCKER_TAG) | xargs -r docker rm -f
+
 .PHONY: docker-health
 docker-health: ## Check health of the running container
 	@curl -sf http://localhost:$(SERVER_PORT)/health && echo " OK" || echo " FAIL"

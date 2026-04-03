@@ -26,40 +26,29 @@ try:
 
     # Reset
     result = env.reset()
-    print(f"Reset: {result.observation.success}")
-    print(f"Supported services: {result.observation.metadata['supported_services']}")
+    print(f"Episode: {result.observation.episode_id}")
 
     # Create an S3 bucket
-    result = env.step(AwsRlAction(
-        service="s3",
-        operation="create_bucket",
-        parameters={"Bucket": "my-rl-bucket"}
-    ))
-    print(f"Create bucket success: {result.observation.success}")
+    result = env.step(AwsRlAction(command="aws s3 mb s3://my-rl-bucket"))
+    print(f"Create bucket success: {result.observation.command_success}")
+    print(f"Output: {result.observation.command_output}")
 
-    # Put an object in the bucket
-    result = env.step(AwsRlAction(
-        service="s3",
-        operation="put_object",
-        parameters={"Bucket": "my-rl-bucket", "Key": "hello.txt", "Body": "world"}
-    ))
-    print(f"Put object success: {result.observation.success}")
+    # Upload a file to the bucket
+    result = env.step(AwsRlAction(command="aws s3 cp hello.txt s3://my-rl-bucket/"))
+    print(f"Upload success: {result.observation.command_success}")
 
     # List buckets
-    result = env.step(AwsRlAction(
-        service="s3",
-        operation="list_buckets",
-        parameters={}
-    ))
-    print(f"Buckets: {result.observation.response}")
+    result = env.step(AwsRlAction(command="aws s3 ls"))
+    print(f"Buckets: {result.observation.command_output}")
 
-    # Create an SQS queue
-    result = env.step(AwsRlAction(
-        service="sqs",
-        operation="create_queue",
-        parameters={"QueueName": "my-queue"}
-    ))
-    print(f"Queue URL: {result.observation.response.get('QueueUrl')}")
+    # Describe EC2 instances
+    result = env.step(AwsRlAction(command="aws ec2 describe-instances"))
+    print(f"EC2 output: {result.observation.command_output}")
+
+    # Check current task and resource state
+    print(f"Task: {result.observation.task}")
+    print(f"Task achieved: {result.observation.task_achieved}")
+    print(f"Resources: {result.observation.resources}")
 
 finally:
     env.close()
@@ -94,34 +83,40 @@ The Docker image bundles:
 
 ## Environment Details
 
+### Core Types
+
+- `TaskID` — Unique task identifier (int)
+- `EpisodeID` — Unique episode identifier (str)
+- `StepCount` — Step counter within an episode (int)
+- `AwsService` — Supported AWS services: `s3`, `ec2`, `dynamodb`, `lambda`
+
+### Task
+
+**Task**: Defines what the RL agent must accomplish
+
+- `task_id` (TaskID) — Unique task identifier
+- `difficulty` (TaskDifficulty) — One of: `warmup`, `beginner`, `intermediate`, `advanced`, `expert`
+- `description` (str) — Human-readable task description
+- `success_criteria` (dict) — Machine-readable criteria to evaluate task completion
+
 ### Action
 
-**AwsRlAction**: An AWS API call to execute
-- `service` (str) - AWS service name (e.g. `"s3"`, `"sqs"`, `"dynamodb"`)
-- `operation` (str) - boto3 client method (e.g. `"create_bucket"`, `"send_message"`)
-- `parameters` (dict) - kwargs passed to the boto3 method
+**AwsRlAction**: An AWS CLI command to execute against MiniStack
+
+- `command` (str) — AWS CLI command to execute, e.g. `"aws s3 ls"`, `"aws ec2 describe-instances"`
 
 ### Observation
 
-**AwsRlObservation**: The result of the AWS API call
-- `success` (bool) - Whether the call succeeded
-- `response` (dict) - The AWS API response data
-- `error` (str) - Error message if the call failed
-- `service` (str) - Service that was called
-- `operation` (str) - Operation that was executed
-- `reward` (float) - +1.0 for success, -0.5 for client errors, -1.0 for invalid service/unexpected errors
-- `done` (bool) - Always False (infinite episode)
-- `metadata` (dict) - Step count and other info
+**AwsRlObservation**: The result returned after each step
 
-### Reward Structure
-
-| Outcome | Reward |
-|---------|--------|
-| Successful API call | +1.0 |
-| AWS ClientError (e.g. bucket already exists) | -0.5 |
-| Invalid parameter validation | -0.5 |
-| Unsupported service | -1.0 |
-| Unexpected error | -1.0 |
+- `episode_id` (EpisodeID) — Unique identifier for the episode
+- `step_count` (StepCount) — Current step count in the episode
+- `command_success` (bool) — Whether the CLI command executed successfully
+- `command_output` (str) — Stdout from the executed AWS CLI command
+- `error` (str) — Stderr if the command failed
+- `resources` (dict[AwsService, dict | list | str]) — Current resource state from MiniStack, keyed by service name
+- `task` (Task | None) — The task the agent is trying to accomplish
+- `task_achieved` (bool) — Whether the task has been achieved
 
 ## Architecture
 
@@ -157,16 +152,10 @@ result = env.reset()
 
 # Create a DynamoDB table
 result = env.step(AwsRlAction(
-    service="dynamodb",
-    operation="create_table",
-    parameters={
-        "TableName": "my-table",
-        "KeySchema": [{"AttributeName": "id", "KeyType": "HASH"}],
-        "AttributeDefinitions": [{"AttributeName": "id", "AttributeType": "S"}],
-        "BillingMode": "PAY_PER_REQUEST",
-    }
+    command="aws dynamodb create-table --table-name my-table --key-schema AttributeName=id,KeyType=HASH --attribute-definitions AttributeName=id,AttributeType=S --billing-mode PAY_PER_REQUEST"
 ))
-print(f"Table created: {result.observation.success}")
+print(f"Table created: {result.observation.command_success}")
+print(f"Output: {result.observation.command_output}")
 ```
 
 ### Concurrent Sessions
@@ -180,15 +169,9 @@ def run_episode(client_id: int):
         result = env.reset()
         for i in range(10):
             result = env.step(AwsRlAction(
-                service="s3",
-                operation="put_object",
-                parameters={
-                    "Bucket": f"client-{client_id}",
-                    "Key": f"step-{i}.txt",
-                    "Body": f"data from step {i}"
-                }
+                command=f"aws s3api put-object --bucket client-{client_id} --key step-{i}.txt --body 'data from step {i}'"
             ))
-        return client_id, result.observation.success
+        return client_id, result.observation.command_success
 
 with ThreadPoolExecutor(max_workers=4) as executor:
     results = list(executor.map(run_episode, range(4)))

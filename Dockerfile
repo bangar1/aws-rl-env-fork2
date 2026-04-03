@@ -79,6 +79,9 @@ RUN mkdir -p /root/.aws && \
     printf '[default]\naws_access_key_id = test\naws_secret_access_key = test\n' > /root/.aws/credentials
 ENV AWS_ENDPOINT_URL=http://localhost:4566
 
+# Enable the web interface for OpenEnv (if applicable)
+ENV ENABLE_WEB_INTERFACE=true
+
 # Set PATH to use the virtual environment
 ENV PATH="/app/.venv/bin:$PATH"
 
