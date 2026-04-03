@@ -1,0 +1,18 @@
+- task_id: 10
+  description: >
+    Deploy a serverless API: create a DynamoDB table 'items',
+    a Lambda function 'api-handler' that reads from it,
+    and an API Gateway REST API routing GET /items to the Lambda.
+  success_criteria:
+    services:
+      - dynamodb
+      - lambda
+      - iam
+      - apigateway
+    steps:
+      - operation: create-table
+        resource: items
+      - operation: create-role
+      - operation: create-function
+        resource: api-handler
+      - operation: create-rest-api

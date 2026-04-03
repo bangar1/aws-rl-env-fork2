@@ -1,0 +1,16 @@
+- task_id: 9
+  description: >
+    Create a Lambda function 'processor' with an IAM role,
+    then create an SQS queue 'tasks' as an event source.
+  success_criteria:
+    services:
+      - lambda
+      - iam
+      - sqs
+    steps:
+      - operation: create-role
+      - operation: create-function
+        resource: processor
+      - operation: create-queue
+        resource: tasks
+      - operation: create-event-source-mapping

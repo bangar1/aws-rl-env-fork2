@@ -30,17 +30,19 @@ class AwsService(str, Enum):
 
 
 class TaskDifficulty(Enum):
-    EASY = "easy"
-    MEDIUM = "medium"
-    HARD = "hard"
+    WARMUP = "warmup"
+    BEGINNER = "beginner"
+    INTERMEDIATE = "intermediate"
+    ADVANCED = "advanced"
+    EXPERT = "expert"
 
 
 class Task(BaseModel):
     """Defines a task the RL agent must accomplish in the AWS environment."""
 
-    task_id: TaskID = Field(..., description="Unique task identifier")
+    task_id: TaskID = Field(..., ge=0, description="Unique task identifier")
     difficulty: TaskDifficulty = Field(
-        default=TaskDifficulty.EASY, description="Task difficulty level"
+        default=TaskDifficulty.WARMUP, description="Task difficulty level"
     )
     description: str = Field(..., description="Human-readable task description")
     success_criteria: dict[str, Any] = Field(
@@ -67,7 +69,7 @@ class AwsRlObservation(Observation):
     """Observation returned after each step in the AWS RL environment."""
 
     episode_id: EpisodeID = Field(..., description="Unique identifier for the episode")
-    step_count: StepCount = Field(..., description="Current step count in the episode")
+    step_count: StepCount = Field(..., ge=0, description="Current step count in the episode")
     command_success: bool = Field(
         ..., description="Whether the CLI command executed successfully"
     )

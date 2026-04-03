@@ -7,95 +7,85 @@
 """
 Aws Rl Env Environment Implementation.
 
-A simple test environment that echoes back messages sent to it.
-Perfect for testing HTTP server infrastructure.
+An RL environment backed by a simulated AWS cloud powered by MiniStack.
+The agent sends AWS CLI commands as actions and receives CLI output plus
+the current resource state as observations.
 """
 
+import logging
+
+from typing import Any, Optional
 from uuid import uuid4
 
 from openenv.core.env_server.interfaces import Environment
 from openenv.core.env_server.types import State
 
-from models import AwsRlAction, AwsRlObservation
+from models import AwsRlAction, AwsRlObservation, EpisodeID, StepCount, Task
+from server.services.aws_backend import AwsBackend
+from server.services.curriculum import Curriculum
+
+logger = logging.getLogger(__name__)
 
 
-class AwsRlEnvironment(Environment):
-    """
-    A simple echo environment that echoes back messages.
-
-    This environment is designed for testing the HTTP server infrastructure.
-    It maintains minimal state and simply echoes back whatever message it receives.
-
-    Example:
-        >>> env = AwsRlEnvironment()
-        >>> obs = env.reset()
-        >>> print(obs.echoed_message)  # "Aws Rl Env environment ready!"
-        >>>
-        >>> obs = env.step(AwsRlAction(message="Hello"))
-        >>> print(obs.echoed_message)  # "Hello"
-        >>> print(obs.message_length)  # 5
-    """
-
-    # Enable concurrent WebSocket sessions.
-    # Set to True if your environment isolates state between instances.
-    # When True, multiple WebSocket clients can connect simultaneously, each
-    # getting their own environment instance (when using factory mode in app.py).
+class AwsRlEnvironment(Environment[AwsRlAction, AwsRlObservation, State]):
     SUPPORTS_CONCURRENT_SESSIONS: bool = True
 
-    def __init__(self):
-        """Initialize the aws_rl_env environment."""
+    def __init__(self) -> None:
+        print("Initializing AWS RL Environment...")
         self._state = State(episode_id=str(uuid4()), step_count=0)
-        self._reset_count = 0
+        self._backend = AwsBackend()
+        self._curriculum = Curriculum()
+        self._current_task: Task | None = None
 
-    def reset(self) -> AwsRlObservation:
-        """
-        Reset the environment.
-
-        Returns:
-            AwsRlObservation with a ready message
-        """
-        self._state = State(episode_id=str(uuid4()), step_count=0)
-        self._reset_count += 1
+    def reset(
+        self,
+        seed: Optional[int] = None,
+        episode_id: Optional[str] = None,
+        **kwargs: Any,
+    ) -> AwsRlObservation:
+        self._backend.reset_environment()
+        self._state = State(episode_id=episode_id or str(uuid4()), step_count=0)
+        self._current_task = self._curriculum.next_task()
 
         return AwsRlObservation(
-            echoed_message="Aws Rl Env environment ready!",
-            message_length=0,
+            episode_id=EpisodeID(self._state.episode_id or ""),
+            step_count=StepCount(self._state.step_count),
+            command_success=True,
+            command_output="Environment reset. MiniStack state wiped.",
+            task=self._current_task,
             done=False,
             reward=0.0,
         )
 
-    def step(self, action: AwsRlAction) -> AwsRlObservation:  # type: ignore[override]
-        """
-        Execute a step in the environment by echoing the message.
-
-        Args:
-            action: AwsRlAction containing the message to echo
-
-        Returns:
-            AwsRlObservation with the echoed message and its length
-        """
+    def step(
+        self,
+        action: AwsRlAction,
+        timeout_s: Optional[float] = None,
+        **kwargs: Any,
+    ) -> AwsRlObservation:
         self._state.step_count += 1
 
-        message = action.message
-        length = len(message)
+        success, stdout, stderr = self._backend.execute_command(action.command)
+        reward = 1.0 if success else -1.0
 
-        # Simple reward: longer messages get higher rewards
-        reward = length * 0.1
+        # TODO: evaluate success_criteria to determine task_achieved
+        task_achieved = False
+
+        if self._current_task and task_achieved:
+            self._curriculum.record_result(self._current_task, achieved=True)
 
         return AwsRlObservation(
-            echoed_message=message,
-            message_length=length,
+            episode_id=EpisodeID(self._state.episode_id or ""),
+            step_count=StepCount(self._state.step_count),
+            command_success=success,
+            command_output=stdout,
+            error=stderr,
+            task=self._current_task,
+            task_achieved=task_achieved,
             done=False,
             reward=reward,
-            metadata={"original_message": message, "step": self._state.step_count},
         )
 
     @property
     def state(self) -> State:
-        """
-        Get the current environment state.
-
-        Returns:
-            Current State with episode_id and step_count
-        """
         return self._state

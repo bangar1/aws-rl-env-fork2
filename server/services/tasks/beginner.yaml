@@ -1,0 +1,26 @@
+- task_id: 4
+  description: Create an S3 bucket named 'my-test-bucket'.
+  success_criteria:
+    command_contains: s3api
+    operation: create-bucket
+    resource_exists:
+      service: s3
+      name: my-test-bucket
+
+- task_id: 5
+  description: Create a DynamoDB table named 'users' with a partition key 'user_id' (S).
+  success_criteria:
+    command_contains: dynamodb
+    operation: create-table
+    resource_exists:
+      service: dynamodb
+      name: users
+
+- task_id: 6
+  description: Create a Lambda function named 'hello-world'.
+  success_criteria:
+    command_contains: lambda
+    operation: create-function
+    resource_exists:
+      service: lambda
+      name: hello-world

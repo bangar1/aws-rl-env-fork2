@@ -1,0 +1,23 @@
+- task_id: 0
+  description: List all S3 buckets in the environment.
+  success_criteria:
+    command_contains: s3
+    operation: ls
+
+- task_id: 1
+  description: Describe all EC2 instances in the environment.
+  success_criteria:
+    command_contains: ec2
+    operation: describe-instances
+
+- task_id: 2
+  description: List all DynamoDB tables.
+  success_criteria:
+    command_contains: dynamodb
+    operation: list-tables
+
+- task_id: 3
+  description: List all Lambda functions.
+  success_criteria:
+    command_contains: lambda
+    operation: list-functions

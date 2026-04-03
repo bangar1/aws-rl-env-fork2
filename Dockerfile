@@ -85,9 +85,9 @@ ENV PATH="/app/.venv/bin:$PATH"
 # Set PYTHONPATH so imports work correctly
 ENV PYTHONPATH="/app/env:$PYTHONPATH"
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:8000/health || exit 1
+
+# DEV_MODE=1 enables live reload via --reload flag
+ENV DEV_MODE=1
 
 # Entrypoint: start MiniStack in background, then run the FastAPI server
-CMD ["sh", "-c", "ministack & sleep 2 && uvicorn server.app:app --host 0.0.0.0 --port 8000"]
+CMD ["sh", "-c", "ministack & sleep 2 && uvicorn server.app:app --host 0.0.0.0 --port 8000 $([ \"$DEV_MODE\" = '1' ] && echo '--reload --reload-dir /app/env')"]
