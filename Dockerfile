@@ -80,7 +80,7 @@ RUN mkdir -p /root/.aws && \
 ENV AWS_ENDPOINT_URL=http://localhost:4566
 
 # Enable the web interface for OpenEnv (if applicable)
-ENV ENABLE_WEB_INTERFACE=true
+# ENV ENABLE_WEB_INTERFACE=true
 
 # Set PATH to use the virtual environment
 ENV PATH="/app/.venv/bin:$PATH"
@@ -90,7 +90,7 @@ ENV PYTHONPATH="/app/env:$PYTHONPATH"
 
 
 # DEV_MODE=1 enables live reload via --reload flag
-ENV DEV_MODE=1
+ENV DEV_MODE=0
 
 # Entrypoint: start MiniStack in background, then run the FastAPI server
 CMD ["sh", "-c", "ministack & sleep 2 && uvicorn server.app:app --host 0.0.0.0 --port 8000 $([ \"$DEV_MODE\" = '1' ] && echo '--reload --reload-dir /app/env')"]

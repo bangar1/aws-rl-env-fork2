@@ -27,6 +27,7 @@ dependencies = [
     # "openspiel>=1.0.0",
     # "smolagents>=1.22.0,<2",
     "ministack>=1.1.24",
+    "python-dotenv>=1.0.0",
 ]
 
 [project.optional-dependencies]

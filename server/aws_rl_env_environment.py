@@ -117,7 +117,7 @@ class AwsRlEnvironment(Environment[AwsRlAction, AwsRlObservation, State]):
             error=stderr,
             task=self._current_task,
             task_achieved=task_achieved,
-            done=False,
+            done=task_achieved,
             reward=reward,
         )
 
