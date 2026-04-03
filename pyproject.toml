@@ -33,6 +33,8 @@ dependencies = [
 dev = [
     "pytest>=8.0.0",
     "pytest-cov>=4.0.0",
+    "ruff>=0.4.0",
+    "mypy>=1.10.0",
 ]
 
 [project.scripts]
@@ -44,3 +46,10 @@ server = "aws_rl_env.server.app:main"
 include-package-data = true
 packages = ["aws_rl_env", "aws_rl_env.server"]
 package-dir = { "aws_rl_env" = ".", "aws_rl_env.server" = "server" }
+
+[tool.mypy]
+files = ["*.py", "server/"]
+ignore_missing_imports = true
+namespace_packages = true
+explicit_package_bases = true
+mypy_path = "."

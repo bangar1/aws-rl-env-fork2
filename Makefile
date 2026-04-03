@@ -1,0 +1,130 @@
+# Project settings
+PROJECT_NAME := openenv-aws_rl_env
+PYTHON := python3
+UV := uv
+DOCKER_IMAGE := aws-rl-env
+DOCKER_TAG := latest
+SERVER_HOST := 0.0.0.0
+SERVER_PORT := 8000
+
+.DEFAULT_GOAL := help
+
+# ──────────────────────────────────────────────
+# Setup & Dependencies
+# ──────────────────────────────────────────────
+
+.PHONY: install
+install: ## Install project dependencies
+	$(UV) sync --frozen
+
+.PHONY: install-dev
+install-dev: ## Install project with dev dependencies
+	$(UV) sync --frozen --all-extras
+
+.PHONY: lock
+lock: ## Update the lockfile
+	$(UV) lock
+
+# ──────────────────────────────────────────────
+# Development
+# ──────────────────────────────────────────────
+
+.PHONY: run
+run: ## Run with MiniStack + FastAPI server (mirrors Docker CMD)
+	ministack & sleep 2 && $(UV) run uvicorn server.app:app --host $(SERVER_HOST) --port $(SERVER_PORT)
+
+# ──────────────────────────────────────────────
+# Code Quality
+# ──────────────────────────────────────────────
+
+.PHONY: format
+format: ## Format code with ruff
+	$(UV) run ruff format .
+
+.PHONY: lint
+lint: ## Lint code with ruff
+	$(UV) run ruff check .
+
+.PHONY: lint-fix
+lint-fix: ## Lint and auto-fix code with ruff
+	$(UV) run ruff check --fix .
+
+.PHONY: typecheck
+typecheck: ## Run type checking with mypy
+	$(UV) run mypy
+
+.PHONY: check
+check: lint typecheck
+
+# ──────────────────────────────────────────────
+# Docker
+# ──────────────────────────────────────────────
+
+.PHONY: docker-build
+docker-build: ## Build Docker image
+	docker build -t $(DOCKER_IMAGE):$(DOCKER_TAG) .
+
+.PHONY: docker-run
+docker-run: ## Run Docker container
+	docker run --rm -p $(SERVER_PORT):8000 $(DOCKER_IMAGE):$(DOCKER_TAG)
+
+.PHONY: docker-run-detach
+docker-run-detach: ## Run Docker container in background
+	docker run -d --rm -p $(SERVER_PORT):8000 --name $(DOCKER_IMAGE) $(DOCKER_IMAGE):$(DOCKER_TAG)
+
+.PHONY: docker-stop
+docker-stop: ## Stop the running Docker container
+	docker stop $(DOCKER_IMAGE)
+
+.PHONY: docker-logs
+docker-logs: ## Tail logs from the running Docker container
+	docker logs -f $(DOCKER_IMAGE)
+
+.PHONY: docker-shell
+docker-shell: ## Open a shell in the running Docker container
+	docker exec -it $(DOCKER_IMAGE) /bin/bash
+
+.PHONY: docker-health
+docker-health: ## Check health of the running container
+	@curl -sf http://localhost:$(SERVER_PORT)/health && echo " OK" || echo " FAIL"
+
+# ──────────────────────────────────────────────
+# OpenEnv
+# ──────────────────────────────────────────────
+
+.PHONY: openenv-validate
+openenv-validate: ## Validate the OpenEnv configuration
+	openenv validate
+
+.PHONY: openenv-build
+openenv-build: ## Build the environment using OpenEnv CLI
+	openenv build
+
+.PHONY: openenv-push
+openenv-push: ## Push the environment to Hugging Face Spaces
+	openenv push
+
+# ──────────────────────────────────────────────
+# Cleanup
+# ──────────────────────────────────────────────
+
+.PHONY: clean
+clean: ## Remove build artifacts and caches
+	rm -rf build/ dist/ *.egg-info .eggs/
+	rm -rf .pytest_cache/ .mypy_cache/ .ruff_cache/
+	rm -rf htmlcov/ .coverage coverage.xml
+	find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
+	find . -type f -name '*.pyc' -delete 2>/dev/null || true
+
+.PHONY: clean-all
+clean-all: clean ## Remove all artifacts including venv
+	rm -rf .venv/
+
+# ──────────────────────────────────────────────
+# Help
+# ──────────────────────────────────────────────
+
+.PHONY: help
+help: ## Show this help message
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
+		awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'

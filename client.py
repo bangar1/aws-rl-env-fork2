@@ -15,9 +15,7 @@ from openenv.core.env_server.types import State
 from .models import AwsRlAction, AwsRlObservation
 
 
-class AwsRlEnv(
-    EnvClient[AwsRlAction, AwsRlObservation, State]
-):
+class AwsRlEnv(EnvClient[AwsRlAction, AwsRlObservation, State]):
     """
     Client for the Aws Rl Env Environment.
 
