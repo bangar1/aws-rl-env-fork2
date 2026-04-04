@@ -246,5 +246,11 @@ class TaskGrader:
         if not latest_step.success:
             progress_reward *= 0.5
 
+        # Rollback penalty: wasteful create→delete pairs
+        progress_reward -= 0.1 * tracker.detect_rollbacks()
+
+        # Idempotency bonus: graceful "already exists" handling
+        progress_reward += 0.02 * tracker.detect_idempotent_retries()
+
         # Clamp to [0.0, 0.99] — never reach 1.0 without achieving
         return min(max(progress_reward, 0.0), 0.99)

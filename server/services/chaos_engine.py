@@ -138,9 +138,7 @@ class ChaosEngine:
                         continue
                     templates = _PERTURBATION_TEMPLATES.get(service, [])
                     for template in templates:
-                        rendered = self._render_template(
-                            template, match, service
-                        )
+                        rendered = self._render_template(template, match, service)
                         if rendered:
                             candidates.append(rendered)
 

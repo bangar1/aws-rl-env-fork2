@@ -63,6 +63,44 @@ def _command_mentions_resource(command: str, resource: str) -> bool:
     return False
 
 
+# Maps create operations to their corresponding delete operations.
+_CREATE_DELETE_PAIRS: dict[str, str] = {
+    "create-bucket": "delete-bucket",
+    "create-table": "delete-table",
+    "create-function": "delete-function",
+    "create-queue": "delete-queue",
+    "create-topic": "delete-topic",
+    "create-role": "delete-role",
+    "create-rest-api": "delete-rest-api",
+    "create-secret": "delete-secret",
+    "put-bucket-policy": "delete-bucket-policy",
+    "attach-role-policy": "detach-role-policy",
+}
+
+_ALREADY_EXISTS_PATTERNS: list[str] = [
+    "already exists",
+    "BucketAlreadyExists",
+    "BucketAlreadyOwnedByYou",
+    "ResourceInUseException",
+    "ResourceConflictException",
+    "EntityAlreadyExists",
+    "QueueNameExists",
+    "TopicAlreadyExists",
+]
+
+
+def _extract_resource_name(command: str) -> str | None:
+    """Extract the primary resource name from an AWS CLI command."""
+    parts = command.strip().split()
+    for i, part in enumerate(parts):
+        if part in _RESOURCE_FLAGS and i + 1 < len(parts):
+            return parts[i + 1]
+        for flag in _RESOURCE_FLAGS:
+            if part.startswith(f"{flag}="):
+                return part.split("=", 1)[1]
+    return None
+
+
 class EpisodeTracker:
     """Tracks command history within a single episode for grading."""
 
@@ -143,3 +181,50 @@ class EpisodeTracker:
     @previous_progress.setter
     def previous_progress(self, value: float) -> None:
         self._previous_progress = value
+
+    def detect_rollbacks(self) -> int:
+        """Count create→delete pairs on the same resource (wasteful rollbacks)."""
+        # Build a set of (operation, resource) for successful create commands
+        creates: list[tuple[str, str]] = []
+        for record in self._history:
+            if not record.success:
+                continue
+            _, op = _parse_aws_command(record.command)
+            if op is None or op not in _CREATE_DELETE_PAIRS:
+                continue
+            resource = _extract_resource_name(record.command)
+            if resource is not None:
+                creates.append((op, resource))
+
+        rollback_count = 0
+        for create_op, resource in creates:
+            delete_op = _CREATE_DELETE_PAIRS[create_op]
+            for record in self._history:
+                if not record.success:
+                    continue
+                _, op = _parse_aws_command(record.command)
+                if op == delete_op and _command_mentions_resource(
+                    record.command, resource
+                ):
+                    rollback_count += 1
+                    break
+
+        return rollback_count
+
+    def detect_idempotent_retries(self) -> int:
+        """Count create failures with 'already exists' followed by a successful next step."""
+        count = 0
+        for i, record in enumerate(self._history):
+            if record.success:
+                continue
+            _, op = _parse_aws_command(record.command)
+            if op is None or not op.startswith("create"):
+                continue
+            # Check stderr for "already exists" patterns
+            if not any(pat in record.stderr for pat in _ALREADY_EXISTS_PATTERNS):
+                continue
+            # Next step must exist and be successful
+            if i + 1 < len(self._history) and self._history[i + 1].success:
+                count += 1
+
+        return count
