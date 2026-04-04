@@ -22,6 +22,7 @@ from openenv.core.env_server.types import State
 
 from models import AwsRlAction, AwsRlObservation, EpisodeID, StepCount, Task
 from server.services.aws_backend import AwsBackend
+from server.services.chaos_engine import ChaosEngine
 from server.services.curriculum import Curriculum
 from server.services.environment_designer import EnvironmentDesigner
 from server.services.episode_tracker import EpisodeTracker
@@ -41,6 +42,7 @@ class AwsRlEnvironment(Environment[AwsRlAction, AwsRlObservation, State]):
         self._grader = TaskGrader(self._backend)
         self._designer = EnvironmentDesigner(self._backend)
         self._tracker = EpisodeTracker()
+        self._chaos_engine = ChaosEngine(self._backend)
         self._current_task: Task | None = None
 
     def reset(
@@ -52,6 +54,7 @@ class AwsRlEnvironment(Environment[AwsRlAction, AwsRlObservation, State]):
         self._backend.reset_environment()
         self._state = State(episode_id=episode_id or str(uuid4()), step_count=0)
         self._tracker.reset()
+        self._chaos_engine.reset()
         self._current_task = self._curriculum.next_task()
 
         self._designer.apply(self._current_task)
@@ -95,11 +98,12 @@ class AwsRlEnvironment(Environment[AwsRlAction, AwsRlObservation, State]):
         # Record in tracker
         latest_step = self._tracker.record_step(command, success, stdout, stderr)
 
-        # Grade the task
-        task_achieved = False
-
+        # Grade the task (pass cumulative chaos flag for recovery bonus)
         grade_result = self._grader.grade(
-            self._current_task, self._tracker, latest_step
+            self._current_task,
+            self._tracker,
+            latest_step,
+            chaos_occurred=self._chaos_engine.chaos_occurred,
         )
         task_achieved = grade_result.task_achieved
         reward = grade_result.reward
@@ -108,6 +112,13 @@ class AwsRlEnvironment(Environment[AwsRlAction, AwsRlObservation, State]):
             self._curriculum.record_result(
                 self._current_task, achieved=True, reward=reward
             )
+
+        # Inject chaos AFTER grading — disrupts state for future steps
+        self._chaos_engine.maybe_inject(
+            self._current_task,
+            self._tracker,
+            self._curriculum.chaos_probability,
+        )
 
         return AwsRlObservation(
             episode_id=EpisodeID(self._state.episode_id or ""),

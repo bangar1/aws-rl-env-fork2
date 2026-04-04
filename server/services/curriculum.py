@@ -59,6 +59,7 @@ TIER_CONFIGS: dict[TaskDifficulty, TierConfig] = {
         mastery_window=10,
         mastery_threshold=0.7,
         fast_track_rate=0.9,
+        chaos_probability=0.1,
     ),
     TaskDifficulty.ADVANCED: TierConfig(
         min_episodes=10,
@@ -66,6 +67,7 @@ TIER_CONFIGS: dict[TaskDifficulty, TierConfig] = {
         mastery_window=10,
         mastery_threshold=0.7,
         fast_track_rate=0.9,
+        chaos_probability=0.2,
     ),
     TaskDifficulty.EXPERT: TierConfig(
         min_episodes=0,
@@ -73,6 +75,7 @@ TIER_CONFIGS: dict[TaskDifficulty, TierConfig] = {
         mastery_window=10,
         mastery_threshold=0.7,
         fast_track_rate=1.0,
+        chaos_probability=0.3,
     ),
 }
 
@@ -236,6 +239,10 @@ class Curriculum:
     @property
     def is_warmup(self) -> bool:
         return self.current_difficulty == TaskDifficulty.WARMUP
+
+    @property
+    def chaos_probability(self) -> float:
+        return self.tier_config.chaos_probability
 
     # -- Public API -----------------------------------------------------------
 

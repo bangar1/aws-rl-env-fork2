@@ -63,6 +63,12 @@ class TierConfig(BaseModel):
         le=1.0,
         description="Success rate for early promotion after 3 episodes",
     )
+    chaos_probability: float = Field(
+        default=0.0,
+        ge=0.0,
+        le=1.0,
+        description="Probability of chaos injection per step",
+    )
 
 
 class SpacedRepState(BaseModel):

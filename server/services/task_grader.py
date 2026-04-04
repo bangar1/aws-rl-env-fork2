@@ -42,6 +42,7 @@ class TaskGrader:
         task: Task,
         tracker: EpisodeTracker,
         latest_step: StepRecord,
+        chaos_occurred: bool = False,
     ) -> GradeResult:
         criteria = task.success_criteria
 
@@ -58,7 +59,9 @@ class TaskGrader:
             result = GradeResult(reason="no recognised success_criteria fields")
 
         # Compute shaped reward
-        result.reward = self._compute_reward(result, latest_step, tracker)
+        result.reward = self._compute_reward(
+            result, latest_step, tracker, chaos_occurred
+        )
 
         # Update tracker's previous progress (monotonic — never decrease)
         if result.partial_progress > tracker.previous_progress:
@@ -225,10 +228,11 @@ class TaskGrader:
         result: GradeResult,
         latest_step: StepRecord,
         tracker: EpisodeTracker,
+        chaos_occurred: bool = False,
     ) -> float:
-        """Compute a shaped reward in [0.0, 1.0]."""
+        """Compute a shaped reward in [0.0, 1.05]."""
         if result.task_achieved:
-            return 1.0
+            return 1.05 if chaos_occurred else 1.0
 
         # Base: partial progress scaled to 0.0–0.8 range
         progress_reward = result.partial_progress * 0.8
