@@ -73,6 +73,18 @@ class ResourceVerifier:
             "iam": self._check_iam_role,
             "apigateway": self._check_apigateway,
             "secretsmanager": self._check_secretsmanager,
+            "ecs": self._check_ecs_cluster,
+            "rds": self._check_rds_instance,
+            "elasticache": self._check_elasticache_cluster,
+            "route53": self._check_route53_hosted_zone,
+            "elbv2": self._check_elbv2_load_balancer,
+            "efs": self._check_efs_filesystem,
+            "cognito-idp": self._check_cognito_user_pool,
+            "ssm": self._check_ssm_parameter,
+            "events": self._check_eventbridge_rule,
+            "apigatewayv2": self._check_apigatewayv2,
+            "cloudformation": self._check_cloudformation_stack,
+            "glue": self._check_glue_database,
         }
         verifier = verifiers.get(service_lower)
         if verifier is None:
@@ -184,3 +196,106 @@ class ResourceVerifier:
             return any(i.get("name") == name for i in items)
         except (json.JSONDecodeError, TypeError):
             return False
+
+    def _check_ecs_cluster(self, name: str) -> bool:
+        success, _, _ = self._backend.execute_command(
+            f"aws ecs describe-clusters --clusters {name}"
+        )
+        return success
+
+    def _check_rds_instance(self, name: str) -> bool:
+        success, _, _ = self._backend.execute_command(
+            f"aws rds describe-db-instances --db-instance-identifier {name}"
+        )
+        return success
+
+    def _check_elasticache_cluster(self, name: str) -> bool:
+        success, _, _ = self._backend.execute_command(
+            f"aws elasticache describe-cache-clusters --cache-cluster-id {name}"
+        )
+        return success
+
+    def _check_route53_hosted_zone(self, name: str) -> bool:
+        success, stdout, _ = self._backend.execute_command(
+            "aws route53 list-hosted-zones --output json"
+        )
+        if not success:
+            return False
+        try:
+            data = json.loads(stdout)
+            zones = data.get("HostedZones", [])
+            return any(z.get("Name", "").rstrip(".") == name.rstrip(".") for z in zones)
+        except (json.JSONDecodeError, TypeError):
+            return False
+
+    def _check_elbv2_load_balancer(self, name: str) -> bool:
+        success, _, _ = self._backend.execute_command(
+            f"aws elbv2 describe-load-balancers --names {name}"
+        )
+        return success
+
+    def _check_efs_filesystem(self, name: str) -> bool:
+        success, stdout, _ = self._backend.execute_command(
+            "aws efs describe-file-systems --output json"
+        )
+        if not success:
+            return False
+        try:
+            data = json.loads(stdout)
+            filesystems = data.get("FileSystems", [])
+            return any(
+                any(t.get("Value") == name for t in fs.get("Tags", []))
+                for fs in filesystems
+            )
+        except (json.JSONDecodeError, TypeError):
+            return False
+
+    def _check_cognito_user_pool(self, name: str) -> bool:
+        success, stdout, _ = self._backend.execute_command(
+            "aws cognito-idp list-user-pools --max-results 60 --output json"
+        )
+        if not success:
+            return False
+        try:
+            data = json.loads(stdout)
+            pools = data.get("UserPools", [])
+            return any(p.get("Name") == name for p in pools)
+        except (json.JSONDecodeError, TypeError):
+            return False
+
+    def _check_ssm_parameter(self, name: str) -> bool:
+        success, _, _ = self._backend.execute_command(
+            f"aws ssm get-parameter --name {name}"
+        )
+        return success
+
+    def _check_eventbridge_rule(self, name: str) -> bool:
+        success, _, _ = self._backend.execute_command(
+            f"aws events describe-rule --name {name}"
+        )
+        return success
+
+    def _check_apigatewayv2(self, name: str) -> bool:
+        success, stdout, _ = self._backend.execute_command(
+            "aws apigatewayv2 get-apis --output json"
+        )
+        if not success:
+            return False
+        try:
+            data = json.loads(stdout)
+            items = data.get("Items", [])
+            return any(i.get("Name") == name for i in items)
+        except (json.JSONDecodeError, TypeError):
+            return False
+
+    def _check_cloudformation_stack(self, name: str) -> bool:
+        success, _, _ = self._backend.execute_command(
+            f"aws cloudformation describe-stacks --stack-name {name}"
+        )
+        return success
+
+    def _check_glue_database(self, name: str) -> bool:
+        success, _, _ = self._backend.execute_command(
+            f"aws glue get-database --name {name}"
+        )
+        return success

@@ -18,6 +18,7 @@ StepCount = NewType("StepCount", int)
 
 
 class AwsService(str, Enum):
+    # Core services
     S3 = "s3"
     EC2 = "ec2"
     DYNAMODB = "dynamodb"
@@ -27,6 +28,28 @@ class AwsService(str, Enum):
     IAM = "iam"
     APIGATEWAY = "apigateway"
     SECRETSMANAGER = "secretsmanager"
+    # Compute & containers
+    ECS = "ecs"
+    # Data & analytics
+    RDS = "rds"
+    ELASTICACHE = "elasticache"
+    ATHENA = "athena"
+    GLUE = "glue"
+    FIREHOSE = "firehose"
+    EMR = "emr"
+    # Networking & routing
+    APIGATEWAYV2 = "apigatewayv2"
+    ROUTE53 = "route53"
+    ELBV2 = "elbv2"
+    # Storage
+    EBS = "ebs"
+    EFS = "efs"
+    # Identity & config
+    COGNITO = "cognito-idp"
+    SSM = "ssm"
+    EVENTBRIDGE = "events"
+    # Infrastructure as code
+    CLOUDFORMATION = "cloudformation"
 
 
 # ---------------------------------------------------------------------------
@@ -176,10 +199,6 @@ class Task(BaseModel):
         default_factory=list,
         description="Commands to run during reset to set up initial state (e.g. for SRE tasks)",
     )
-    cost_budget: float | None = Field(
-        default=None,
-        description="Optional simulated cost budget in USD. Enables cost-based reward shaping.",
-    )
     desired_state_spec: str | None = Field(
         default=None,
         description="Natural-language specification of the desired end state (shown to agent for drift tasks)",
@@ -227,9 +246,6 @@ class AwsRlObservation(Observation):
     )
     task_achieved: bool = Field(
         default=False, description="Whether the task has been achieved"
-    )
-    cost_incurred: float = Field(
-        default=0.0, description="Cumulative simulated cost of operations this episode"
     )
     hints_used: int = Field(
         default=0, ge=0, description="Number of hints requested this episode"
