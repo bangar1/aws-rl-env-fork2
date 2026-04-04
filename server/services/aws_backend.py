@@ -8,19 +8,19 @@ import httpx
 
 logger = logging.getLogger(__name__)
 
-MINISTACK_URL = os.getenv("MINISTACK_URL", "http://localhost:4566")
+AWS_INFRA_URL = os.getenv("AWS_INFRA_URL", "http://localhost:4566")
 
 
 class AwsBackend:
     """Backend service for executing AWS CLI commands against MiniStack."""
 
-    def __init__(self, ministack_url: str = MINISTACK_URL) -> None:
-        self._ministack_url = ministack_url
+    def __init__(self, aws_infra_url: str = AWS_INFRA_URL) -> None:
+        self._aws_infra_url = aws_infra_url
 
     def reset_environment(self) -> None:
         """Wipe all MiniStack service state via POST /_ministack/reset."""
         try:
-            resp = httpx.post(f"{self._ministack_url}/_ministack/reset", timeout=10)
+            resp = httpx.post(f"{self._aws_infra_url}/_ministack/reset", timeout=10)
             resp.raise_for_status()
             logger.info("MiniStack state reset successfully")
         except httpx.HTTPError as e:
@@ -38,7 +38,7 @@ class AwsBackend:
         """
         env = {
             **os.environ,
-            "AWS_ENDPOINT_URL": self._ministack_url,
+            "AWS_ENDPOINT_URL": self._aws_infra_url,
             "AWS_ACCESS_KEY_ID": "test",
             "AWS_SECRET_ACCESS_KEY": "test",
             "AWS_DEFAULT_REGION": "us-east-1",

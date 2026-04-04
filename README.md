@@ -383,7 +383,7 @@ make openenv-push          # Push to HuggingFace Spaces
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `MINISTACK_URL` | `http://localhost:4566` | MiniStack endpoint |
+| `AWS_INFRA_URL` | `http://localhost:4566` | AWS Infra endpoint |
 | `AWS_ACCESS_KEY_ID` | `test` | AWS credentials (any value works) |
 | `AWS_SECRET_ACCESS_KEY` | `test` | AWS credentials (any value works) |
 | `AWS_DEFAULT_REGION` | `us-east-1` | AWS region |
