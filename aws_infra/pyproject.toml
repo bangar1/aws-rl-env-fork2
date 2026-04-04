@@ -18,7 +18,7 @@ dependencies = [
 full = ["duckdb>=0.10.0", "docker>=7.0.0"]
 
 [project.scripts]
-ministack = "aws_infra.app:main"
+aws_infra = "aws_infra.app:main"
 
 [tool.setuptools.packages.find]
 include = ["aws_infra*"]

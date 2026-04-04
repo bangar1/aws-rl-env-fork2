@@ -66,11 +66,11 @@ docker-build: ## Build Docker image
 
 .PHONY: docker-run
 docker-run: ## Run Docker container
-	docker run --rm -p $(SERVER_PORT):8000 $(DOCKER_IMAGE):$(DOCKER_TAG)
+	docker run --rm --name $(DOCKER_IMAGE) -p $(SERVER_PORT):8000 $(DOCKER_IMAGE):$(DOCKER_TAG)
 
 .PHONY: docker-run-dev
 docker-run-dev: ## Run Docker container in dev mode with live reload
-	docker run --rm -p $(SERVER_PORT):8000 -v $(PWD):/app/env -v /app/env/.venv -e DEV_MODE=1 $(DOCKER_IMAGE):$(DOCKER_TAG)
+	docker run --rm --name $(DOCKER_IMAGE) -p $(SERVER_PORT):8000 -v $(PWD):/app/env -v /app/env/.venv -e DEV_MODE=1 $(DOCKER_IMAGE):$(DOCKER_TAG)
 
 .PHONY: docker-run-detach
 docker-run-detach: ## Run Docker container in background

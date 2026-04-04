@@ -73,7 +73,7 @@ RUN apt-get update && \
     apt-get install -y --no-install-recommends awscli && \
     rm -rf /var/lib/apt/lists/*
 
-# Configure AWS CLI to point to MiniStack
+# Configure AWS CLI to point to aws_infra (MiniStack) and use dummy credentials
 RUN mkdir -p /root/.aws && \
     printf '[default]\nregion = us-east-1\noutput = json\n' > /root/.aws/config && \
     printf '[default]\naws_access_key_id = test\naws_secret_access_key = test\n' > /root/.aws/credentials
@@ -92,5 +92,5 @@ ENV PYTHONPATH="/app/env:$PYTHONPATH"
 # DEV_MODE=1 enables live reload via --reload flag
 ENV DEV_MODE=0
 
-# Entrypoint: start MiniStack in background, then run the FastAPI server
-CMD ["sh", "-c", "ministack & sleep 2 && uvicorn server.app:app --host 0.0.0.0 --port 8000 $([ \"$DEV_MODE\" = '1' ] && echo '--reload --reload-dir /app/env')"]
+# Entrypoint: start aws_infra in background, then run the FastAPI server
+CMD ["sh", "-c", "aws_infra -d & sleep 2 && uvicorn server.app:app --host 0.0.0.0 --port 8000 $([ \"$DEV_MODE\" = '1' ] && echo '--reload --reload-dir /app/env')"]
