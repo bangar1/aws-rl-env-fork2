@@ -42,16 +42,16 @@ RUN if ! command -v uv >/dev/null 2>&1; then \
 # If uv.lock exists, use it; otherwise resolve on the fly
 RUN --mount=type=cache,target=/root/.cache/uv \
     if [ -f uv.lock ]; then \
-    uv sync --frozen --no-install-project --no-editable; \
+    uv sync --frozen --extra dev --no-install-project --no-editable; \
     else \
-    uv sync --no-install-project --no-editable; \
+    uv sync --extra dev --no-install-project --no-editable; \
     fi
 
 RUN --mount=type=cache,target=/root/.cache/uv \
     if [ -f uv.lock ]; then \
-    uv sync --frozen --no-editable; \
+    uv sync --frozen --extra dev --no-editable; \
     else \
-    uv sync --no-editable; \
+    uv sync --extra dev --no-editable; \
     fi
 
 # Final runtime stage
@@ -90,7 +90,7 @@ ENV PYTHONPATH="/app/env:$PYTHONPATH"
 
 
 # DEV_MODE=1 enables live reload via --reload flag
-ENV DEV_MODE=0
+ENV DEV_MODE=1
 
 # Entrypoint: start aws_infra in background, then run the FastAPI server
 CMD ["sh", "-c", "aws_infra -d & sleep 2 && uvicorn server.app:app --host 0.0.0.0 --port 8000 $([ \"$DEV_MODE\" = '1' ] && echo '--reload --reload-dir /app/env')"]

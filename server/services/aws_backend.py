@@ -2,6 +2,7 @@
 
 import logging
 import os
+import shlex
 import subprocess
 
 import httpx
@@ -46,7 +47,7 @@ class AwsBackend:
 
         try:
             result = subprocess.run(
-                command.split(),
+                shlex.split(command),
                 capture_output=True,
                 text=True,
                 timeout=30,

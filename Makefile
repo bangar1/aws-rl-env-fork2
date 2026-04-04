@@ -82,7 +82,7 @@ docker-run-dev: ## Run Docker container in dev mode with live reload
 
 .PHONY: docker-run-detach
 docker-run-detach: ## Run Docker container in background
-	docker run -d --rm -p $(SERVER_PORT):8000 --name $(DOCKER_IMAGE) $(DOCKER_IMAGE):$(DOCKER_TAG)
+	docker run -d --rm --name $(DOCKER_IMAGE) -p $(SERVER_PORT):8000 -v $(PWD):/app/env -v /app/env/.venv -e DEV_MODE=1 $(DOCKER_IMAGE):$(DOCKER_TAG)
 
 .PHONY: docker-stop
 docker-stop: ## Stop the running Docker container
@@ -99,6 +99,10 @@ docker-shell: ## Open a shell in the running Docker container
 .PHONY: docker-clean
 docker-clean: ## Stop and remove all running containers for this image
 	@docker ps -q --filter ancestor=$(DOCKER_IMAGE):$(DOCKER_TAG) | xargs -r docker rm -f
+
+.PHONY: docker-test
+docker-test: ## Run tests inside the running Docker container
+	docker exec $(DOCKER_IMAGE) python -m pytest env/tests/test_intermediate_tasks.py -v
 
 .PHONY: docker-health
 docker-health: ## Check health of the running container

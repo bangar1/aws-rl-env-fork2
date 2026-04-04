@@ -70,7 +70,7 @@ class ResourceVerifier:
             "lambda": self._check_lambda_function,
             "sqs": self._check_sqs_queue,
             "sns": self._check_sns_topic,
-            "iam": self._check_iam_role,
+            "iam": self._check_iam_resource,
             "apigateway": self._check_apigateway,
             "secretsmanager": self._check_secretsmanager,
             "ecs": self._check_ecs_cluster,
@@ -85,6 +85,8 @@ class ResourceVerifier:
             "apigatewayv2": self._check_apigatewayv2,
             "cloudformation": self._check_cloudformation_stack,
             "glue": self._check_glue_database,
+            "ebs": self._check_ebs_volume,
+            "firehose": self._check_firehose_stream,
         }
         verifier = verifiers.get(service_lower)
         if verifier is None:
@@ -172,11 +174,33 @@ class ResourceVerifier:
         except (json.JSONDecodeError, TypeError):
             return False
 
-    def _check_iam_role(self, name: str) -> bool:
+    def _check_iam_resource(self, name: str) -> bool:
+        """Check for IAM roles, users, and policies by name."""
+        # Try role first
         success, _, _ = self._backend.execute_command(
             f"aws iam get-role --role-name {name}"
         )
-        return success
+        if success:
+            return True
+        # Try user
+        success, _, _ = self._backend.execute_command(
+            f"aws iam get-user --user-name {name}"
+        )
+        if success:
+            return True
+        # Try policy (list and match by name)
+        success, stdout, _ = self._backend.execute_command(
+            "aws iam list-policies --scope Local --output json"
+        )
+        if success:
+            try:
+                data = json.loads(stdout)
+                policies = data.get("Policies", [])
+                if any(p.get("PolicyName") == name for p in policies):
+                    return True
+            except (json.JSONDecodeError, TypeError):
+                pass
+        return False
 
     def _check_secretsmanager(self, name: str) -> bool:
         success, _, _ = self._backend.execute_command(
@@ -198,10 +222,20 @@ class ResourceVerifier:
             return False
 
     def _check_ecs_cluster(self, name: str) -> bool:
-        success, _, _ = self._backend.execute_command(
+        success, stdout, _ = self._backend.execute_command(
             f"aws ecs describe-clusters --clusters {name}"
         )
-        return success
+        if not success:
+            return False
+        try:
+            data = json.loads(stdout)
+            clusters = data.get("clusters", [])
+            return any(
+                c.get("clusterName") == name and c.get("status") != "INACTIVE"
+                for c in clusters
+            )
+        except (json.JSONDecodeError, TypeError):
+            return False
 
     def _check_rds_instance(self, name: str) -> bool:
         success, _, _ = self._backend.execute_command(
@@ -229,10 +263,17 @@ class ResourceVerifier:
             return False
 
     def _check_elbv2_load_balancer(self, name: str) -> bool:
-        success, _, _ = self._backend.execute_command(
+        success, stdout, _ = self._backend.execute_command(
             f"aws elbv2 describe-load-balancers --names {name}"
         )
-        return success
+        if not success:
+            return False
+        try:
+            data = json.loads(stdout)
+            lbs = data.get("LoadBalancers", [])
+            return any(lb.get("LoadBalancerName") == name for lb in lbs)
+        except (json.JSONDecodeError, TypeError):
+            return False
 
     def _check_efs_filesystem(self, name: str) -> bool:
         success, stdout, _ = self._backend.execute_command(
@@ -244,7 +285,8 @@ class ResourceVerifier:
             data = json.loads(stdout)
             filesystems = data.get("FileSystems", [])
             return any(
-                any(t.get("Value") == name for t in fs.get("Tags", []))
+                fs.get("CreationToken") == name
+                or any(t.get("Value") == name for t in fs.get("Tags", []))
                 for fs in filesystems
             )
         except (json.JSONDecodeError, TypeError):
@@ -297,5 +339,24 @@ class ResourceVerifier:
     def _check_glue_database(self, name: str) -> bool:
         success, _, _ = self._backend.execute_command(
             f"aws glue get-database --name {name}"
+        )
+        return success
+
+    def _check_ebs_volume(self, name: str) -> bool:
+        success, stdout, _ = self._backend.execute_command(
+            "aws ec2 describe-volumes --output json"
+        )
+        if not success:
+            return False
+        try:
+            data = json.loads(stdout)
+            volumes = data.get("Volumes", [])
+            return len(volumes) > 0
+        except (json.JSONDecodeError, TypeError):
+            return False
+
+    def _check_firehose_stream(self, name: str) -> bool:
+        success, _, _ = self._backend.execute_command(
+            f"aws firehose describe-delivery-stream --delivery-stream-name {name}"
         )
         return success

@@ -109,7 +109,7 @@
 - task_id: 39
   description: Describe all EBS volumes in the environment.
   success_criteria:
-    command_contains: ebs
+    command_contains: ec2
     operation: describe-volumes
 
 - task_id: 40
