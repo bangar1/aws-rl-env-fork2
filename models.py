@@ -48,6 +48,8 @@ class AwsService(str, Enum):
     COGNITO = "cognito-idp"
     SSM = "ssm"
     EVENTBRIDGE = "events"
+    # Monitoring
+    CLOUDWATCH = "cloudwatch"
     # Infrastructure as code
     CLOUDFORMATION = "cloudformation"
 

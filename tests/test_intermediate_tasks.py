@@ -319,6 +319,27 @@ def _resolve_dynamic_commands(
 _DYNAMIC_TASK_IDS = {76, 78, 82, 84}
 
 
+def _execute_all_commands(
+    task_id: int, backend: AwsBackend
+) -> list[tuple[str, bool, str, str]]:
+    """Execute static commands, resolve dynamic follow-ups, return all (cmd, ok, out, err)."""
+    static_cmds = INTERMEDIATE_COMMANDS[task_id]
+    results: list[tuple[str, bool, str, str]] = []
+
+    for cmd in static_cmds:
+        success, stdout, stderr = backend.execute_command(cmd)
+        results.append((cmd, success, stdout, stderr))
+
+    if task_id in _DYNAMIC_TASK_IDS:
+        outputs = [r[2] for r in results]
+        extra_cmds = _resolve_dynamic_commands(task_id, outputs)
+        for cmd in extra_cmds:
+            success, stdout, stderr = backend.execute_command(cmd)
+            results.append((cmd, success, stdout, stderr))
+
+    return results
+
+
 @pytest.fixture(scope="module")
 def backend() -> AwsBackend:
     return AwsBackend()
@@ -347,27 +368,6 @@ def _build_task(entry: dict) -> Task:
             for cmd in entry.get("setup_commands", [])
         ],
     )
-
-
-def _execute_all_commands(
-    task_id: int, backend: AwsBackend
-) -> list[tuple[str, bool, str, str]]:
-    """Execute static commands, resolve dynamic follow-ups, return all (cmd, ok, out, err)."""
-    static_cmds = INTERMEDIATE_COMMANDS[task_id]
-    results: list[tuple[str, bool, str, str]] = []
-
-    for cmd in static_cmds:
-        success, stdout, stderr = backend.execute_command(cmd)
-        results.append((cmd, success, stdout, stderr))
-
-    if task_id in _DYNAMIC_TASK_IDS:
-        outputs = [r[2] for r in results]  # stdout values
-        extra_cmds = _resolve_dynamic_commands(task_id, outputs)
-        for cmd in extra_cmds:
-            success, stdout, stderr = backend.execute_command(cmd)
-            results.append((cmd, success, stdout, stderr))
-
-    return results
 
 
 def test_all_intermediate_tasks_have_commands(intermediate_tasks: list[dict]) -> None:
@@ -419,7 +419,6 @@ def test_intermediate_task_grading(
     for cmd, success, stdout, stderr in results:
         step = tracker.record_step(cmd, success, stdout, stderr)
 
-    # Grade using the last step
     result = grader.grade(task, tracker, step)
 
     all_cmds = [r[0] for r in results]
@@ -448,7 +447,6 @@ def test_intermediate_task_partial_gives_no_completion(
     entry = next((t for t in intermediate_tasks if t["task_id"] == task_id), None)
     assert entry is not None
 
-    # Check actual step count from YAML criteria
     steps = entry.get("success_criteria", {}).get("steps", [])
     if len(steps) < 2:
         pytest.skip("Single-step task — partial test not applicable")
@@ -456,7 +454,6 @@ def test_intermediate_task_partial_gives_no_completion(
     backend.reset_environment()
     task = _build_task(entry)
 
-    # Execute only the first static command
     cmd = INTERMEDIATE_COMMANDS[task_id][0]
     success, stdout, stderr = backend.execute_command(cmd)
     tracker = EpisodeTracker()
