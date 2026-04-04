@@ -19,6 +19,14 @@ install: ## Install project dependencies
 
 .PHONY: install-dev
 install-dev: ## Install project with dev dependencies
+	$(UV) sync --frozen --extra dev
+
+.PHONY: install-train
+install-train: ## Install project with training dependencies (trl, torch, peft, etc.)
+	$(UV) sync --frozen --extra training
+
+.PHONY: install-all
+install-all: ## Install project with all dependencies (dev + training)
 	$(UV) sync --frozen --all-extras
 
 .PHONY: lock
