@@ -60,7 +60,7 @@ class AwsRlEnvironment(Environment[AwsRlAction, AwsRlObservation, State]):
             episode_id=EpisodeID(self._state.episode_id or ""),
             step_count=StepCount(self._state.step_count),
             command_success=True,
-            command_output="Environment reset. MiniStack state wiped.",
+            command_output="Environment reset. Infra state wiped.",
             task=self._current_task,
             done=False,
             reward=0.0,

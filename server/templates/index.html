@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AWS RL Environment</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+
+<body>
+
+  <!-- Navigation -->
+  <nav id="navbar">
+    <ul class="nav-links">
+      <li><a href="#about" class="nav-link active">About</a></li>
+      <li><a href="#tiers" class="nav-link">Tiers</a></li>
+      <li><a href="#features" class="nav-link">Features</a></li>
+      <li><a href="#api" class="nav-link">API</a></li>
+      <li><a href="#playground" class="nav-link">Playground</a></li>
+    </ul>
+  </nav>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero-bg"></div>
+    <div class="hero-content">
+      <h1 id="hero-title" class="type-animate">AWS RL Environment</h1>
+      <h2 id="hero-subtitle" class="type-animate">Train AI agents on real AWS cloud tasks</h2>
+      <div class="hero-cta-container hero-fade-up">
+        <a href="#playground" class="btn-primary">
+          Try the Playground
+          <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+          </svg>
+        </a>
+        <a href="#api" class="btn-secondary">
+          API Docs
+          <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+          </svg>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Content -->
+  <div class="container">
+
+    <!-- About -->
+    <div class="section-wrapper" id="about">
+      <div class="left-col">
+        <div class="icon-container">
+          <svg viewBox="0 0 24 24">
+            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+          </svg>
+        </div>
+        <span class="section-title">About</span>
+      </div>
+      <div class="right-col">
+        <div class="card animate-up">
+          <h3>Learn AWS by doing.</h3>
+          <p>An OpenEnv-compliant RL environment where agents execute real AWS CLI commands against a simulated cloud
+            powered by MiniStack. A progressive curriculum tracks mastery and adapts difficulty in real-time.</p>
+          <div class="skills-container">
+            <span class="skill-tag">S3</span>
+            <span class="skill-tag">EC2</span>
+            <span class="skill-tag">DynamoDB</span>
+            <span class="skill-tag">Lambda</span>
+            <span class="skill-tag">SQS</span>
+            <span class="skill-tag">SNS</span>
+            <span class="skill-tag">IAM</span>
+            <span class="skill-tag">API Gateway</span>
+            <span class="skill-tag">CloudFormation</span>
+            <span class="skill-tag">CloudWatch</span>
+            <span class="skill-tag">Kinesis</span>
+            <span class="skill-tag">SES</span>
+            <span class="skill-tag">Step Functions</span>
+            <span class="skill-tag">Secrets Manager</span>
+            <span class="skill-tag accent">+ 20 more</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Difficulty Tiers -->
+    <div class="section-wrapper" id="tiers">
+      <div class="left-col">
+        <div class="icon-container">
+          <svg viewBox="0 0 24 24">
+            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+          </svg>
+        </div>
+        <span class="section-title">Tiers</span>
+      </div>
+      <div class="right-col">
+        <div class="animate-up">
+          <div class="tier-item">
+            <span class="tier-badge warmup">Warmup</span>
+            <span class="tier-tasks">0 &ndash; 5</span>
+            <span class="tier-desc">List resources &mdash; S3 buckets, EC2 instances, DynamoDB tables</span>
+          </div>
+          <div class="tier-item">
+            <span class="tier-badge beginner">Beginner</span>
+            <span class="tier-tasks">6 &ndash; 10</span>
+            <span class="tier-desc">Create basic resources &mdash; buckets, tables, queues, functions</span>
+          </div>
+          <div class="tier-item">
+            <span class="tier-badge intermediate">Intermediate</span>
+            <span class="tier-tasks">11 &ndash; 14</span>
+            <span class="tier-desc">Multi-step operations &mdash; create, configure, and connect</span>
+          </div>
+          <div class="tier-item">
+            <span class="tier-badge advanced">Advanced</span>
+            <span class="tier-tasks">15 &ndash; 17</span>
+            <span class="tier-desc">Cross-service architectures &mdash; Lambda + SQS, API Gateway</span>
+          </div>
+          <div class="tier-item">
+            <span class="tier-badge expert">Expert</span>
+            <span class="tier-tasks">18 &ndash; 20</span>
+            <span class="tier-desc">SRE incidents &mdash; diagnose and fix broken infrastructure</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Curriculum Features -->
+    <div class="section-wrapper" id="features">
+      <div class="left-col">
+        <div class="icon-container">
+          <svg viewBox="0 0 24 24">
+            <path
+              d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+          </svg>
+        </div>
+        <span class="section-title">Features</span>
+      </div>
+      <div class="right-col">
+        <div class="feature-grid animate-up">
+          <div class="minimal-card">
+            <div class="feature-icon">&#x2191;</div>
+            <h3 style="font-size:1.1rem;margin-bottom:.5rem;">Progressive Difficulty</h3>
+            <p style="font-size:.95rem;">Start easy, advance as you master each tier automatically.</p>
+          </div>
+          <div class="minimal-card">
+            <div class="feature-icon">&#x2713;</div>
+            <h3 style="font-size:1.1rem;margin-bottom:.5rem;">Mastery Tracking</h3>
+            <p style="font-size:.95rem;">Per-task graduation with sustained performance tracking.</p>
+          </div>
+          <div class="minimal-card">
+            <div class="feature-icon">&#x21BB;</div>
+            <h3 style="font-size:1.1rem;margin-bottom:.5rem;">Spaced Repetition</h3>
+            <p style="font-size:.95rem;">Graduated tasks resurface at increasing intervals.</p>
+          </div>
+          <div class="minimal-card">
+            <div class="feature-icon">&#x25CE;</div>
+            <h3 style="font-size:1.1rem;margin-bottom:.5rem;">Priority Selection</h3>
+            <p style="font-size:.95rem;">Focuses on your weakest skills for efficient learning.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- API Access -->
+    <div class="section-wrapper" id="api">
+      <div class="left-col">
+        <div class="icon-container">
+          <svg viewBox="0 0 24 24">
+            <path d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+        </div>
+        <span class="section-title">API</span>
+      </div>
+      <div class="right-col">
+        <div class="grid-2 animate-up">
+          <div class="card" style="margin-bottom:0;">
+            <h3 style="font-size:1.1rem;">WebSocket</h3>
+            <div class="code-block">import websockets, json
+
+              async with websockets.connect(
+              "wss://your-space.hf.space/ws"
+              ) as ws:
+              await ws.send(json.dumps({
+              "type": "reset"
+              }))
+              obs = json.loads(await ws.recv())
+
+              await ws.send(json.dumps({
+              "type": "step",
+              "data": {"command": "aws s3 ls"}
+              }))
+              obs = json.loads(await ws.recv())</div>
+          </div>
+          <div class="card" style="margin-bottom:0;">
+            <h3 style="font-size:1.1rem;">Python Client</h3>
+            <div class="code-block">from aws_rl_env import (
+              AwsRlEnv, AwsRlAction
+              )
+
+              with AwsRlEnv.from_env(
+              "your-hf-user/aws-rl-env"
+              ) as env:
+              result = await env.step(
+              AwsRlAction(
+              command="aws s3 ls"
+              )
+              )</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Playground -->
+    <div class="section-wrapper" id="playground">
+      <div class="left-col">
+        <div class="icon-container">
+          <svg viewBox="0 0 24 24">
+            <path
+              d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+            <path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+        <span class="section-title">Play</span>
+      </div>
+      <div class="right-col">
+        <div class="playground-grid animate-up">
+
+          <!-- Sidebar -->
+          <div class="playground-sidebar">
+            <div class="minimal-card">
+              <span class="card-label">Controls</span>
+              <button class="btn-primary btn-full" id="resetBtn" onclick="resetEnv()">New Episode</button>
+            </div>
+            <div class="minimal-card">
+              <span class="card-label">Command</span>
+              <input class="cmd-input" id="cmdInput" type="text"
+                placeholder="aws s3 ls"
+                onkeydown="if(event.key==='Enter')runCmd()">
+              <button class="btn-secondary btn-full" id="runBtn" onclick="runCmd()" style="margin-top:0.75rem;">Run
+                Command</button>
+            </div>
+            <div class="minimal-card">
+              <span class="card-label">Services</span>
+              <div class="skills-container">
+                <span class="skill-tag">S3</span>
+                <span class="skill-tag">EC2</span>
+                <span class="skill-tag">DynamoDB</span>
+                <span class="skill-tag">Lambda</span>
+                <span class="skill-tag">SQS</span>
+                <span class="skill-tag">SNS</span>
+                <span class="skill-tag">IAM</span>
+                <span class="skill-tag">API GW</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Main -->
+          <div>
+            <div class="task-box empty" id="taskBox" style="margin-bottom:1rem;">
+              <p style="font-size:1rem;font-weight:500;margin-bottom:.25rem;">Click New Episode to start</p>
+              <p style="font-size:.9rem;color:var(--text-muted);margin-bottom:0;">The curriculum assigns a task matching
+                your skill level</p>
+            </div>
+
+            <div class="status-bar" id="statusBar" style="margin-bottom:1rem;">Ready.</div>
+
+            <div class="card" style="margin-bottom:1rem;">
+              <span class="card-label">Output</span>
+              <div class="output-box" id="outputBox">No output yet.</div>
+            </div>
+
+            <div class="card">
+              <span class="card-label">Command Log</span>
+              <table class="log-table">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Command</th>
+                    <th>OK</th>
+                    <th>Reward</th>
+                  </tr>
+                </thead>
+                <tbody id="logBody">
+                  <tr>
+                    <td colspan="4" class="log-empty">No commands executed yet</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <footer>
+    <p>AWS RL Environment &mdash; An OpenEnv environment powered by MiniStack</p>
+  </footer>
+
+  <script src="/static/js/app.js"></script>
+</body>
+
+</html>

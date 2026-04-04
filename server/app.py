@@ -28,19 +28,30 @@ Usage:
     python -m server.app
 """
 
+import os
+from pathlib import Path
+from typing import Any, Dict
+
+from fastapi import Body
+from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
+from pydantic import BaseModel
+from starlette.requests import Request
+
 try:
     from openenv.core.env_server.http_server import create_app
 except Exception as e:  # pragma: no cover
     raise ImportError(
-        "openenv is required for the web interface. Install dependencies with '\n    uv sync\n'"
+        "openenv is required. Install dependencies with 'uv sync'"
     ) from e
-
 
 from models import AwsRlAction, AwsRlObservation
 from server.aws_rl_env_environment import AwsRlEnvironment
 
+# Force ENABLE_WEB_INTERFACE=false so OpenEnv creates API-only app (no Gradio)
+os.environ["ENABLE_WEB_INTERFACE"] = "false"
 
-# Create the app with web interface and README integration
 app = create_app(
     AwsRlEnvironment,
     AwsRlAction,
@@ -48,6 +59,60 @@ app = create_app(
     env_name="aws_rl_env",
     max_concurrent_envs=1,  # increase this number to allow more concurrent WebSocket sessions
 )
+
+# ---------------------------------------------------------------------------
+# Stateful web playground endpoints
+# ---------------------------------------------------------------------------
+# OpenEnv's HTTP /reset and /step create a new env per request (stateless).
+# The web playground needs state across requests, so we maintain a shared
+# environment instance and expose /web/reset and /web/step.
+# ---------------------------------------------------------------------------
+
+_env = AwsRlEnvironment()
+
+
+class WebStepRequest(BaseModel):
+    action: Dict[str, Any]
+
+
+@app.post("/web/reset", include_in_schema=False)
+async def web_reset():
+    obs = _env.reset()
+    return {
+        "observation": obs.model_dump(),
+        "reward": obs.reward,
+        "done": obs.done,
+    }
+
+
+@app.post("/web/step", include_in_schema=False)
+async def web_step(request: WebStepRequest = Body(...)):
+    action = AwsRlAction(**request.action)
+    obs = _env.step(action)
+    return {
+        "observation": obs.model_dump(),
+        "reward": obs.reward,
+        "done": obs.done,
+    }
+
+
+# ---------------------------------------------------------------------------
+# Custom web UI
+# ---------------------------------------------------------------------------
+
+_server_dir = Path(__file__).parent
+_templates = Jinja2Templates(directory=str(_server_dir / "templates"))
+app.mount("/static", StaticFiles(directory=str(_server_dir / "static")), name="static")
+
+
+@app.get("/", response_class=RedirectResponse, include_in_schema=False)
+async def root_redirect():
+    return RedirectResponse(url="/web")
+
+
+@app.get("/web", response_class=HTMLResponse, include_in_schema=False)
+async def web_ui(request: Request):
+    return _templates.TemplateResponse(request=request, name="index.html")
 
 
 def main(host: str = "0.0.0.0", port: int = 8000):
