@@ -389,7 +389,7 @@
         resource: emr-service-role
       - operation: create-instance-profile
         resource: emr-ec2-profile
-      - operation: run-job-flow
+      - operation: create-cluster
         resource: analytics-cluster
 
 - task_id: 101

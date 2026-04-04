@@ -15,7 +15,7 @@
       aws lambda create-function --function-name order-processor
       --runtime python3.12 --handler index.handler
       --role arn:aws:iam::000000000000:role/broken-lambda-role
-      --zip-file fileb:///tmp/dummy.zip
+      --code S3Bucket=dummy,S3Key=dummy.zip
     - aws sqs create-queue --queue-name incoming-orders
   success_criteria:
     services:
@@ -41,9 +41,7 @@
     expires non-current object versions after 30 days.
   setup_commands:
     - aws s3api create-bucket --bucket app-config-store
-    - >-
-      aws s3api put-object --bucket app-config-store
-      --key config/app.json --body /dev/null
+    - aws s3api put-object --bucket app-config-store --key config/app.json
   success_criteria:
     services:
       - s3
@@ -174,7 +172,7 @@
       aws lambda create-function --function-name data-processor
       --runtime python3.12 --handler index.handler
       --role arn:aws:iam::000000000000:role/data-processor-role
-      --zip-file fileb:///tmp/dummy.zip
+      --code S3Bucket=dummy,S3Key=dummy.zip
       --environment Variables={DB_PASSWORD=hunter2}
   success_criteria:
     services:
@@ -211,7 +209,7 @@
       aws lambda create-function --function-name payment-webhook
       --runtime python3.12 --handler index.handler
       --role arn:aws:iam::000000000000:role/payment-webhook-role
-      --zip-file fileb:///tmp/dummy.zip
+      --code S3Bucket=dummy,S3Key=dummy.zip
       --timeout 3
   success_criteria:
     services:
@@ -305,39 +303,6 @@
         resource: analytics-db-sg-fixed
       - operation: modify-db-instance
         resource: analytics-db
-
-- task_id: 112
-  description: >
-    SRE Incident: An ElastiCache Redis cluster 'session-cache' was created
-    with the default parameter group which has maxmemory-policy set to
-    'volatile-lru'. The application requires 'allkeys-lru' to avoid cache
-    misses on non-expiring keys. Create a new parameter group
-    'session-cache-params' for redis7, set the maxmemory-policy parameter
-    to 'allkeys-lru', and modify the cluster to use the new parameter group.
-  setup_commands:
-    - >-
-      aws elasticache create-cache-cluster --cache-cluster-id session-cache
-      --cache-node-type cache.t3.micro --engine redis
-      --num-cache-nodes 1
-  success_criteria:
-    services:
-      - elasticache
-    state_checks:
-      - command: >-
-          aws elasticache describe-cache-parameter-groups
-          --cache-parameter-group-name session-cache-params
-        output_contains: "session-cache-params"
-      - command: >-
-          aws elasticache describe-cache-clusters
-          --cache-cluster-id session-cache
-        output_contains: "session-cache-params"
-    steps:
-      - operation: create-cache-parameter-group
-        resource: session-cache-params
-      - operation: modify-cache-parameter-group
-        resource: session-cache-params
-      - operation: modify-cache-cluster
-        resource: session-cache
 
 - task_id: 113
   description: >
@@ -449,7 +414,7 @@
       aws lambda create-function --function-name public-api-handler
       --runtime python3.12 --handler index.handler
       --role arn:aws:iam::000000000000:role/public-api-role
-      --zip-file fileb:///tmp/dummy.zip
+      --code S3Bucket=dummy,S3Key=dummy.zip
     - >-
       aws lambda add-permission --function-name public-api-handler
       --statement-id open-access --action lambda:InvokeFunction
@@ -478,9 +443,7 @@
     server-side encryption headers.
   setup_commands:
     - aws s3api create-bucket --bucket data-lake-raw
-    - >-
-      aws s3api put-object --bucket data-lake-raw
-      --key customers/data.csv --body /dev/null
+    - aws s3api put-object --bucket data-lake-raw --key customers/data.csv
   success_criteria:
     services:
       - s3
@@ -559,17 +522,18 @@
 
 - task_id: 120
   description: >
-    Security Audit: An IAM user 'deploy-bot' has console access with a
-    login profile but no MFA device configured. The user also has an overly
-    permissive inline policy 'admin-access' granting full admin rights.
-    Delete the login profile to remove console access, replace the inline
-    policy with a policy named 'deploy-only' that restricts permissions to
-    's3:PutObject' and 'codedeploy:*' on all resources.
+    Security Audit: An IAM user 'deploy-bot' has an overly permissive
+    inline policy 'admin-access' granting full admin rights and an
+    attached managed policy 'arn:aws:iam::aws:policy/IAMFullAccess' that
+    is unnecessary. Detach the managed policy, delete the overly broad
+    inline policy, and replace it with a policy named 'deploy-only' that
+    restricts permissions to 's3:PutObject' and 'codedeploy:*' on all
+    resources.
   setup_commands:
     - aws iam create-user --user-name deploy-bot
     - >-
-      aws iam create-login-profile --user-name deploy-bot
-      --password TempPass123!
+      aws iam attach-user-policy --user-name deploy-bot
+      --policy-arn arn:aws:iam::aws:policy/IAMFullAccess
     - >-
       aws iam put-user-policy --user-name deploy-bot
       --policy-name admin-access
@@ -583,7 +547,7 @@
       - command: aws iam get-user-policy --user-name deploy-bot --policy-name deploy-only
         output_contains: "codedeploy:*"
     steps:
-      - operation: delete-login-profile
+      - operation: detach-user-policy
         resource: deploy-bot
       - operation: delete-user-policy
         resource: deploy-bot
@@ -606,7 +570,7 @@
       aws lambda create-function --function-name etl-runner
       --runtime python3.12 --handler index.handler
       --role arn:aws:iam::000000000000:role/etl-runner-role
-      --zip-file fileb:///tmp/dummy.zip
+      --code S3Bucket=dummy,S3Key=dummy.zip
     - >-
       aws events put-rule --name nightly-etl-trigger
       --schedule-expression 'rate(1 day)' --state DISABLED
@@ -737,9 +701,7 @@
     correct key path.
   setup_commands:
     - aws s3api create-bucket --bucket glue-scripts-bucket
-    - >-
-      aws s3api put-object --bucket glue-scripts-bucket
-      --key scripts/daily-transform.py --body /dev/null
+    - aws s3api put-object --bucket glue-scripts-bucket --key scripts/daily-transform.py
     - >-
       aws glue create-job --name daily-transform
       --role arn:aws:iam::000000000000:role/glue-role
@@ -794,9 +756,7 @@
     using a template that provisions a DynamoDB table 'legacy-config'.
   setup_commands:
     - aws s3api create-bucket --bucket legacy-data-bucket
-    - >-
-      aws s3api put-object --bucket legacy-data-bucket
-      --key important/data.json --body /dev/null
+    - aws s3api put-object --bucket legacy-data-bucket --key important/data.json
     - >-
       aws cloudformation create-stack --stack-name legacy-infra
       --template-body '{"AWSTemplateFormatVersion":"2010-09-09","Resources":{"Bucket":{"Type":"AWS::S3::Bucket","Properties":{"BucketName":"legacy-data-bucket"}}}}'
