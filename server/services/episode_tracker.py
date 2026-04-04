@@ -110,12 +110,14 @@ class EpisodeTracker:
         self._previous_progress: float = 0.0
         # Track which (operation, resource) pairs have been credited
         self._credited_operations: set[tuple[str, str | None]] = set()
+        self._hints_used: int = 0
 
     def reset(self) -> None:
         self._history.clear()
         self._step_counter = 0
         self._previous_progress = 0.0
         self._credited_operations.clear()
+        self._hints_used = 0
 
     def record_step(
         self, command: str, success: bool, stdout: str, stderr: str
@@ -173,6 +175,15 @@ class EpisodeTracker:
     @property
     def step_count(self) -> int:
         return self._step_counter
+
+    def record_hint(self) -> int:
+        """Record that a hint was used. Returns the new hint level (1-indexed)."""
+        self._hints_used += 1
+        return self._hints_used
+
+    @property
+    def hints_used(self) -> int:
+        return self._hints_used
 
     @property
     def previous_progress(self) -> float:

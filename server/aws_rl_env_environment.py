@@ -26,6 +26,7 @@ from server.services.chaos_engine import ChaosEngine
 from server.services.curriculum import Curriculum
 from server.services.environment_designer import EnvironmentDesigner
 from server.services.episode_tracker import EpisodeTracker
+from server.services.hint_provider import HintProvider, MAX_HINT_LEVEL
 from server.services.task_grader import TaskGrader
 
 logger = logging.getLogger(__name__)
@@ -43,6 +44,7 @@ class AwsRlEnvironment(Environment[AwsRlAction, AwsRlObservation, State]):
         self._designer = EnvironmentDesigner(self._backend)
         self._tracker = EpisodeTracker()
         self._chaos_engine = ChaosEngine(self._backend)
+        self._hint_provider = HintProvider()
         self._current_task: Task | None = None
 
     def reset(
@@ -93,17 +95,36 @@ class AwsRlEnvironment(Environment[AwsRlAction, AwsRlObservation, State]):
                 reward=0.0,
             )
 
+        # Intercept hint requests before reaching MiniStack
+        if command == "aws help --task-hint":
+            hint_level = self._tracker.record_hint()
+            clamped_level = min(hint_level, MAX_HINT_LEVEL)
+            hint_text = self._hint_provider.get_hint(self._current_task, clamped_level)
+            return AwsRlObservation(
+                episode_id=EpisodeID(self._state.episode_id or ""),
+                step_count=StepCount(self._state.step_count),
+                command_success=True,
+                command_output=hint_text,
+                task=self._current_task,
+                task_achieved=False,
+                done=False,
+                reward=0.0,
+                hints_used=self._tracker.hints_used,
+                hint_text=hint_text,
+            )
+
         success, stdout, stderr = self._backend.execute_command(command)
 
         # Record in tracker
         latest_step = self._tracker.record_step(command, success, stdout, stderr)
 
-        # Grade the task (pass cumulative chaos flag for recovery bonus)
+        # Grade the task (pass cumulative chaos flag and hint count)
         grade_result = self._grader.grade(
             self._current_task,
             self._tracker,
             latest_step,
             chaos_occurred=self._chaos_engine.chaos_occurred,
+            hints_used=self._tracker.hints_used,
         )
         task_achieved = grade_result.task_achieved
         reward = grade_result.reward
@@ -130,6 +151,7 @@ class AwsRlEnvironment(Environment[AwsRlAction, AwsRlObservation, State]):
             task_achieved=task_achieved,
             done=task_achieved,
             reward=reward,
+            hints_used=self._tracker.hints_used,
         )
 
     @property

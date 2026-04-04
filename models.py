@@ -223,3 +223,9 @@ class AwsRlObservation(Observation):
     cost_incurred: float = Field(
         default=0.0, description="Cumulative simulated cost of operations this episode"
     )
+    hints_used: int = Field(
+        default=0, ge=0, description="Number of hints requested this episode"
+    )
+    hint_text: str = Field(
+        default="", description="Text of the most recently requested hint"
+    )

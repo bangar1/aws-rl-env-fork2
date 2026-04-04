@@ -43,6 +43,7 @@ class TaskGrader:
         tracker: EpisodeTracker,
         latest_step: StepRecord,
         chaos_occurred: bool = False,
+        hints_used: int = 0,
     ) -> GradeResult:
         criteria = task.success_criteria
 
@@ -60,7 +61,7 @@ class TaskGrader:
 
         # Compute shaped reward
         result.reward = self._compute_reward(
-            result, latest_step, tracker, chaos_occurred
+            result, latest_step, tracker, chaos_occurred, hints_used
         )
 
         # Update tracker's previous progress (monotonic — never decrease)
@@ -229,10 +230,13 @@ class TaskGrader:
         latest_step: StepRecord,
         tracker: EpisodeTracker,
         chaos_occurred: bool = False,
+        hints_used: int = 0,
     ) -> float:
         """Compute a shaped reward in [0.0, 1.05]."""
         if result.task_achieved:
-            return 1.05 if chaos_occurred else 1.0
+            base = 1.05 if chaos_occurred else 1.0
+            # Hint decay: 0.85^hints_used
+            return base * (0.85 ** hints_used)
 
         # Base: partial progress scaled to 0.0–0.8 range
         progress_reward = result.partial_progress * 0.8
@@ -251,6 +255,10 @@ class TaskGrader:
 
         # Idempotency bonus: graceful "already exists" handling
         progress_reward += 0.02 * tracker.detect_idempotent_retries()
+
+        # Hint decay: 0.85^hints_used
+        if hints_used > 0:
+            progress_reward *= 0.85**hints_used
 
         # Clamp to [0.0, 0.99] — never reach 1.0 without achieving
         return min(max(progress_reward, 0.0), 0.99)
