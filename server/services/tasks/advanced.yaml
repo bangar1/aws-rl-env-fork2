@@ -58,3 +58,530 @@
       - operation: subscribe
       - operation: subscribe
       - operation: publish
+
+- task_id: 87
+  description: >
+    Build an event-driven image processing pipeline. Create an S3 bucket
+    'image-uploads', create an IAM execution role for Lambda, create a
+    Lambda function 'image-resizer' with the execution role, then
+    configure an S3 event notification to trigger the Lambda on object
+    creation using the events service.
+  success_criteria:
+    services:
+      - s3
+      - iam
+      - lambda
+      - events
+    steps:
+      - operation: create-bucket
+        resource: image-uploads
+      - operation: create-role
+      - operation: create-function
+        resource: image-resizer
+      - operation: put-bucket-notification-configuration
+        resource: image-uploads
+      - operation: put-rule
+      - operation: put-targets
+
+- task_id: 88
+  description: >
+    Deploy a containerized microservice behind a load balancer. Create an
+    IAM role for ECS task execution, register an ECS task definition
+    'web-app-task', create an ECS cluster 'web-cluster', create a target
+    group 'web-tg' on port 80, create an application load balancer
+    'web-alb', and create an ECS service 'web-service' attached to the
+    load balancer.
+  success_criteria:
+    services:
+      - iam
+      - ecs
+      - elbv2
+      - ec2
+    steps:
+      - operation: create-role
+      - operation: register-task-definition
+        resource: web-app-task
+      - operation: create-cluster
+        resource: web-cluster
+      - operation: create-target-group
+        resource: web-tg
+      - operation: create-load-balancer
+        resource: web-alb
+      - operation: create-listener
+      - operation: create-service
+        resource: web-service
+
+- task_id: 89
+  description: >
+    Create an asynchronous order processing system. Create a DynamoDB
+    table 'orders', create an SQS queue 'order-queue', create an SNS
+    topic 'order-notifications', subscribe the SQS queue to the SNS
+    topic, create an IAM role for Lambda, and create a Lambda function
+    'order-processor' with the SQS queue as an event source.
+  success_criteria:
+    services:
+      - dynamodb
+      - sqs
+      - sns
+      - lambda
+    steps:
+      - operation: create-table
+        resource: orders
+      - operation: create-queue
+        resource: order-queue
+      - operation: create-topic
+        resource: order-notifications
+      - operation: subscribe
+      - operation: create-role
+      - operation: create-function
+        resource: order-processor
+      - operation: create-event-source-mapping
+
+- task_id: 90
+  description: >
+    Set up a secure database with rotated credentials. Create an RDS
+    subnet group 'db-subnets', create an RDS MySQL instance 'app-db',
+    store the database credentials in Secrets Manager as 'db-credentials',
+    create an IAM role for Lambda, and create a Lambda function
+    'secret-rotator' to handle credential rotation.
+  success_criteria:
+    services:
+      - rds
+      - secretsmanager
+      - iam
+      - lambda
+    steps:
+      - operation: create-db-subnet-group
+        resource: db-subnets
+      - operation: create-db-instance
+        resource: app-db
+      - operation: create-secret
+        resource: db-credentials
+      - operation: create-role
+      - operation: create-function
+        resource: secret-rotator
+
+- task_id: 91
+  description: >
+    Build a DNS-routed load-balanced web tier. Create a VPC security
+    group 'web-sg' allowing HTTP traffic, create a target group
+    'frontend-tg' on port 80, create an application load balancer
+    'frontend-alb', create a listener on port 80, create a Route53
+    hosted zone 'example.internal', and add an alias record pointing
+    to the load balancer.
+  success_criteria:
+    services:
+      - ec2
+      - elbv2
+      - route53
+    steps:
+      - operation: create-security-group
+        resource: web-sg
+      - operation: create-target-group
+        resource: frontend-tg
+      - operation: create-load-balancer
+        resource: frontend-alb
+      - operation: create-listener
+      - operation: create-hosted-zone
+        resource: example.internal
+      - operation: change-resource-record-sets
+
+- task_id: 92
+  description: >
+    Deploy a Cognito-authenticated HTTP API. Create a Cognito user pool
+    'app-users', create a user pool client 'app-client', create an IAM
+    role for Lambda, create a Lambda function 'auth-handler', create an
+    HTTP API 'auth-api' using API Gateway v2, and attach a JWT authorizer
+    backed by the Cognito user pool.
+  success_criteria:
+    services:
+      - cognito-idp
+      - iam
+      - lambda
+      - apigatewayv2
+    steps:
+      - operation: create-user-pool
+        resource: app-users
+      - operation: create-user-pool-client
+        resource: app-client
+      - operation: create-role
+      - operation: create-function
+        resource: auth-handler
+      - operation: create-api
+        resource: auth-api
+      - operation: create-authorizer
+
+- task_id: 93
+  description: >
+    Set up infrastructure-as-code deployment via CloudFormation. Create
+    an S3 bucket 'cfn-templates' to store templates, upload a template
+    object to the bucket, create an IAM role 'cfn-deploy-role' for
+    CloudFormation execution, and create a CloudFormation stack
+    'app-stack' using the uploaded template and IAM role.
+  success_criteria:
+    services:
+      - s3
+      - iam
+      - cloudformation
+    steps:
+      - operation: create-bucket
+        resource: cfn-templates
+      - operation: put-object
+      - operation: create-role
+        resource: cfn-deploy-role
+      - operation: create-stack
+        resource: app-stack
+
+- task_id: 94
+  description: >
+    Build an ETL pipeline with AWS Glue. Create an S3 bucket
+    'data-lake-raw' for raw data, create a second S3 bucket
+    'data-lake-processed' for processed output, create an IAM role
+    'glue-etl-role' for Glue execution, create a Glue database
+    'analytics-db', and create a Glue crawler 'raw-data-crawler'
+    targeting the raw data bucket.
+  success_criteria:
+    services:
+      - s3
+      - iam
+      - glue
+    steps:
+      - operation: create-bucket
+        resource: data-lake-raw
+      - operation: create-bucket
+        resource: data-lake-processed
+      - operation: create-role
+        resource: glue-etl-role
+      - operation: create-database
+        resource: analytics-db
+      - operation: create-crawler
+        resource: raw-data-crawler
+
+- task_id: 95
+  description: >
+    Create a real-time data ingestion pipeline with Kinesis Firehose.
+    Create an S3 bucket 'event-archive' as the delivery destination,
+    create an IAM role 'firehose-delivery-role' with S3 write
+    permissions, create a Firehose delivery stream 'event-stream'
+    delivering to the S3 bucket, and put a test record into the stream.
+  success_criteria:
+    services:
+      - s3
+      - iam
+      - firehose
+    steps:
+      - operation: create-bucket
+        resource: event-archive
+      - operation: create-role
+        resource: firehose-delivery-role
+      - operation: create-delivery-stream
+        resource: event-stream
+      - operation: put-record
+
+- task_id: 96
+  description: >
+    Build a scheduled Lambda maintenance job using EventBridge. Create
+    an IAM role for Lambda execution, create a Lambda function
+    'db-cleanup' using the execution role, create an EventBridge rule
+    'nightly-cleanup' with a cron schedule, add the Lambda function as
+    the rule target, and grant EventBridge permission to invoke the
+    Lambda.
+  success_criteria:
+    services:
+      - iam
+      - lambda
+      - events
+    steps:
+      - operation: create-role
+      - operation: create-function
+        resource: db-cleanup
+      - operation: put-rule
+        resource: nightly-cleanup
+      - operation: put-targets
+      - operation: add-permission
+
+- task_id: 97
+  description: >
+    Deploy a parameter-driven Lambda using Systems Manager. Create
+    SSM parameters 'app-config-db-host' and 'app-config-api-key'
+    to store application configuration, create an IAM role with SSM
+    read permissions for Lambda, create a Lambda function
+    'config-reader' that reads the parameters at runtime, and create
+    an EventBridge rule to invoke it on a schedule.
+  success_criteria:
+    services:
+      - ssm
+      - iam
+      - lambda
+      - events
+    steps:
+      - operation: put-parameter
+        resource: app-config-db-host
+      - operation: put-parameter
+        resource: app-config-api-key
+      - operation: create-role
+      - operation: create-function
+        resource: config-reader
+      - operation: put-rule
+      - operation: put-targets
+
+- task_id: 98
+  description: >
+    Provision an ElastiCache cluster with network access. Create a VPC
+    security group 'cache-sg' allowing inbound Redis traffic on port
+    6379, create a cache subnet group 'cache-subnets', create an
+    ElastiCache Redis cluster 'session-store' in the subnet group with
+    the security group, and create an IAM policy for application access.
+  success_criteria:
+    services:
+      - ec2
+      - elasticache
+      - iam
+    steps:
+      - operation: create-security-group
+        resource: cache-sg
+      - operation: authorize-security-group-ingress
+      - operation: create-cache-subnet-group
+        resource: cache-subnets
+      - operation: create-cache-cluster
+        resource: session-store
+      - operation: create-policy
+
+- task_id: 99
+  description: >
+    Set up a shared file system for EC2 instances. Create a VPC security
+    group 'efs-sg' allowing NFS traffic on port 2049, create an EFS
+    file system with a creation token 'shared-fs', create a mount target
+    in a subnet with the security group, and create an IAM policy
+    granting EFS access to EC2 instances.
+  success_criteria:
+    services:
+      - ec2
+      - efs
+      - iam
+    steps:
+      - operation: create-security-group
+        resource: efs-sg
+      - operation: authorize-security-group-ingress
+      - operation: create-file-system
+        resource: shared-fs
+      - operation: create-mount-target
+      - operation: create-policy
+
+- task_id: 100
+  description: >
+    Launch an EMR cluster for big data processing. Create an S3 bucket
+    'emr-logs' for cluster logs, create an S3 bucket 'emr-output' for
+    job output, create an IAM role 'emr-service-role' for the EMR
+    service, create an IAM instance profile 'emr-ec2-profile' for
+    cluster nodes, and run a cluster 'analytics-cluster' with Spark.
+  success_criteria:
+    services:
+      - s3
+      - iam
+      - emr
+    steps:
+      - operation: create-bucket
+        resource: emr-logs
+      - operation: create-bucket
+        resource: emr-output
+      - operation: create-role
+        resource: emr-service-role
+      - operation: create-instance-profile
+        resource: emr-ec2-profile
+      - operation: run-job-flow
+        resource: analytics-cluster
+
+- task_id: 101
+  description: >
+    Build a DynamoDB stream processing pipeline. Create a DynamoDB
+    table 'user-activity' with streams enabled, create an SQS dead
+    letter queue 'activity-dlq', create an IAM role for Lambda, create
+    a Lambda function 'activity-processor', and create an event source
+    mapping from the DynamoDB stream to the Lambda function.
+  success_criteria:
+    services:
+      - dynamodb
+      - sqs
+      - iam
+      - lambda
+    steps:
+      - operation: create-table
+        resource: user-activity
+      - operation: create-queue
+        resource: activity-dlq
+      - operation: create-role
+      - operation: create-function
+        resource: activity-processor
+      - operation: create-event-source-mapping
+
+- task_id: 102
+  description: >
+    Create a multi-target SNS notification pipeline. Create an SNS topic
+    'system-alerts', create an SQS queue 'alert-archive' and subscribe
+    it to the topic, create an IAM role for Lambda, create a Lambda
+    function 'alert-handler' and subscribe it to the same topic, and
+    publish a test alert message.
+  success_criteria:
+    services:
+      - sns
+      - sqs
+      - iam
+      - lambda
+    steps:
+      - operation: create-topic
+        resource: system-alerts
+      - operation: create-queue
+        resource: alert-archive
+      - operation: subscribe
+      - operation: create-role
+      - operation: create-function
+        resource: alert-handler
+      - operation: subscribe
+      - operation: publish
+
+- task_id: 103
+  description: >
+    Deploy a serverless CRUD API with DynamoDB and API Gateway v2.
+    Create a DynamoDB table 'tasks-table', create an IAM role for
+    Lambda with DynamoDB permissions, create a Lambda function
+    'tasks-api-handler', create an HTTP API 'tasks-api' using API
+    Gateway v2, create an integration with the Lambda, and create
+    a route for GET /tasks.
+  success_criteria:
+    services:
+      - dynamodb
+      - iam
+      - lambda
+      - apigatewayv2
+    steps:
+      - operation: create-table
+        resource: tasks-table
+      - operation: create-role
+      - operation: create-function
+        resource: tasks-api-handler
+      - operation: create-api
+        resource: tasks-api
+      - operation: create-integration
+      - operation: create-route
+
+- task_id: 104
+  description: >
+    Set up a secure S3 data pipeline with encryption. Create an S3
+    bucket 'secure-input', create a second S3 bucket 'secure-output',
+    put a bucket policy enforcing encryption on 'secure-input', create
+    an IAM role for Lambda, and create a Lambda function 'data-transformer'
+    that reads from input and writes to output.
+  success_criteria:
+    services:
+      - s3
+      - iam
+      - lambda
+    steps:
+      - operation: create-bucket
+        resource: secure-input
+      - operation: create-bucket
+        resource: secure-output
+      - operation: put-bucket-policy
+        resource: secure-input
+      - operation: create-role
+      - operation: create-function
+        resource: data-transformer
+
+- task_id: 105
+  description: >
+    Build a secrets-backed Lambda API. Store an API key in Secrets
+    Manager as 'third-party-api-key', create an IAM role with Secrets
+    Manager read access, create a Lambda function 'external-caller'
+    that retrieves the secret at runtime, create an API Gateway REST
+    API 'external-api', create a resource and method, and integrate
+    with the Lambda.
+  success_criteria:
+    services:
+      - secretsmanager
+      - iam
+      - lambda
+      - apigateway
+    steps:
+      - operation: create-secret
+        resource: third-party-api-key
+      - operation: create-role
+      - operation: create-function
+        resource: external-caller
+      - operation: create-rest-api
+        resource: external-api
+      - operation: create-resource
+      - operation: put-method
+      - operation: put-integration
+
+- task_id: 106
+  description: >
+    Deploy a containerized batch processor with ECS Fargate. Create an
+    IAM role 'batch-task-role' for ECS task execution, create an ECS
+    cluster 'batch-cluster', register a task definition 'batch-job'
+    with Fargate compatibility, create a security group 'batch-sg',
+    and run a standalone task in the cluster.
+  success_criteria:
+    services:
+      - iam
+      - ecs
+      - ec2
+    steps:
+      - operation: create-role
+        resource: batch-task-role
+      - operation: create-cluster
+        resource: batch-cluster
+      - operation: register-task-definition
+        resource: batch-job
+      - operation: create-security-group
+        resource: batch-sg
+      - operation: run-task
+
+- task_id: 107
+  description: >
+    Create an Athena analytics workspace. Create an S3 bucket
+    'query-results' for Athena output, create an S3 bucket
+    'analytics-data' for source data, create a Glue database
+    'web-analytics', create an IAM policy for Athena access, and
+    create an Athena workgroup 'analytics-team' configured to use
+    the results bucket.
+  success_criteria:
+    services:
+      - s3
+      - glue
+      - iam
+      - athena
+    steps:
+      - operation: create-bucket
+        resource: query-results
+      - operation: create-bucket
+        resource: analytics-data
+      - operation: create-database
+        resource: web-analytics
+      - operation: create-policy
+      - operation: create-work-group
+        resource: analytics-team
+
+- task_id: 108
+  description: >
+    Build a CloudFormation-managed Lambda stack with artifact storage.
+    Create an S3 bucket 'lambda-artifacts' for deployment packages,
+    upload a Lambda zip package to the bucket, create an IAM role
+    'cfn-lambda-role' for CloudFormation, create an IAM role
+    'lambda-exec-role' for the Lambda function, and create a
+    CloudFormation stack 'lambda-stack' referencing the S3 artifact.
+  success_criteria:
+    services:
+      - s3
+      - iam
+      - cloudformation
+    steps:
+      - operation: create-bucket
+        resource: lambda-artifacts
+      - operation: put-object
+      - operation: create-role
+        resource: cfn-lambda-role
+      - operation: create-role
+        resource: lambda-exec-role
+      - operation: create-stack
+        resource: lambda-stack

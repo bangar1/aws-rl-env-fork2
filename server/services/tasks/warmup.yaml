@@ -33,3 +33,117 @@
   success_criteria:
     command_contains: sns
     operation: list-topics
+
+- task_id: 27
+  description: List all IAM users in the environment.
+  success_criteria:
+    command_contains: iam
+    operation: list-users
+
+- task_id: 28
+  description: List all secrets stored in Secrets Manager.
+  success_criteria:
+    command_contains: secretsmanager
+    operation: list-secrets
+
+- task_id: 29
+  description: List all ECS clusters in the environment.
+  success_criteria:
+    command_contains: ecs
+    operation: list-clusters
+
+- task_id: 30
+  description: Describe all RDS database instances in the environment.
+  success_criteria:
+    command_contains: rds
+    operation: describe-db-instances
+
+- task_id: 31
+  description: Describe all ElastiCache clusters in the environment.
+  success_criteria:
+    command_contains: elasticache
+    operation: describe-cache-clusters
+
+- task_id: 32
+  description: List all Athena named queries in the environment.
+  success_criteria:
+    command_contains: athena
+    operation: list-named-queries
+
+- task_id: 33
+  description: List all Glue databases in the data catalog.
+  success_criteria:
+    command_contains: glue
+    operation: get-databases
+
+- task_id: 34
+  description: List all Kinesis Firehose delivery streams.
+  success_criteria:
+    command_contains: firehose
+    operation: list-delivery-streams
+
+- task_id: 35
+  description: List all EMR clusters in the environment.
+  success_criteria:
+    command_contains: emr
+    operation: list-clusters
+
+- task_id: 36
+  description: List all HTTP APIs in API Gateway V2.
+  success_criteria:
+    command_contains: apigatewayv2
+    operation: get-apis
+
+- task_id: 37
+  description: List all Route 53 hosted zones in the environment.
+  success_criteria:
+    command_contains: route53
+    operation: list-hosted-zones
+
+- task_id: 38
+  description: Describe all Application Load Balancers in the environment.
+  success_criteria:
+    command_contains: elbv2
+    operation: describe-load-balancers
+
+- task_id: 39
+  description: Describe all EBS volumes in the environment.
+  success_criteria:
+    command_contains: ebs
+    operation: describe-volumes
+
+- task_id: 40
+  description: Describe all EFS file systems in the environment.
+  success_criteria:
+    command_contains: efs
+    operation: describe-file-systems
+
+- task_id: 41
+  description: List all Cognito user pools in the environment.
+  success_criteria:
+    command_contains: cognito-idp
+    operation: list-user-pools
+
+- task_id: 42
+  description: Describe all SSM parameters in the environment.
+  success_criteria:
+    command_contains: ssm
+    operation: describe-parameters
+
+- task_id: 43
+  description: List all EventBridge rules in the environment.
+  success_criteria:
+    command_contains: events
+    operation: list-rules
+
+- task_id: 44
+  description: List all CloudFormation stacks in the environment.
+  success_criteria:
+    command_contains: cloudformation
+    operation: list-stacks
+
+- task_id: 45
+  description: List all REST APIs in API Gateway.
+  success_criteria:
+    command_contains: apigateway
+    operation: get-rest-apis

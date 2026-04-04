@@ -194,3 +194,625 @@
         resource: data-processor/db-password
       - operation: update-function-configuration
         resource: data-processor
+
+- task_id: 109
+  description: >
+    SRE Incident: A Lambda function 'payment-webhook' has a timeout of 3
+    seconds, causing frequent timeouts when calling a slow downstream API.
+    The CloudWatch alarm 'payment-webhook-errors' that should monitor
+    invocation errors does not exist. Update the function timeout to 30
+    seconds and create a CloudWatch alarm named 'payment-webhook-errors'
+    that triggers when the Errors metric exceeds 5 over a 60-second period.
+  setup_commands:
+    - >-
+      aws iam create-role --role-name payment-webhook-role
+      --assume-role-policy-document '{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":{"Service":"lambda.amazonaws.com"},"Action":"sts:AssumeRole"}]}'
+    - >-
+      aws lambda create-function --function-name payment-webhook
+      --runtime python3.12 --handler index.handler
+      --role arn:aws:iam::000000000000:role/payment-webhook-role
+      --zip-file fileb:///tmp/dummy.zip
+      --timeout 3
+  success_criteria:
+    services:
+      - lambda
+      - cloudwatch
+    state_checks:
+      - command: aws lambda get-function-configuration --function-name payment-webhook
+        json_path: "$.Timeout"
+        expected: 30
+      - command: aws cloudwatch describe-alarms --alarm-names payment-webhook-errors
+        output_contains: "payment-webhook-errors"
+      - command: aws cloudwatch describe-alarms --alarm-names payment-webhook-errors
+        output_contains: "Errors"
+    steps:
+      - operation: update-function-configuration
+        resource: payment-webhook
+      - operation: put-metric-alarm
+        resource: payment-webhook-errors
+
+- task_id: 110
+  description: >
+    SRE Incident: An ECS service 'api-service' in cluster 'prod-cluster' has
+    its desired count set to 0 after an accidental scale-down. The task
+    definition 'api-task' exists but the service's IAM role 'ecs-service-role'
+    is missing the required ECS policy. Attach the AmazonECS_FullAccess policy
+    to the role and update the service desired count to 3.
+  setup_commands:
+    - aws ecs create-cluster --cluster-name prod-cluster
+    - >-
+      aws iam create-role --role-name ecs-service-role
+      --assume-role-policy-document '{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":{"Service":"ecs.amazonaws.com"},"Action":"sts:AssumeRole"}]}'
+    - >-
+      aws ecs register-task-definition --family api-task
+      --container-definitions '[{"name":"api","image":"nginx:latest","memory":256,"cpu":128,"essential":true}]'
+    - >-
+      aws ecs create-service --cluster prod-cluster
+      --service-name api-service --task-definition api-task
+      --desired-count 0
+  success_criteria:
+    services:
+      - ecs
+      - iam
+    state_checks:
+      - command: aws ecs describe-services --cluster prod-cluster --services api-service
+        json_path: "$.services[0].desiredCount"
+        expected: 3
+      - command: aws iam list-attached-role-policies --role-name ecs-service-role
+        output_contains: "ECS"
+    steps:
+      - operation: attach-role-policy
+        resource: ecs-service-role
+      - operation: update-service
+        resource: api-service
+
+- task_id: 111
+  description: >
+    SRE Incident: An RDS instance 'analytics-db' is in stopped state after
+    a maintenance window and needs to be started. Additionally, its security
+    group 'analytics-db-sg' only allows inbound access from 0.0.0.0/0 on
+    port 3306, which is a security risk. Create a new security group
+    'analytics-db-sg-fixed' in VPC 'vpc-12345' that restricts MySQL access
+    to the private subnet CIDR 10.0.1.0/24 and modify the RDS instance
+    to use the new security group.
+  setup_commands:
+    - >-
+      aws ec2 create-security-group --group-name analytics-db-sg
+      --description "Overly permissive DB security group"
+    - >-
+      aws ec2 authorize-security-group-ingress --group-name analytics-db-sg
+      --protocol tcp --port 3306 --cidr 0.0.0.0/0
+    - >-
+      aws rds create-db-instance --db-instance-identifier analytics-db
+      --db-instance-class db.t3.micro --engine mysql
+      --master-username admin --master-user-password temppass123
+    - aws rds stop-db-instance --db-instance-identifier analytics-db
+  success_criteria:
+    services:
+      - rds
+      - ec2
+    state_checks:
+      - command: aws rds describe-db-instances --db-instance-identifier analytics-db
+        output_contains: "available"
+      - command: aws ec2 describe-security-groups --group-names analytics-db-sg-fixed
+        output_contains: "10.0.1.0/24"
+    steps:
+      - operation: start-db-instance
+        resource: analytics-db
+      - operation: create-security-group
+        resource: analytics-db-sg-fixed
+      - operation: authorize-security-group-ingress
+        resource: analytics-db-sg-fixed
+      - operation: modify-db-instance
+        resource: analytics-db
+
+- task_id: 112
+  description: >
+    SRE Incident: An ElastiCache Redis cluster 'session-cache' was created
+    with the default parameter group which has maxmemory-policy set to
+    'volatile-lru'. The application requires 'allkeys-lru' to avoid cache
+    misses on non-expiring keys. Create a new parameter group
+    'session-cache-params' for redis7, set the maxmemory-policy parameter
+    to 'allkeys-lru', and modify the cluster to use the new parameter group.
+  setup_commands:
+    - >-
+      aws elasticache create-cache-cluster --cache-cluster-id session-cache
+      --cache-node-type cache.t3.micro --engine redis
+      --num-cache-nodes 1
+  success_criteria:
+    services:
+      - elasticache
+    state_checks:
+      - command: >-
+          aws elasticache describe-cache-parameter-groups
+          --cache-parameter-group-name session-cache-params
+        output_contains: "session-cache-params"
+      - command: >-
+          aws elasticache describe-cache-clusters
+          --cache-cluster-id session-cache
+        output_contains: "session-cache-params"
+    steps:
+      - operation: create-cache-parameter-group
+        resource: session-cache-params
+      - operation: modify-cache-parameter-group
+        resource: session-cache-params
+      - operation: modify-cache-cluster
+        resource: session-cache
+
+- task_id: 113
+  description: >
+    SRE Incident: An SQS queue 'order-processing' has messages accumulating
+    in its dead-letter queue 'order-processing-dlq'. Investigation shows the
+    visibility timeout on the main queue is only 5 seconds, causing messages
+    to be re-delivered before processing completes. Update the visibility
+    timeout on 'order-processing' to 120 seconds and set the redrive policy
+    to allow a maximum receive count of 5 before sending to the DLQ.
+  setup_commands:
+    - aws sqs create-queue --queue-name order-processing-dlq
+    - >-
+      aws sqs create-queue --queue-name order-processing
+      --attributes VisibilityTimeout=5
+  success_criteria:
+    services:
+      - sqs
+    state_checks:
+      - command: >-
+          aws sqs get-queue-attributes
+          --queue-url http://localhost:4566/000000000000/order-processing
+          --attribute-names VisibilityTimeout
+        json_path: "$.Attributes.VisibilityTimeout"
+        expected: "120"
+      - command: >-
+          aws sqs get-queue-attributes
+          --queue-url http://localhost:4566/000000000000/order-processing
+          --attribute-names RedrivePolicy
+        output_contains: "order-processing-dlq"
+      - command: >-
+          aws sqs get-queue-attributes
+          --queue-url http://localhost:4566/000000000000/order-processing
+          --attribute-names RedrivePolicy
+        output_contains: "maxReceiveCount"
+    steps:
+      - operation: set-queue-attributes
+        resource: order-processing
+
+- task_id: 114
+  description: >
+    SRE Incident: A Route53 hosted zone 'example.com' has an A record for
+    'api.example.com' pointing to the old IP address '10.0.0.99'. The
+    application has been migrated to a new server at '10.0.1.50'. Update
+    the A record for 'api.example.com' to point to the new IP address
+    '10.0.1.50' with a TTL of 300 seconds.
+  setup_commands:
+    - aws route53 create-hosted-zone --name example.com --caller-reference ref-001
+    - >-
+      aws route53 change-resource-record-sets --hosted-zone-id zone-001
+      --change-batch '{"Changes":[{"Action":"CREATE","ResourceRecordSet":{"Name":"api.example.com","Type":"A","TTL":60,"ResourceRecords":[{"Value":"10.0.0.99"}]}}]}'
+  success_criteria:
+    services:
+      - route53
+    state_checks:
+      - command: aws route53 list-resource-record-sets --hosted-zone-id zone-001
+        output_contains: "10.0.1.50"
+      - command: aws route53 list-resource-record-sets --hosted-zone-id zone-001
+        output_contains: "api.example.com"
+    steps:
+      - operation: change-resource-record-sets
+        resource: api.example.com
+
+- task_id: 115
+  description: >
+    SRE Incident: An Application Load Balancer 'web-alb' has a target group
+    'web-targets' with a health check misconfigured to use path '/healthz'
+    on port 8080, but the application serves health checks on path '/health'
+    on port 80. All targets are showing as unhealthy. Fix the health check
+    configuration on the target group to use the correct path '/health' and
+    port 80, with a healthy threshold of 2 and interval of 15 seconds.
+  setup_commands:
+    - >-
+      aws elbv2 create-load-balancer --name web-alb
+      --type application --subnets subnet-aaa subnet-bbb
+    - >-
+      aws elbv2 create-target-group --name web-targets
+      --protocol HTTP --port 80 --vpc-id vpc-12345
+      --health-check-path /healthz --health-check-port 8080
+      --health-check-interval-seconds 60 --healthy-threshold-count 5
+  success_criteria:
+    services:
+      - elbv2
+    state_checks:
+      - command: aws elbv2 describe-target-groups --names web-targets
+        output_contains: "/health"
+      - command: aws elbv2 describe-target-groups --names web-targets
+        json_path: "$.TargetGroups[0].HealthCheckPort"
+        expected: "80"
+      - command: aws elbv2 describe-target-groups --names web-targets
+        json_path: "$.TargetGroups[0].HealthyThresholdCount"
+        expected: 2
+    steps:
+      - operation: modify-target-group
+        resource: web-targets
+
+- task_id: 116
+  description: >
+    Security Audit: A Lambda function 'public-api-handler' has a resource
+    policy that allows any AWS account to invoke it (Principal: '*'). This
+    is a critical security vulnerability. Remove the overly permissive
+    policy statement 'open-access' and add a new statement 'restricted-access'
+    that only allows invocation from the API Gateway service principal
+    'apigateway.amazonaws.com' with a source ARN condition.
+  setup_commands:
+    - >-
+      aws iam create-role --role-name public-api-role
+      --assume-role-policy-document '{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":{"Service":"lambda.amazonaws.com"},"Action":"sts:AssumeRole"}]}'
+    - >-
+      aws lambda create-function --function-name public-api-handler
+      --runtime python3.12 --handler index.handler
+      --role arn:aws:iam::000000000000:role/public-api-role
+      --zip-file fileb:///tmp/dummy.zip
+    - >-
+      aws lambda add-permission --function-name public-api-handler
+      --statement-id open-access --action lambda:InvokeFunction
+      --principal '*'
+  success_criteria:
+    services:
+      - lambda
+      - iam
+    state_checks:
+      - command: aws lambda get-policy --function-name public-api-handler
+        output_contains: "restricted-access"
+      - command: aws lambda get-policy --function-name public-api-handler
+        output_contains: "apigateway.amazonaws.com"
+    steps:
+      - operation: remove-permission
+        resource: public-api-handler
+      - operation: add-permission
+        resource: public-api-handler
+
+- task_id: 117
+  description: >
+    Security Audit: An S3 bucket 'data-lake-raw' contains sensitive customer
+    data but has no server-side encryption configured. Enable default
+    server-side encryption on the bucket using AES256 (SSE-S3). Also add
+    a bucket policy that denies any PutObject request that does not include
+    server-side encryption headers.
+  setup_commands:
+    - aws s3api create-bucket --bucket data-lake-raw
+    - >-
+      aws s3api put-object --bucket data-lake-raw
+      --key customers/data.csv --body /dev/null
+  success_criteria:
+    services:
+      - s3
+    state_checks:
+      - command: aws s3api get-bucket-encryption --bucket data-lake-raw
+        output_contains: "AES256"
+      - command: aws s3api get-bucket-policy --bucket data-lake-raw --output json
+        output_contains: "s3:x-amz-server-side-encryption"
+      - command: aws s3api get-bucket-policy --bucket data-lake-raw --output json
+        output_contains: "Deny"
+    steps:
+      - operation: put-bucket-encryption
+        resource: data-lake-raw
+      - operation: put-bucket-policy
+        resource: data-lake-raw
+
+- task_id: 118
+  description: >
+    Security Audit: A DynamoDB table 'financial-transactions' stores
+    sensitive payment data but does not have point-in-time recovery (PITR)
+    enabled. Additionally, the table lacks a TTL configuration for
+    automatic cleanup of old records. Enable continuous backups (PITR) on
+    the table and configure TTL on the 'expiry_timestamp' attribute.
+  setup_commands:
+    - >-
+      aws dynamodb create-table --table-name financial-transactions
+      --attribute-definitions AttributeName=tx_id,AttributeType=S
+      --key-schema AttributeName=tx_id,KeyType=HASH
+      --provisioned-throughput ReadCapacityUnits=10,WriteCapacityUnits=10
+  success_criteria:
+    services:
+      - dynamodb
+    state_checks:
+      - command: >-
+          aws dynamodb describe-continuous-backups
+          --table-name financial-transactions
+        output_contains: "ENABLED"
+      - command: >-
+          aws dynamodb describe-time-to-live
+          --table-name financial-transactions
+        output_contains: "expiry_timestamp"
+    steps:
+      - operation: update-continuous-backups
+        resource: financial-transactions
+      - operation: update-time-to-live
+        resource: financial-transactions
+
+- task_id: 119
+  description: >
+    Security Audit: An SSM parameter '/app/database/password' stores a
+    database password as a plain String type instead of SecureString. Create
+    a new SecureString parameter '/app/database/password-secure' with the
+    same value 'SuperSecret123', then create a Secrets Manager secret
+    'app/database-credentials' to provide rotation capability for the
+    credential.
+  setup_commands:
+    - >-
+      aws ssm put-parameter --name /app/database/password
+      --value SuperSecret123 --type String
+  success_criteria:
+    services:
+      - ssm
+      - secretsmanager
+    state_checks:
+      - command: aws ssm get-parameter --name /app/database/password-secure
+        output_contains: "SecureString"
+      - command: >-
+          aws secretsmanager describe-secret
+          --secret-id app/database-credentials
+        output_contains: "app/database-credentials"
+    steps:
+      - operation: put-parameter
+        resource: /app/database/password-secure
+      - operation: create-secret
+        resource: app/database-credentials
+
+- task_id: 120
+  description: >
+    Security Audit: An IAM user 'deploy-bot' has console access with a
+    login profile but no MFA device configured. The user also has an overly
+    permissive inline policy 'admin-access' granting full admin rights.
+    Delete the login profile to remove console access, replace the inline
+    policy with a policy named 'deploy-only' that restricts permissions to
+    's3:PutObject' and 'codedeploy:*' on all resources.
+  setup_commands:
+    - aws iam create-user --user-name deploy-bot
+    - >-
+      aws iam create-login-profile --user-name deploy-bot
+      --password TempPass123!
+    - >-
+      aws iam put-user-policy --user-name deploy-bot
+      --policy-name admin-access
+      --policy-document '{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Action":"*","Resource":"*"}]}'
+  success_criteria:
+    services:
+      - iam
+    state_checks:
+      - command: aws iam get-user-policy --user-name deploy-bot --policy-name deploy-only
+        output_contains: "s3:PutObject"
+      - command: aws iam get-user-policy --user-name deploy-bot --policy-name deploy-only
+        output_contains: "codedeploy:*"
+    steps:
+      - operation: delete-login-profile
+        resource: deploy-bot
+      - operation: delete-user-policy
+        resource: deploy-bot
+      - operation: put-user-policy
+        resource: deploy-bot
+
+- task_id: 121
+  description: >
+    SRE Incident: An EventBridge rule 'nightly-etl-trigger' that should
+    invoke a Lambda function 'etl-runner' every night at 2 AM UTC is
+    currently disabled and has no targets configured. The Lambda function
+    exists but the rule was never properly set up. Enable the rule, set
+    its schedule expression to 'cron(0 2 * * ? *)', and add the Lambda
+    function as its target.
+  setup_commands:
+    - >-
+      aws iam create-role --role-name etl-runner-role
+      --assume-role-policy-document '{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":{"Service":"lambda.amazonaws.com"},"Action":"sts:AssumeRole"}]}'
+    - >-
+      aws lambda create-function --function-name etl-runner
+      --runtime python3.12 --handler index.handler
+      --role arn:aws:iam::000000000000:role/etl-runner-role
+      --zip-file fileb:///tmp/dummy.zip
+    - >-
+      aws events put-rule --name nightly-etl-trigger
+      --schedule-expression 'rate(1 day)' --state DISABLED
+  success_criteria:
+    services:
+      - events
+      - lambda
+    state_checks:
+      - command: aws events describe-rule --name nightly-etl-trigger
+        output_contains: "ENABLED"
+      - command: aws events describe-rule --name nightly-etl-trigger
+        output_contains: "cron(0 2 * * ? *)"
+      - command: aws events list-targets-by-rule --rule nightly-etl-trigger
+        output_contains: "etl-runner"
+    steps:
+      - operation: put-rule
+        resource: nightly-etl-trigger
+      - operation: put-targets
+        resource: nightly-etl-trigger
+
+- task_id: 122
+  description: >
+    SRE Incident: A Kinesis Firehose delivery stream 'clickstream-delivery'
+    is writing to S3 bucket 'clickstream-archive' but using the wrong
+    prefix 'raw/' instead of the required 'clickstream/year=!{timestamp:yyyy}/month=!{timestamp:MM}/'.
+    The S3 bucket exists but the delivery stream prefix needs to be corrected.
+    Delete the misconfigured delivery stream and recreate it with the
+    correct S3 prefix configuration pointing to the 'clickstream-archive' bucket.
+  setup_commands:
+    - aws s3api create-bucket --bucket clickstream-archive
+    - >-
+      aws firehose create-delivery-stream
+      --delivery-stream-name clickstream-delivery
+      --s3-destination-configuration
+      RoleARN=arn:aws:iam::000000000000:role/firehose-role,BucketARN=arn:aws:s3:::clickstream-archive,Prefix=raw/
+  success_criteria:
+    services:
+      - firehose
+      - s3
+    state_checks:
+      - command: aws firehose describe-delivery-stream --delivery-stream-name clickstream-delivery
+        output_contains: "clickstream-archive"
+      - command: aws firehose describe-delivery-stream --delivery-stream-name clickstream-delivery
+        output_contains: "clickstream/year="
+    steps:
+      - operation: delete-delivery-stream
+        resource: clickstream-delivery
+      - operation: create-delivery-stream
+        resource: clickstream-delivery
+
+- task_id: 123
+  description: >
+    SRE Incident: An SNS topic 'order-notifications' is experiencing failed
+    deliveries to its SQS subscriber, and there is no dead-letter queue
+    configured on the subscription to capture failed messages. Create an
+    SQS queue 'order-notifications-dlq' to serve as the DLQ, then update
+    the existing subscription's redrive policy to send failed messages to
+    the DLQ. Also set the SQS queue's message retention period to 14 days
+    (1209600 seconds).
+  setup_commands:
+    - aws sns create-topic --name order-notifications
+    - aws sqs create-queue --queue-name order-subscriber
+    - >-
+      aws sns subscribe --topic-arn arn:aws:sns:us-east-1:000000000000:order-notifications
+      --protocol sqs
+      --notification-endpoint arn:aws:sqs:us-east-1:000000000000:order-subscriber
+  success_criteria:
+    services:
+      - sns
+      - sqs
+    state_checks:
+      - command: >-
+          aws sqs get-queue-attributes
+          --queue-url http://localhost:4566/000000000000/order-notifications-dlq
+          --attribute-names MessageRetentionPeriod
+        json_path: "$.Attributes.MessageRetentionPeriod"
+        expected: "1209600"
+      - command: >-
+          aws sns list-subscriptions-by-topic
+          --topic-arn arn:aws:sns:us-east-1:000000000000:order-notifications
+        output_contains: "order-subscriber"
+    steps:
+      - operation: create-queue
+        resource: order-notifications-dlq
+      - operation: set-queue-attributes
+        resource: order-notifications-dlq
+      - operation: set-subscription-attributes
+
+- task_id: 124
+  description: >
+    Security Audit: An EFS file system 'shared-data' was created without
+    encryption at rest. Since EFS encryption cannot be enabled after creation,
+    create a new encrypted EFS file system with the tag Name='shared-data-encrypted'
+    and creation token 'shared-data-encrypted'. Also create a mount target
+    security group 'efs-mount-sg' that only allows NFS traffic (port 2049)
+    from the application subnet CIDR 10.0.2.0/24.
+  setup_commands:
+    - >-
+      aws efs create-file-system --creation-token shared-data
+      --no-encrypted --tags Key=Name,Value=shared-data
+  success_criteria:
+    services:
+      - efs
+      - ec2
+    state_checks:
+      - command: aws efs describe-file-systems
+        output_contains: "shared-data-encrypted"
+      - command: aws ec2 describe-security-groups --group-names efs-mount-sg
+        output_contains: "2049"
+      - command: aws ec2 describe-security-groups --group-names efs-mount-sg
+        output_contains: "10.0.2.0/24"
+    steps:
+      - operation: create-file-system
+        resource: shared-data-encrypted
+      - operation: create-security-group
+        resource: efs-mount-sg
+      - operation: authorize-security-group-ingress
+        resource: efs-mount-sg
+
+- task_id: 125
+  description: >
+    SRE Incident: A Glue ETL job 'daily-transform' is failing because its
+    script location points to a non-existent S3 path
+    's3://glue-scripts-bucket/old/transform.py'. The correct script has been
+    uploaded to 's3://glue-scripts-bucket/scripts/daily-transform.py'. Update
+    the Glue job to reference the correct script location. Also ensure the
+    S3 bucket 'glue-scripts-bucket' exists and contains an object at the
+    correct key path.
+  setup_commands:
+    - aws s3api create-bucket --bucket glue-scripts-bucket
+    - >-
+      aws s3api put-object --bucket glue-scripts-bucket
+      --key scripts/daily-transform.py --body /dev/null
+    - >-
+      aws glue create-job --name daily-transform
+      --role arn:aws:iam::000000000000:role/glue-role
+      --command '{"Name":"glueetl","ScriptLocation":"s3://glue-scripts-bucket/old/transform.py","PythonVersion":"3"}'
+  success_criteria:
+    services:
+      - glue
+      - s3
+    state_checks:
+      - command: aws glue get-job --job-name daily-transform
+        output_contains: "scripts/daily-transform.py"
+      - command: >-
+          aws s3api head-object --bucket glue-scripts-bucket
+          --key scripts/daily-transform.py
+        output_contains: "ContentLength"
+    steps:
+      - operation: update-job
+        resource: daily-transform
+
+- task_id: 126
+  description: >
+    Security Audit: A Cognito user pool 'customer-auth' has a dangerously
+    weak password policy allowing minimum length of 6 with no requirements
+    for uppercase, numbers, or symbols. Update the password policy to
+    require a minimum length of 12, and require uppercase letters, lowercase
+    letters, numbers, and symbols. Also set the temporary password validity
+    to 1 day.
+  setup_commands:
+    - >-
+      aws cognito-idp create-user-pool --pool-name customer-auth
+      --policies '{"PasswordPolicy":{"MinimumLength":6,"RequireUppercase":false,"RequireLowercase":false,"RequireNumbers":false,"RequireSymbols":false,"TemporaryPasswordValidityDays":7}}'
+  success_criteria:
+    services:
+      - cognito-idp
+    state_checks:
+      - command: aws cognito-idp describe-user-pool --user-pool-id us-east-1_customer-auth
+        output_contains: "MinimumLength"
+      - command: aws cognito-idp describe-user-pool --user-pool-id us-east-1_customer-auth
+        output_contains: "RequireUppercase"
+    steps:
+      - operation: update-user-pool
+        resource: customer-auth
+
+- task_id: 127
+  description: >
+    SRE Incident: A CloudFormation stack 'legacy-infra' is stuck in
+    ROLLBACK_COMPLETE state after a failed update. The stack contains
+    an S3 bucket 'legacy-data-bucket' with important data that must be
+    preserved. Create a new S3 bucket 'legacy-data-backup' to serve as
+    a backup destination, then delete the failed CloudFormation stack
+    to allow redeployment. Finally, create a new stack 'legacy-infra-v2'
+    using a template that provisions a DynamoDB table 'legacy-config'.
+  setup_commands:
+    - aws s3api create-bucket --bucket legacy-data-bucket
+    - >-
+      aws s3api put-object --bucket legacy-data-bucket
+      --key important/data.json --body /dev/null
+    - >-
+      aws cloudformation create-stack --stack-name legacy-infra
+      --template-body '{"AWSTemplateFormatVersion":"2010-09-09","Resources":{"Bucket":{"Type":"AWS::S3::Bucket","Properties":{"BucketName":"legacy-data-bucket"}}}}'
+  success_criteria:
+    services:
+      - cloudformation
+      - s3
+    state_checks:
+      - command: aws s3api head-bucket --bucket legacy-data-backup
+        output_contains: ""
+      - command: aws cloudformation describe-stacks --stack-name legacy-infra-v2
+        output_contains: "legacy-infra-v2"
+    steps:
+      - operation: create-bucket
+        resource: legacy-data-backup
+      - operation: delete-stack
+        resource: legacy-infra
+      - operation: create-stack
+        resource: legacy-infra-v2

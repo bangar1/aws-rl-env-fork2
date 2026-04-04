@@ -41,3 +41,259 @@
         resource: lambda-exec-role
       - operation: attach-role-policy
         resource: lambda-exec-role
+
+- task_id: 66
+  description: >
+    Create an S3 bucket named 'app-assets', then create an IAM policy named
+    'app-assets-read-policy' that grants s3:GetObject access to the bucket.
+  success_criteria:
+    steps:
+      - operation: create-bucket
+        resource: app-assets
+      - operation: create-policy
+        resource: app-assets-read-policy
+
+- task_id: 67
+  description: >
+    Create a DynamoDB table named 'user-sessions' with partition key 'session_id' (S),
+    then create an S3 bucket named 'session-exports' for exporting table data.
+  success_criteria:
+    steps:
+      - operation: create-table
+        resource: user-sessions
+      - operation: create-bucket
+        resource: session-exports
+
+- task_id: 68
+  description: >
+    Create an IAM role named 'data-processor-role' with an assume-role policy
+    for Lambda, then create a Lambda function named 'data-processor' using that role
+    with runtime python3.12 and handler index.handler using --zip-file fileb:///tmp/dummy.zip.
+  success_criteria:
+    steps:
+      - operation: create-role
+        resource: data-processor-role
+      - operation: create-function
+        resource: data-processor
+
+- task_id: 69
+  description: >
+    Create an SQS queue named 'order-events', then create an SNS topic named
+    'order-notifications' and subscribe the queue to the topic using the sqs protocol.
+  success_criteria:
+    steps:
+      - operation: create-queue
+        resource: order-events
+      - operation: create-topic
+        resource: order-notifications
+      - operation: subscribe
+        resource: order-notifications
+
+- task_id: 70
+  description: >
+    Create a secret in Secrets Manager named 'db-credentials' with a JSON value
+    containing username and password fields, then create an IAM role named
+    'secret-reader-role' with an assume-role policy for Lambda.
+  success_criteria:
+    steps:
+      - operation: create-secret
+        resource: db-credentials
+      - operation: create-role
+        resource: secret-reader-role
+
+- task_id: 71
+  description: >
+    Create an SSM parameter named '/app/config/db-host' with type String and
+    value 'db.internal.local', then create a Lambda function named 'config-loader'
+    with runtime python3.12 and handler index.handler using --zip-file fileb:///tmp/dummy.zip
+    and role arn:aws:iam::000000000000:role/lambda-exec-role.
+  success_criteria:
+    steps:
+      - operation: put-parameter
+        resource: /app/config/db-host
+      - operation: create-function
+        resource: config-loader
+
+- task_id: 72
+  description: >
+    Create a Lambda function named 'scheduled-task' with runtime python3.12,
+    handler index.handler, role arn:aws:iam::000000000000:role/lambda-exec-role,
+    and --zip-file fileb:///tmp/dummy.zip. Then create an EventBridge rule named
+    'every-five-minutes' with a schedule expression of rate(5 minutes) and add the
+    Lambda function as a target.
+  success_criteria:
+    steps:
+      - operation: create-function
+        resource: scheduled-task
+      - operation: put-rule
+        resource: every-five-minutes
+      - operation: put-targets
+        resource: every-five-minutes
+
+- task_id: 73
+  description: >
+    Create an IAM role named 'ecs-task-role' with an assume-role policy for
+    ecs-tasks.amazonaws.com, then attach the AmazonS3ReadOnlyAccess managed
+    policy to it.
+  success_criteria:
+    steps:
+      - operation: create-role
+        resource: ecs-task-role
+      - operation: attach-role-policy
+        resource: ecs-task-role
+
+- task_id: 74
+  description: >
+    Create a secret in Secrets Manager named 'rds-master-password' with a
+    JSON value containing host, port, username, and password fields. Then create
+    an RDS DB instance named 'app-database' with engine mysql, db-instance-class
+    db.t3.micro, and master credentials.
+  success_criteria:
+    steps:
+      - operation: create-secret
+        resource: rds-master-password
+      - operation: create-db-instance
+        resource: app-database
+
+- task_id: 75
+  description: >
+    Create an Application Load Balancer target group named 'web-targets' with
+    protocol HTTP, port 80, and VPC. Then create a Route 53 hosted zone for
+    'app.example.com'.
+  success_criteria:
+    steps:
+      - operation: create-target-group
+        resource: web-targets
+      - operation: create-hosted-zone
+        resource: app.example.com
+
+- task_id: 76
+  description: >
+    Create a Cognito user pool named 'app-users', then create a user pool
+    client named 'web-app-client' in that user pool.
+  success_criteria:
+    steps:
+      - operation: create-user-pool
+        resource: app-users
+      - operation: create-user-pool-client
+        resource: web-app-client
+
+- task_id: 77
+  description: >
+    Create an EFS file system with a creation token 'app-storage', then create
+    a security group named 'efs-mount-sg' with a description allowing NFS access
+    for mounting the file system.
+  success_criteria:
+    steps:
+      - operation: create-file-system
+        resource: app-storage
+      - operation: create-security-group
+        resource: efs-mount-sg
+
+- task_id: 78
+  description: >
+    Create an EBS volume of 20 GiB in availability zone us-east-1a with type gp3,
+    then tag the volume with Name 'data-volume' using create-tags.
+  success_criteria:
+    steps:
+      - operation: create-volume
+        resource: data-volume
+      - operation: create-tags
+        resource: data-volume
+
+- task_id: 79
+  description: >
+    Create an ElastiCache subnet group named 'cache-subnets' with a description
+    and subnet IDs, then create an ElastiCache cluster named 'session-cache' with
+    engine redis, cache-node-type cache.t3.micro, and num-cache-nodes 1.
+  success_criteria:
+    steps:
+      - operation: create-cache-subnet-group
+        resource: cache-subnets
+      - operation: create-cache-cluster
+        resource: session-cache
+
+- task_id: 80
+  description: >
+    Create a Glue database named 'analytics-db' in the Glue Data Catalog,
+    then create a Glue crawler named 'raw-data-crawler' targeting an S3 path
+    with the analytics-db as the target database.
+  success_criteria:
+    steps:
+      - operation: create-database
+        resource: analytics-db
+      - operation: create-crawler
+        resource: raw-data-crawler
+
+- task_id: 81
+  description: >
+    Create a CloudFormation stack named 'vpc-stack' using a template URL or
+    template body that defines a simple VPC resource, then describe the stack
+    to verify it was created successfully.
+  success_criteria:
+    steps:
+      - operation: create-stack
+        resource: vpc-stack
+      - operation: describe-stacks
+        resource: vpc-stack
+
+- task_id: 82
+  description: >
+    Create an HTTP API in API Gateway V2 named 'products-api' with protocol-type
+    HTTP, then create a route with route-key 'GET /products' on that API.
+  success_criteria:
+    steps:
+      - operation: create-api
+        resource: products-api
+      - operation: create-route
+        resource: products-api
+
+- task_id: 83
+  description: >
+    Create an S3 bucket named 'firehose-delivery', then create a Kinesis
+    Firehose delivery stream named 'event-stream' with an S3 destination
+    configuration pointing to the firehose-delivery bucket.
+  success_criteria:
+    steps:
+      - operation: create-bucket
+        resource: firehose-delivery
+      - operation: create-delivery-stream
+        resource: event-stream
+
+- task_id: 84
+  description: >
+    Create an SQS queue named 'task-queue' with a visibility timeout of 60
+    seconds, then send a message to the queue with a body containing a JSON
+    payload representing a processing task.
+  success_criteria:
+    steps:
+      - operation: create-queue
+        resource: task-queue
+      - operation: send-message
+        resource: task-queue
+
+- task_id: 85
+  description: >
+    Create a DynamoDB table named 'products' with partition key 'product_id' (S)
+    and sort key 'category' (S), then put an item into the table with product_id
+    'P001', category 'electronics', and name 'Wireless Mouse'.
+  success_criteria:
+    steps:
+      - operation: create-table
+        resource: products
+      - operation: put-item
+        resource: products
+
+- task_id: 86
+  description: >
+    Create an IAM role named 'firehose-delivery-role' with an assume-role policy
+    for firehose.amazonaws.com, then create an IAM policy named 's3-write-policy'
+    granting s3:PutObject access and attach it to the role.
+  success_criteria:
+    steps:
+      - operation: create-role
+        resource: firehose-delivery-role
+      - operation: create-policy
+        resource: s3-write-policy
+      - operation: attach-role-policy
+        resource: firehose-delivery-role

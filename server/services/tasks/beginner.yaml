@@ -42,3 +42,183 @@
     resource_exists:
       service: lambda
       name: hello-world
+
+- task_id: 46
+  description: Create an IAM role named 'lambda-exec-role' with an assume role policy that allows the Lambda service to assume it.
+  success_criteria:
+    command_contains: iam
+    operation: create-role
+    resource_exists:
+      service: iam
+      name: lambda-exec-role
+
+- task_id: 47
+  description: Create a secret in Secrets Manager named 'db-credentials' with the value '{"username":"admin","password":"secret123"}'.
+  success_criteria:
+    command_contains: secretsmanager
+    operation: create-secret
+    resource_exists:
+      service: secretsmanager
+      name: db-credentials
+
+- task_id: 48
+  description: Create an ECS cluster named 'web-cluster'.
+  success_criteria:
+    command_contains: ecs
+    operation: create-cluster
+    resource_exists:
+      service: ecs
+      name: web-cluster
+
+- task_id: 49
+  description: Create an RDS DB instance named 'app-database' with engine 'mysql', instance class 'db.t3.micro', master username 'admin', and master password 'Password123'.
+  success_criteria:
+    command_contains: rds
+    operation: create-db-instance
+    resource_exists:
+      service: rds
+      name: app-database
+
+- task_id: 50
+  description: Create an ElastiCache cluster named 'session-cache' with engine 'redis' and cache node type 'cache.t3.micro'.
+  success_criteria:
+    command_contains: elasticache
+    operation: create-cache-cluster
+    resource_exists:
+      service: elasticache
+      name: session-cache
+
+- task_id: 51
+  description: Create a Route53 hosted zone for the domain 'example.internal'.
+  success_criteria:
+    command_contains: route53
+    operation: create-hosted-zone
+    resource_exists:
+      service: route53
+      name: example.internal
+
+- task_id: 52
+  description: Create an Application Load Balancer named 'web-alb' with subnets 'subnet-00000001' and 'subnet-00000002'.
+  success_criteria:
+    command_contains: elbv2
+    operation: create-load-balancer
+    resource_exists:
+      service: elbv2
+      name: web-alb
+
+- task_id: 53
+  description: Create an EBS volume of 20 GiB in availability zone 'us-east-1a'.
+  success_criteria:
+    command_contains: ec2
+    operation: create-volume
+    resource_exists:
+      service: ebs
+      name: us-east-1a-volume
+
+- task_id: 54
+  description: Create an EFS file system with a creation token of 'shared-storage'.
+  success_criteria:
+    command_contains: efs
+    operation: create-file-system
+    resource_exists:
+      service: efs
+      name: shared-storage
+
+- task_id: 55
+  description: Create a Cognito user pool named 'app-users'.
+  success_criteria:
+    command_contains: cognito-idp
+    operation: create-user-pool
+    resource_exists:
+      service: cognito-idp
+      name: app-users
+
+- task_id: 56
+  description: Create an SSM parameter named '/config/app/database-url' of type 'String' with value 'mysql://localhost:3306/mydb'.
+  success_criteria:
+    command_contains: ssm
+    operation: put-parameter
+    resource_exists:
+      service: ssm
+      name: /config/app/database-url
+
+- task_id: 57
+  description: Create an EventBridge rule named 'daily-cleanup' with a schedule expression of 'rate(1 day)'.
+  success_criteria:
+    command_contains: events
+    operation: put-rule
+    resource_exists:
+      service: events
+      name: daily-cleanup
+
+- task_id: 58
+  description: Create a CloudFormation stack named 'vpc-stack' using the template URL 'https://s3.amazonaws.com/templates/vpc.yaml'.
+  success_criteria:
+    command_contains: cloudformation
+    operation: create-stack
+    resource_exists:
+      service: cloudformation
+      name: vpc-stack
+
+- task_id: 59
+  description: Create an API Gateway REST API named 'orders-api'.
+  success_criteria:
+    command_contains: apigateway
+    operation: create-rest-api
+    resource_exists:
+      service: apigateway
+      name: orders-api
+
+- task_id: 60
+  description: Create an API Gateway V2 HTTP API named 'payments-api' with protocol type 'HTTP'.
+  success_criteria:
+    command_contains: apigatewayv2
+    operation: create-api
+    resource_exists:
+      service: apigatewayv2
+      name: payments-api
+
+- task_id: 61
+  description: Create a Glue database named 'analytics-db' in the default Glue catalog.
+  success_criteria:
+    command_contains: glue
+    operation: create-database
+    resource_exists:
+      service: glue
+      name: analytics-db
+
+- task_id: 62
+  description: Create a Kinesis Firehose delivery stream named 'log-stream' with a direct put source.
+  success_criteria:
+    command_contains: firehose
+    operation: create-delivery-stream
+    resource_exists:
+      service: firehose
+      name: log-stream
+
+- task_id: 63
+  description: Create an IAM policy named 's3-read-policy' that allows s3:GetObject on all resources.
+  success_criteria:
+    command_contains: iam
+    operation: create-policy
+    resource_exists:
+      service: iam
+      name: s3-read-policy
+
+- task_id: 64
+  description: Create an IAM user named 'deploy-bot'.
+  success_criteria:
+    command_contains: iam
+    operation: create-user
+    resource_exists:
+      service: iam
+      name: deploy-bot
+
+- task_id: 65
+  description: Create a Lambda function named 'data-processor' using the python3.12 runtime with handler 'index.handler' and role 'arn:aws:iam::000000000000:role/lambda-exec-role', using --zip-file fileb:///tmp/dummy.zip.
+  success_criteria:
+    command_contains: lambda
+    operation: create-function
+    resource_exists:
+      service: lambda
+      name: data-processor
