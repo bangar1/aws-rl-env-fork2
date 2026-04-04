@@ -180,6 +180,14 @@ class Task(BaseModel):
         default=None,
         description="Optional simulated cost budget in USD. Enables cost-based reward shaping.",
     )
+    desired_state_spec: str | None = Field(
+        default=None,
+        description="Natural-language specification of the desired end state (shown to agent for drift tasks)",
+    )
+    possible_drifts: list[SetupCommand] = Field(
+        default_factory=list,
+        description="Pool of mutations the DriftEngine may randomly apply after setup",
+    )
 
 
 # ---------------------------------------------------------------------------

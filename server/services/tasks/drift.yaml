@@ -1,0 +1,205 @@
+# Configuration Drift Detection Tasks (Expert Tier)
+#
+# Each task provisions correct infrastructure via setup_commands, then the
+# DriftEngine randomly applies a subset of possible_drifts.  The agent must
+# audit the environment, discover which resources drifted, and fix only those.
+
+- task_id: 24
+  description: >
+    The following infrastructure should exist: S3 bucket 'config-store' with
+    versioning enabled, a lifecycle rule named 'expire-old' that expires
+    non-current object versions after 90 days, and server-side encryption
+    using AES256.  DynamoDB table 'sessions' with provisioned throughput of
+    100 RCU and 100 WCU.  Some resources may have drifted from the desired
+    specification.  Audit the current state and fix any configuration that
+    does not match.
+  desired_state_spec: >
+    S3 bucket 'config-store': versioning=Enabled, lifecycle rule 'expire-old'
+    expiring non-current versions after 90 days, SSE with AES256.
+    DynamoDB table 'sessions': 100 RCU, 100 WCU.
+  setup_commands:
+    - aws s3api create-bucket --bucket config-store
+    - >-
+      aws s3api put-bucket-versioning --bucket config-store
+      --versioning-configuration Status=Enabled
+    - >-
+      aws s3api put-bucket-lifecycle-configuration --bucket config-store
+      --lifecycle-configuration '{"Rules":[{"ID":"expire-old","Status":"Enabled","NoncurrentVersionExpiration":{"NoncurrentDays":90},"Filter":{"Prefix":""}}]}'
+    - >-
+      aws s3api put-bucket-encryption --bucket config-store
+      --server-side-encryption-configuration '{"Rules":[{"ApplyServerSideEncryptionByDefault":{"SSEAlgorithm":"AES256"}}]}'
+    - >-
+      aws dynamodb create-table --table-name sessions
+      --attribute-definitions AttributeName=id,AttributeType=S
+      --key-schema AttributeName=id,KeyType=HASH
+      --provisioned-throughput ReadCapacityUnits=100,WriteCapacityUnits=100
+  possible_drifts:
+    - command: >-
+        aws s3api put-bucket-versioning --bucket config-store
+        --versioning-configuration Status=Suspended
+      description: Versioning disabled on 'config-store'
+    - command: >-
+        aws s3api delete-bucket-lifecycle --bucket config-store
+      description: Lifecycle rule removed from 'config-store'
+    - command: >-
+        aws s3api delete-bucket-encryption --bucket config-store
+      description: Encryption removed from 'config-store'
+    - command: >-
+        aws dynamodb update-table --table-name sessions
+        --provisioned-throughput ReadCapacityUnits=5,WriteCapacityUnits=100
+      description: DynamoDB RCU reduced to 5
+    - command: >-
+        aws dynamodb update-table --table-name sessions
+        --provisioned-throughput ReadCapacityUnits=100,WriteCapacityUnits=5
+      description: DynamoDB WCU reduced to 5
+  success_criteria:
+    services:
+      - s3
+      - dynamodb
+    state_checks:
+      - command: aws s3api get-bucket-versioning --bucket config-store
+        output_contains: "Enabled"
+      - command: aws s3api get-bucket-lifecycle-configuration --bucket config-store
+        output_contains: "expire-old"
+      - command: aws s3api get-bucket-encryption --bucket config-store
+        output_contains: "AES256"
+      - command: aws dynamodb describe-table --table-name sessions
+        json_path: "$.Table.ProvisionedThroughput.ReadCapacityUnits"
+        expected: 100
+      - command: aws dynamodb describe-table --table-name sessions
+        json_path: "$.Table.ProvisionedThroughput.WriteCapacityUnits"
+        expected: 100
+
+- task_id: 25
+  description: >
+    The following infrastructure should exist: SNS topic 'ops-alerts' with
+    an SQS queue 'ops-inbox' subscribed to it.  IAM role 'ops-automation'
+    with the AmazonSNSFullAccess and AmazonSQSFullAccess policies attached.
+    Lambda function 'alert-handler' using the 'ops-automation' role.  Some
+    resources may have drifted.  Audit and fix.
+  desired_state_spec: >
+    SNS topic 'ops-alerts' with SQS subscription 'ops-inbox'.
+    IAM role 'ops-automation' with AmazonSNSFullAccess and AmazonSQSFullAccess.
+    Lambda 'alert-handler' using role 'ops-automation'.
+  setup_commands:
+    - aws sns create-topic --name ops-alerts
+    - aws sqs create-queue --queue-name ops-inbox
+    - >-
+      aws sns subscribe --topic-arn arn:aws:sns:us-east-1:000000000000:ops-alerts
+      --protocol sqs
+      --notification-endpoint arn:aws:sqs:us-east-1:000000000000:ops-inbox
+    - >-
+      aws iam create-role --role-name ops-automation
+      --assume-role-policy-document '{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":{"Service":"lambda.amazonaws.com"},"Action":"sts:AssumeRole"}]}'
+    - >-
+      aws iam attach-role-policy --role-name ops-automation
+      --policy-arn arn:aws:iam::aws:policy/AmazonSNSFullAccess
+    - >-
+      aws iam attach-role-policy --role-name ops-automation
+      --policy-arn arn:aws:iam::aws:policy/AmazonSQSFullAccess
+    - >-
+      aws lambda create-function --function-name alert-handler
+      --runtime python3.12 --handler index.handler
+      --role arn:aws:iam::000000000000:role/ops-automation
+      --zip-file fileb:///tmp/dummy.zip
+  possible_drifts:
+    - command: >-
+        aws iam detach-role-policy --role-name ops-automation
+        --policy-arn arn:aws:iam::aws:policy/AmazonSNSFullAccess
+      description: SNS policy detached from 'ops-automation'
+    - command: >-
+        aws iam detach-role-policy --role-name ops-automation
+        --policy-arn arn:aws:iam::aws:policy/AmazonSQSFullAccess
+      description: SQS policy detached from 'ops-automation'
+    - command: aws lambda delete-function --function-name alert-handler
+      description: Lambda 'alert-handler' deleted
+    - command: aws sqs delete-queue --queue-url arn:aws:sqs:us-east-1:000000000000:ops-inbox
+      description: SQS queue 'ops-inbox' deleted (breaks subscription)
+  success_criteria:
+    services:
+      - sns
+      - sqs
+      - iam
+      - lambda
+    state_checks:
+      - command: aws sns list-subscriptions-by-topic --topic-arn arn:aws:sns:us-east-1:000000000000:ops-alerts
+        output_contains: "ops-inbox"
+      - command: aws iam list-attached-role-policies --role-name ops-automation
+        output_contains: "SNSFullAccess"
+      - command: aws iam list-attached-role-policies --role-name ops-automation
+        output_contains: "SQSFullAccess"
+      - command: aws lambda get-function --function-name alert-handler
+        output_contains: "alert-handler"
+
+- task_id: 26
+  description: >
+    The following infrastructure should exist: DynamoDB table 'orders' with
+    a global secondary index 'status-index' on the 'status' attribute,
+    provisioned at 50 RCU / 50 WCU.  S3 bucket 'order-archive' with
+    versioning enabled and a CORS configuration allowing GET from '*'.
+    SQS queue 'order-events' with a visibility timeout of 60 seconds and
+    a dead-letter queue 'order-events-dlq' with maxReceiveCount 3.  Some
+    resources may have drifted.  Audit and fix.
+  desired_state_spec: >
+    DynamoDB 'orders': GSI 'status-index', 50 RCU, 50 WCU.
+    S3 'order-archive': versioning=Enabled, CORS allowing GET from '*'.
+    SQS 'order-events': visibility timeout 60s, DLQ 'order-events-dlq' maxReceiveCount=3.
+  setup_commands:
+    - >-
+      aws dynamodb create-table --table-name orders
+      --attribute-definitions AttributeName=id,AttributeType=S AttributeName=status,AttributeType=S
+      --key-schema AttributeName=id,KeyType=HASH
+      --provisioned-throughput ReadCapacityUnits=50,WriteCapacityUnits=50
+      --global-secondary-indexes '[{"IndexName":"status-index","KeySchema":[{"AttributeName":"status","KeyType":"HASH"}],"Projection":{"ProjectionType":"ALL"},"ProvisionedThroughput":{"ReadCapacityUnits":50,"WriteCapacityUnits":50}}]'
+    - aws s3api create-bucket --bucket order-archive
+    - >-
+      aws s3api put-bucket-versioning --bucket order-archive
+      --versioning-configuration Status=Enabled
+    - >-
+      aws s3api put-bucket-cors --bucket order-archive
+      --cors-configuration '{"CORSRules":[{"AllowedOrigins":["*"],"AllowedMethods":["GET"],"AllowedHeaders":["*"]}]}'
+    - aws sqs create-queue --queue-name order-events-dlq
+    - >-
+      aws sqs create-queue --queue-name order-events
+      --attributes '{"VisibilityTimeout":"60","RedrivePolicy":"{\"deadLetterTargetArn\":\"arn:aws:sqs:us-east-1:000000000000:order-events-dlq\",\"maxReceiveCount\":\"3\"}"}'
+  possible_drifts:
+    - command: >-
+        aws dynamodb update-table --table-name orders
+        --provisioned-throughput ReadCapacityUnits=5,WriteCapacityUnits=50
+      description: DynamoDB 'orders' RCU reduced to 5
+    - command: >-
+        aws dynamodb update-table --table-name orders
+        --provisioned-throughput ReadCapacityUnits=50,WriteCapacityUnits=5
+      description: DynamoDB 'orders' WCU reduced to 5
+    - command: >-
+        aws s3api put-bucket-versioning --bucket order-archive
+        --versioning-configuration Status=Suspended
+      description: Versioning suspended on 'order-archive'
+    - command: aws s3api delete-bucket-cors --bucket order-archive
+      description: CORS configuration removed from 'order-archive'
+    - command: >-
+        aws sqs set-queue-attributes
+        --queue-url arn:aws:sqs:us-east-1:000000000000:order-events
+        --attributes '{"VisibilityTimeout":"30"}'
+      description: Visibility timeout changed to 30s on 'order-events'
+  success_criteria:
+    services:
+      - dynamodb
+      - s3
+      - sqs
+    state_checks:
+      - command: aws dynamodb describe-table --table-name orders
+        json_path: "$.Table.ProvisionedThroughput.ReadCapacityUnits"
+        expected: 50
+      - command: aws dynamodb describe-table --table-name orders
+        json_path: "$.Table.ProvisionedThroughput.WriteCapacityUnits"
+        expected: 50
+      - command: aws s3api get-bucket-versioning --bucket order-archive
+        output_contains: "Enabled"
+      - command: aws s3api get-bucket-cors --bucket order-archive
+        output_contains: "GET"
+      - command: >-
+          aws sqs get-queue-attributes
+          --queue-url arn:aws:sqs:us-east-1:000000000000:order-events
+          --attribute-names VisibilityTimeout
+        output_contains: "60"

@@ -14,6 +14,7 @@ from pydantic import BaseModel, Field
 
 from models import SetupCommand, Task
 from server.services.aws_backend import AwsBackend
+from server.services.drift_engine import DriftEngine
 
 logger = logging.getLogger(__name__)
 
@@ -47,6 +48,7 @@ class EnvironmentDesigner:
 
     def __init__(self, backend: AwsBackend) -> None:
         self._backend = backend
+        self._drift_engine = DriftEngine(backend)
 
     def apply(self, task: Task) -> ProvisionResult:
         """Apply the task's environment setup to MiniStack.
@@ -61,7 +63,14 @@ class EnvironmentDesigner:
         if not task.setup_commands:
             return ProvisionResult(resources_created=0)
 
-        return self._apply_cli_commands(task.setup_commands)
+        result = self._apply_cli_commands(task.setup_commands)
+
+        # Apply random configuration drifts after provisioning correct state
+        if task.possible_drifts:
+            applied = self._drift_engine.apply_drift(task)
+            logger.info("Applied %d configuration drifts", len(applied))
+
+        return result
 
     # -- Provisioning strategies ----------------------------------------------
 

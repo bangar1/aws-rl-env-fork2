@@ -17,6 +17,7 @@ import logging
 import random
 from collections import defaultdict
 from pathlib import Path
+from typing import Any
 
 import yaml
 
@@ -88,6 +89,11 @@ _TIER_FILES: dict[TaskDifficulty, str] = {
     TaskDifficulty.EXPERT: "expert.yaml",
 }
 
+# Supplementary task files merged into an existing tier
+_SUPPLEMENTARY_FILES: dict[TaskDifficulty, list[str]] = {
+    TaskDifficulty.EXPERT: ["drift.yaml"],
+}
+
 # ---------------------------------------------------------------------------
 # Priority score tuning constants
 # ---------------------------------------------------------------------------
@@ -112,8 +118,36 @@ _FAST_TRACK_MIN_EPISODES = 3
 # ---------------------------------------------------------------------------
 
 
+def _parse_task_entries(
+    entries: list[dict[str, Any]], difficulty: TaskDifficulty
+) -> list[Task]:
+    """Convert raw YAML entries into Task models."""
+    return [
+        Task(
+            task_id=TaskID(entry["task_id"]),
+            difficulty=difficulty,
+            description=entry["description"],
+            success_criteria=SuccessCriteria(**entry.get("success_criteria", {})),
+            setup_commands=[
+                SetupCommand(command=cmd)
+                if isinstance(cmd, str)
+                else SetupCommand(**cmd)
+                for cmd in entry.get("setup_commands", [])
+            ],
+            desired_state_spec=entry.get("desired_state_spec"),
+            possible_drifts=[
+                SetupCommand(command=d)
+                if isinstance(d, str)
+                else SetupCommand(**d)
+                for d in entry.get("possible_drifts", [])
+            ],
+        )
+        for entry in entries
+    ]
+
+
 def load_tier(difficulty: TaskDifficulty, tasks_dir: Path = TASKS_DIR) -> list[Task]:
-    """Load tasks for a single difficulty tier from its YAML file."""
+    """Load tasks for a single difficulty tier from its YAML file(s)."""
     filename = _TIER_FILES.get(difficulty)
     if filename is None:
         logger.warning("No file mapping for difficulty: %s", difficulty.value)
@@ -127,23 +161,26 @@ def load_tier(difficulty: TaskDifficulty, tasks_dir: Path = TASKS_DIR) -> list[T
     with open(filepath) as f:
         entries = yaml.safe_load(f) or []
 
-    tasks = [
-        Task(
-            task_id=TaskID(entry["task_id"]),
-            difficulty=difficulty,
-            description=entry["description"],
-            success_criteria=SuccessCriteria(**entry.get("success_criteria", {})),
-            setup_commands=[
-                SetupCommand(command=cmd)
-                if isinstance(cmd, str)
-                else SetupCommand(**cmd)
-                for cmd in entry.get("setup_commands", [])
-            ],
+    tasks = _parse_task_entries(entries, difficulty)
+
+    # Load supplementary task files for this tier
+    for extra_file in _SUPPLEMENTARY_FILES.get(difficulty, []):
+        extra_path = tasks_dir / extra_file
+        if not extra_path.exists():
+            continue
+        with open(extra_path) as f:
+            extra_entries = yaml.safe_load(f) or []
+        extra_tasks = _parse_task_entries(extra_entries, difficulty)
+        tasks.extend(extra_tasks)
+        logger.info(
+            "Loaded %d supplementary %s tasks from %s",
+            len(extra_tasks),
+            difficulty.value,
+            extra_file,
         )
-        for entry in entries
-    ]
+
     logger.info(
-        "Loaded %d %s tasks from %s", len(tasks), difficulty.value, filepath.name
+        "Loaded %d %s tasks total", len(tasks), difficulty.value
     )
     return tasks
 
