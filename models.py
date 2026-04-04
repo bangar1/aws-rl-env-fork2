@@ -26,6 +26,7 @@ class AwsService(str, Enum):
     SNS = "sns"
     IAM = "iam"
     APIGATEWAY = "apigateway"
+    SECRETSMANAGER = "secretsmanager"
 
 
 # ---------------------------------------------------------------------------
@@ -169,6 +170,10 @@ class Task(BaseModel):
         default_factory=list,
         description="Commands to run during reset to set up initial state (e.g. for SRE tasks)",
     )
+    cost_budget: float | None = Field(
+        default=None,
+        description="Optional simulated cost budget in USD. Enables cost-based reward shaping.",
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -208,4 +213,7 @@ class AwsRlObservation(Observation):
     )
     task_achieved: bool = Field(
         default=False, description="Whether the task has been achieved"
+    )
+    cost_incurred: float = Field(
+        default=0.0, description="Cumulative simulated cost of operations this episode"
     )

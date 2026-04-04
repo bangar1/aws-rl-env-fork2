@@ -72,6 +72,7 @@ class ResourceVerifier:
             "sns": self._check_sns_topic,
             "iam": self._check_iam_role,
             "apigateway": self._check_apigateway,
+            "secretsmanager": self._check_secretsmanager,
         }
         verifier = verifiers.get(service_lower)
         if verifier is None:
@@ -162,6 +163,12 @@ class ResourceVerifier:
     def _check_iam_role(self, name: str) -> bool:
         success, _, _ = self._backend.execute_command(
             f"aws iam get-role --role-name {name}"
+        )
+        return success
+
+    def _check_secretsmanager(self, name: str) -> bool:
+        success, _, _ = self._backend.execute_command(
+            f"aws secretsmanager describe-secret --secret-id {name}"
         )
         return success
 

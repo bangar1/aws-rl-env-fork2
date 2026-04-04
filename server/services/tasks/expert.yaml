@@ -95,3 +95,102 @@
         resource: ops-alert-inbox
       - operation: subscribe
         resource: ops-alerts
+
+- task_id: 21
+  description: >
+    Security Audit: An S3 bucket 'public-assets' has an overly permissive
+    bucket policy that grants access to any principal ('*'). Review the
+    current policy, identify the vulnerability, and replace it with a
+    restrictive policy that only allows the 'app-role' IAM role to perform
+    s3:GetObject on the bucket's objects.
+  setup_commands:
+    - aws s3api create-bucket --bucket public-assets
+    - >-
+      aws s3api put-bucket-policy --bucket public-assets
+      --policy '{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":"*","Action":"s3:*","Resource":["arn:aws:s3:::public-assets","arn:aws:s3:::public-assets/*"]}]}'
+  success_criteria:
+    services:
+      - s3
+    state_checks:
+      - command: aws s3api get-bucket-policy --bucket public-assets --output json
+        output_contains: "app-role"
+      - command: aws s3api get-bucket-policy --bucket public-assets --output json
+        output_contains: "s3:GetObject"
+    steps:
+      - operation: get-bucket-policy
+        resource: public-assets
+      - operation: put-bucket-policy
+        resource: public-assets
+
+- task_id: 22
+  description: >
+    Security Audit: An IAM role 'app-role' has an inline policy 'app-access'
+    with overly broad permissions (Action: '*', Resource: '*'). Replace the
+    policy with a least-privilege version that only allows 'dynamodb:GetItem'
+    and 'dynamodb:PutItem' on the 'users' table in us-east-1.
+  setup_commands:
+    - >-
+      aws iam create-role --role-name app-role
+      --assume-role-policy-document '{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":{"Service":"lambda.amazonaws.com"},"Action":"sts:AssumeRole"}]}'
+    - >-
+      aws iam put-role-policy --role-name app-role
+      --policy-name app-access
+      --policy-document '{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Action":"*","Resource":"*"}]}'
+  success_criteria:
+    services:
+      - iam
+    state_checks:
+      - command: >-
+          aws iam get-role-policy --role-name app-role
+          --policy-name app-access --output json
+        output_contains: "dynamodb:GetItem"
+      - command: >-
+          aws iam get-role-policy --role-name app-role
+          --policy-name app-access --output json
+        output_contains: "dynamodb:PutItem"
+      - command: >-
+          aws iam get-role-policy --role-name app-role
+          --policy-name app-access --output json
+        output_contains: "users"
+    steps:
+      - operation: get-role-policy
+        resource: app-role
+      - operation: put-role-policy
+        resource: app-role
+
+- task_id: 23
+  description: >
+    Security Audit: A Lambda function 'data-processor' has a database
+    password stored as a plaintext environment variable (DB_PASSWORD=hunter2).
+    Create a secret in Secrets Manager named 'data-processor/db-password'
+    containing the password, update the Lambda configuration to add a
+    SECRET_ARN environment variable pointing to the secret, and remove the
+    plaintext DB_PASSWORD variable.
+  setup_commands:
+    - >-
+      aws iam create-role --role-name data-processor-role
+      --assume-role-policy-document '{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":{"Service":"lambda.amazonaws.com"},"Action":"sts:AssumeRole"}]}'
+    - >-
+      aws lambda create-function --function-name data-processor
+      --runtime python3.12 --handler index.handler
+      --role arn:aws:iam::000000000000:role/data-processor-role
+      --zip-file fileb:///tmp/dummy.zip
+      --environment Variables={DB_PASSWORD=hunter2}
+  success_criteria:
+    services:
+      - secretsmanager
+      - lambda
+    state_checks:
+      - command: >-
+          aws secretsmanager describe-secret
+          --secret-id data-processor/db-password
+        output_contains: "data-processor/db-password"
+      - command: >-
+          aws lambda get-function-configuration
+          --function-name data-processor --output json
+        output_contains: "SECRET_ARN"
+    steps:
+      - operation: create-secret
+        resource: data-processor/db-password
+      - operation: update-function-configuration
+        resource: data-processor

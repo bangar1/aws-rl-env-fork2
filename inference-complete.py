@@ -165,10 +165,7 @@ def get_model_command(
 # ---------------------------------------------------------------------------
 
 
-async def run_episode(
-    env: AwsRlEnv,
-    llm_client: OpenAI
-) -> Optional[dict]:
+async def run_episode(env: AwsRlEnv, llm_client: OpenAI) -> Optional[dict]:
     """Run a single episode: reset -> step loop -> return results."""
     result = await env.reset()
     obs = result.observation
@@ -182,9 +179,9 @@ async def run_episode(
     task_desc = task.description
     task_id = int(task.task_id)
 
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print(f"Episode {episode_num} -- Task {task_id}: {task_desc} (tier: {tier})")
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
 
     history: List[str] = []
     last_output = obs.command_output
@@ -206,7 +203,6 @@ async def run_episode(
             last_reward,
             history,
         )
-        
 
         result = await env.step(AwsRlAction(command=command))
         obs = result.observation
@@ -214,21 +210,22 @@ async def run_episode(
         reward = result.reward or 0.0
         success = obs.command_success
         task_achieved = obs.task_achieved
-        done = result.done
 
         rewards.append(reward)
 
         print()
-        print(f"\n{'-'*60}")
+        print(f"\n{'-' * 60}")
         print(
-            f"  [Step {step}] cmd=\"{command}\"  command_output={obs.command_output!r} "
+            f'  [Step {step}] cmd="{command}"  command_output={obs.command_output!r} '
             f"reward={reward:.2f} command_success={success} achieved={task_achieved}"
         )
-        print(f"\n{'-'*60}")
+        print(f"\n{'-' * 60}")
         print()
 
         status = "OK" if success else "FAIL"
-        history.append(f"Step {step} [{status}]: {command} [command_output]={obs.command_output!r} [error]={obs.error!r} -> reward={reward:.2f}")
+        history.append(
+            f"Step {step} [{status}]: {command} [command_output]={obs.command_output!r} [error]={obs.error!r} -> reward={reward:.2f}"
+        )
         last_output = obs.command_output
         last_error = obs.error
         last_reward = reward
@@ -299,9 +296,9 @@ def print_summary(tier_results: dict[str, list]) -> None:
     total_passed = 0
     total_tasks = 0
 
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print("FINAL RESULTS")
-    print(f"{'='*60}")
+    print(f"{'=' * 60}")
 
     for tier in ALL_TIERS:
         results = tier_results.get(tier, [])
