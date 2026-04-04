@@ -81,6 +81,26 @@ wheels = [
 ]
 
 [[package]]
+name = "aws-infra"
+version = "1.1.24"
+source = { editable = "aws_infra" }
+dependencies = [
+    { name = "httptools" },
+    { name = "pyyaml" },
+    { name = "uvicorn", extra = ["standard"] },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "docker", marker = "extra == 'full'", specifier = ">=7.0.0" },
+    { name = "duckdb", marker = "extra == 'full'", specifier = ">=0.10.0" },
+    { name = "httptools", specifier = ">=0.6.1" },
+    { name = "pyyaml", specifier = ">=6.0" },
+    { name = "uvicorn", extras = ["standard"], specifier = ">=0.30.6" },
+]
+provides-extras = ["full"]
+
+[[package]]
 name = "beartype"
 version = "0.22.9"
 source = { registry = "https://pypi.org/simple" }
@@ -859,20 +879,6 @@ wheels = [
 ]
 
 [[package]]
-name = "ministack"
-version = "1.1.24"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "httptools" },
-    { name = "pyyaml" },
-    { name = "uvicorn", extra = ["standard"] },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/ee/1b/968bb19b6769bcc3cadfb79efa77827e57a6f89effee184d585f3d014876/ministack-1.1.24.tar.gz", hash = "sha256:f0f63d03bc5465be084df59bfc3156aadcac7918ef3aeb775dee3caa2af194e7", size = 444904, upload-time = "2026-04-03T07:57:45.82Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/8d/40/eb5d294ae58a7550e081fcd2cbe1f441d001912aa3c89f8cac5daed58563/ministack-1.1.24-py3-none-any.whl", hash = "sha256:9401ed9c6be20ba4bb21886862a3aff0c6faef73d6c95aead0dc470902968c4c", size = 332451, upload-time = "2026-04-03T07:57:44.012Z" },
-]
-
-[[package]]
 name = "more-itertools"
 version = "11.0.1"
 source = { registry = "https://pypi.org/simple" }
@@ -967,7 +973,7 @@ name = "openenv-aws-rl-env"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
-    { name = "ministack" },
+    { name = "aws-infra" },
     { name = "openenv-core", extra = ["core"] },
     { name = "python-dotenv" },
 ]
@@ -983,7 +989,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "ministack", specifier = ">=1.1.24" },
+    { name = "aws-infra", editable = "aws_infra" },
     { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.10.0" },
     { name = "openenv-core", extras = ["core"], specifier = ">=0.2.2" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.0.0" },

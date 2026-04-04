@@ -20,9 +20,7 @@ class AwsBackend:
     def reset_environment(self) -> None:
         """Wipe all MiniStack service state via POST /_ministack/reset."""
         try:
-            resp = httpx.post(
-                f"{self._ministack_url}/_ministack/reset", timeout=10
-            )
+            resp = httpx.post(f"{self._ministack_url}/_ministack/reset", timeout=10)
             resp.raise_for_status()
             logger.info("MiniStack state reset successfully")
         except httpx.HTTPError as e:

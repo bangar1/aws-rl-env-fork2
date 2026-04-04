@@ -65,17 +65,13 @@ class EnvironmentDesigner:
 
     # -- Provisioning strategies ----------------------------------------------
 
-    def _apply_cli_commands(
-        self, commands: list[SetupCommand]
-    ) -> ProvisionResult:
+    def _apply_cli_commands(self, commands: list[SetupCommand]) -> ProvisionResult:
         """Execute a list of setup commands against MiniStack."""
         errors: list[str] = []
         resources_created = 0
 
         for setup_cmd in commands:
-            success, _stdout, stderr = self._backend.execute_command(
-                setup_cmd.command
-            )
+            success, _stdout, stderr = self._backend.execute_command(setup_cmd.command)
             if success:
                 resources_created += 1
             else:

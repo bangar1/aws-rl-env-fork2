@@ -40,24 +40,39 @@ TASKS_DIR = Path(__file__).parent / "tasks"
 
 TIER_CONFIGS: dict[TaskDifficulty, TierConfig] = {
     TaskDifficulty.WARMUP: TierConfig(
-        min_episodes=5, advance_rate=0.6, mastery_window=10,
-        mastery_threshold=0.7, fast_track_rate=0.9,
+        min_episodes=5,
+        advance_rate=0.6,
+        mastery_window=10,
+        mastery_threshold=0.7,
+        fast_track_rate=0.9,
     ),
     TaskDifficulty.BEGINNER: TierConfig(
-        min_episodes=5, advance_rate=0.6, mastery_window=10,
-        mastery_threshold=0.7, fast_track_rate=0.9,
+        min_episodes=5,
+        advance_rate=0.6,
+        mastery_window=10,
+        mastery_threshold=0.7,
+        fast_track_rate=0.9,
     ),
     TaskDifficulty.INTERMEDIATE: TierConfig(
-        min_episodes=8, advance_rate=0.65, mastery_window=10,
-        mastery_threshold=0.7, fast_track_rate=0.9,
+        min_episodes=8,
+        advance_rate=0.65,
+        mastery_window=10,
+        mastery_threshold=0.7,
+        fast_track_rate=0.9,
     ),
     TaskDifficulty.ADVANCED: TierConfig(
-        min_episodes=10, advance_rate=0.7, mastery_window=10,
-        mastery_threshold=0.7, fast_track_rate=0.9,
+        min_episodes=10,
+        advance_rate=0.7,
+        mastery_window=10,
+        mastery_threshold=0.7,
+        fast_track_rate=0.9,
     ),
     TaskDifficulty.EXPERT: TierConfig(
-        min_episodes=0, advance_rate=1.0, mastery_window=10,
-        mastery_threshold=0.7, fast_track_rate=1.0,
+        min_episodes=0,
+        advance_rate=1.0,
+        mastery_window=10,
+        mastery_threshold=0.7,
+        fast_track_rate=1.0,
     ),
 }
 
@@ -74,10 +89,10 @@ _TIER_FILES: dict[TaskDifficulty, str] = {
 # Priority score tuning constants
 # ---------------------------------------------------------------------------
 
-_NOVELTY_BONUS = 100       # untried tasks — explore first
-_WEAKNESS_WEIGHT = 50      # multiplied by (1 - success_rate)
-_SPACED_REP_BONUS = 30     # graduated task due for re-test
-_RECENCY_PENALTY = 20      # attempted in last 2 episodes
+_NOVELTY_BONUS = 100  # untried tasks — explore first
+_WEAKNESS_WEIGHT = 50  # multiplied by (1 - success_rate)
+_SPACED_REP_BONUS = 30  # graduated task due for re-test
+_RECENCY_PENALTY = 20  # attempted in last 2 episodes
 
 # Exponential decay factor for weighted success rate
 _DECAY_FACTOR = 0.85
@@ -116,13 +131,17 @@ def load_tier(difficulty: TaskDifficulty, tasks_dir: Path = TASKS_DIR) -> list[T
             description=entry["description"],
             success_criteria=SuccessCriteria(**entry.get("success_criteria", {})),
             setup_commands=[
-                SetupCommand(command=cmd) if isinstance(cmd, str) else SetupCommand(**cmd)
+                SetupCommand(command=cmd)
+                if isinstance(cmd, str)
+                else SetupCommand(**cmd)
                 for cmd in entry.get("setup_commands", [])
             ],
         )
         for entry in entries
     ]
-    logger.info("Loaded %d %s tasks from %s", len(tasks), difficulty.value, filepath.name)
+    logger.info(
+        "Loaded %d %s tasks from %s", len(tasks), difficulty.value, filepath.name
+    )
     return tasks
 
 
@@ -135,7 +154,7 @@ def _weighted_success_rate(results: list[bool], decay: float = _DECAY_FACTOR) ->
     """Compute success rate with exponential decay — recent results matter more."""
     if not results:
         return 0.0
-    weights = [decay ** i for i in range(len(results) - 1, -1, -1)]
+    weights = [decay**i for i in range(len(results) - 1, -1, -1)]
     total_weight = sum(weights)
     return sum(w * float(r) for w, r in zip(weights, results)) / total_weight
 
@@ -223,9 +242,7 @@ class Curriculum:
     def next_task(self) -> Task:
         """Select the highest-priority task from the current tier."""
         if not self._current_tasks:
-            self._current_tasks = load_tier(
-                self.current_difficulty, self._tasks_dir
-            )
+            self._current_tasks = load_tier(self.current_difficulty, self._tasks_dir)
             self._task_map = {t.task_id: t for t in self._current_tasks}
             self._rebuild_priority_queue()
 
@@ -242,9 +259,7 @@ class Curriculum:
 
         return task
 
-    def record_result(
-        self, task: Task, achieved: bool, reward: float = 0.0
-    ) -> None:
+    def record_result(self, task: Task, achieved: bool, reward: float = 0.0) -> None:
         """Record episode outcome, update mastery, check promotion."""
         self._episode_count += 1
         self._tier_episodes += 1
@@ -299,9 +314,7 @@ class Curriculum:
         """Weighted success rate per task over recent history."""
         config = self.tier_config
         return {
-            task_id: round(
-                _weighted_success_rate(results[-config.mastery_window:]), 2
-            )
+            task_id: round(_weighted_success_rate(results[-config.mastery_window :]), 2)
             for task_id, results in self._task_history.items()
             if results
         }
@@ -328,9 +341,7 @@ class Curriculum:
             "weak_spots": self.get_weak_spots(),
             "skill_profile": self.get_skill_profile(),
             "spaced_rep_due": [
-                int(tid)
-                for tid in self._task_map
-                if self._is_spaced_rep_due(tid)
+                int(tid) for tid in self._task_map if self._is_spaced_rep_due(tid)
             ],
             "avg_reward_last_10": round(
                 sum(self._episode_rewards[-10:])
@@ -355,7 +366,7 @@ class Curriculum:
 
         # Weakness: worse tasks get higher priority
         results = self._task_history.get(task_id, [])
-        task_rate = _weighted_success_rate(results[-config.mastery_window:])
+        task_rate = _weighted_success_rate(results[-config.mastery_window :])
         score += _WEAKNESS_WEIGHT * (1.0 - task_rate)
 
         # Spaced repetition: graduated task due for re-test
@@ -387,7 +398,7 @@ class Curriculum:
         """Check if a task should be graduated or un-graduated."""
         config = self.tier_config
         results = self._task_history.get(task_id, [])
-        recent = results[-config.mastery_window:]
+        recent = results[-config.mastery_window :]
 
         if len(recent) < _MIN_ATTEMPTS_FOR_MASTERY:
             return

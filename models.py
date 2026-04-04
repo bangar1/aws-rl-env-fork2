@@ -44,14 +44,22 @@ class TaskDifficulty(str, Enum):
 class TierConfig(BaseModel):
     """Configuration for a single difficulty tier's promotion and mastery rules."""
 
-    min_episodes: int = Field(..., ge=0, description="Minimum episodes before promotion eligible")
-    advance_rate: float = Field(..., ge=0.0, le=1.0, description="Tier success rate to advance")
-    mastery_window: int = Field(default=10, ge=1, description="Sliding window size for success rate")
+    min_episodes: int = Field(
+        ..., ge=0, description="Minimum episodes before promotion eligible"
+    )
+    advance_rate: float = Field(
+        ..., ge=0.0, le=1.0, description="Tier success rate to advance"
+    )
+    mastery_window: int = Field(
+        default=10, ge=1, description="Sliding window size for success rate"
+    )
     mastery_threshold: float = Field(
         default=0.7, ge=0.0, le=1.0, description="Per-task graduation threshold"
     )
     fast_track_rate: float = Field(
-        default=0.9, ge=0.0, le=1.0,
+        default=0.9,
+        ge=0.0,
+        le=1.0,
         description="Success rate for early promotion after 3 episodes",
     )
 
@@ -70,7 +78,8 @@ class SetupCommand(BaseModel):
 
     command: str = Field(..., description="AWS CLI command to execute")
     description: str | None = Field(
-        default=None, description="Human-readable explanation of what this command sets up"
+        default=None,
+        description="Human-readable explanation of what this command sets up",
     )
     ignore_failure: bool = Field(
         default=False,
@@ -81,7 +90,9 @@ class SetupCommand(BaseModel):
 class ResourceExistsCheck(BaseModel):
     """Checks that a specific named resource exists in MiniStack."""
 
-    service: AwsService = Field(..., description="AWS service to verify the resource in")
+    service: AwsService = Field(
+        ..., description="AWS service to verify the resource in"
+    )
     name: str = Field(..., description="Exact resource name to verify")
 
 
@@ -102,7 +113,8 @@ class StateCheck(BaseModel):
         default=None, description="Substring that must appear in stdout"
     )
     json_path: str | None = Field(
-        default=None, description="JSON path to extract from stdout, e.g. '$.Table.Name'"
+        default=None,
+        description="JSON path to extract from stdout, e.g. '$.Table.Name'",
     )
     expected: int | float | str | bool | None = Field(
         default=None, description="Expected value at json_path"
@@ -177,7 +189,9 @@ class AwsRlObservation(Observation):
     """Observation returned after each step in the AWS RL environment."""
 
     episode_id: EpisodeID = Field(..., description="Unique identifier for the episode")
-    step_count: StepCount = Field(..., ge=0, description="Current step count in the episode")
+    step_count: StepCount = Field(
+        ..., ge=0, description="Current step count in the episode"
+    )
     command_success: bool = Field(
         ..., description="Whether the CLI command executed successfully"
     )

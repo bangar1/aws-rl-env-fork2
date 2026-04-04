@@ -119,6 +119,7 @@ openenv-push: ## Push the environment to Hugging Face Spaces
 .PHONY: clean
 clean: ## Remove build artifacts and caches
 	rm -rf build/ dist/ *.egg-info .eggs/
+	rm -rf aws_infra/*.egg-info aws_infra/build/ aws_infra/dist/
 	rm -rf .pytest_cache/ .mypy_cache/ .ruff_cache/
 	rm -rf htmlcov/ .coverage coverage.xml
 	find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true

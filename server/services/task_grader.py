@@ -145,9 +145,7 @@ class TaskGrader:
 
         # For advanced tasks with services requirement, also check services
         services_required = criteria.services
-        services_met = all(
-            tracker.has_used_service(svc) for svc in services_required
-        )
+        services_met = all(tracker.has_used_service(svc) for svc in services_required)
 
         achieved = completed == total and (not services_required or services_met)
 
@@ -205,9 +203,7 @@ class TaskGrader:
 
         # Check services requirement
         services_required = criteria.services
-        services_met = all(
-            tracker.has_used_service(svc) for svc in services_required
-        )
+        services_met = all(tracker.has_used_service(svc) for svc in services_required)
 
         # Task achieved only when ALL state checks pass
         achieved = all_checks_pass and (not services_required or services_met)

@@ -85,7 +85,9 @@ def log_start(task: str, env: str, model: str) -> None:
     print(f"[START] task={task} env={env} model={model}", flush=True)
 
 
-def log_step(step: int, action: str, reward: float, done: bool, error: Optional[str]) -> None:
+def log_step(
+    step: int, action: str, reward: float, done: bool, error: Optional[str]
+) -> None:
     error_val = error if error else "null"
     done_val = str(done).lower()
     print(
@@ -96,7 +98,10 @@ def log_step(step: int, action: str, reward: float, done: bool, error: Optional[
 
 def log_end(success: bool, steps: int, score: float, rewards: List[float]) -> None:
     rewards_str = ",".join(f"{r:.2f}" for r in rewards)
-    print(f"[END] success={str(success).lower()} steps={steps} score={score:.3f} rewards={rewards_str}", flush=True)
+    print(
+        f"[END] success={str(success).lower()} steps={steps} score={score:.3f} rewards={rewards_str}",
+        flush=True,
+    )
 
 
 def build_user_prompt(
@@ -197,8 +202,13 @@ async def main() -> None:
                 break
 
             command = get_model_command(
-                client, task_description, step,
-                last_output, last_error, last_reward, history,
+                client,
+                task_description,
+                step,
+                last_output,
+                last_error,
+                last_reward,
+                history,
             )
 
             result = await env.step(AwsRlAction(command=command))

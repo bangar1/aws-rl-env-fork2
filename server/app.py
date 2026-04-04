@@ -42,9 +42,7 @@ from starlette.requests import Request
 try:
     from openenv.core.env_server.http_server import create_app
 except Exception as e:  # pragma: no cover
-    raise ImportError(
-        "openenv is required. Install dependencies with 'uv sync'"
-    ) from e
+    raise ImportError("openenv is required. Install dependencies with 'uv sync'") from e
 
 from models import AwsRlAction, AwsRlObservation
 from server.aws_rl_env_environment import AwsRlEnvironment
