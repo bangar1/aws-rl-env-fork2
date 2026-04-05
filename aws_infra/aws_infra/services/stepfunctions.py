@@ -1786,6 +1786,25 @@ _SERVICE_DISPATCH = {
 }
 
 
+SUPPORTED_ACTIONS = [
+    "CreateStateMachine", "DeleteStateMachine", "DescribeStateMachine", "UpdateStateMachine",
+    "ListStateMachines", "StartExecution", "StartSyncExecution", "StopExecution",
+    "DescribeExecution", "DescribeStateMachineForExecution", "ListExecutions",
+    "GetExecutionHistory", "SendTaskSuccess", "SendTaskFailure", "SendTaskHeartbeat",
+    "CreateActivity", "DeleteActivity", "DescribeActivity", "ListActivities",
+    "GetActivityTask", "TagResource", "UntagResource", "ListTagsForResource",
+]
+
+
+def get_state() -> dict:
+    return {
+        "state_machines": {"count": len(_state_machines), "names": list(_state_machines.keys())},
+        "executions": {"count": len(_executions), "arns": list(_executions.keys())},
+        "activities": {"count": len(_activities), "names": list(_activities.keys())},
+        "tags": {"count": len(_tags), "resources": list(_tags.keys())},
+    }
+
+
 def reset():
     _state_machines.clear()
     _executions.clear()

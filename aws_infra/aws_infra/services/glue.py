@@ -1074,6 +1074,36 @@ def _simple_glob_match(pattern, name):
     return fnmatch.fnmatch(name, pattern)
 
 
+SUPPORTED_ACTIONS = [
+    "CreateDatabase", "DeleteDatabase", "GetDatabase", "GetDatabases", "UpdateDatabase",
+    "CreateTable", "DeleteTable", "GetTable", "GetTables", "UpdateTable", "BatchDeleteTable",
+    "CreatePartition", "DeletePartition", "GetPartition", "GetPartitions",
+    "BatchCreatePartition", "BatchGetPartition", "CreatePartitionIndex", "GetPartitionIndexes",
+    "CreateConnection", "DeleteConnection", "GetConnection", "GetConnections",
+    "CreateCrawler", "DeleteCrawler", "GetCrawler", "GetCrawlers", "UpdateCrawler",
+    "StartCrawler", "StopCrawler", "GetCrawlerMetrics", "CreateJob", "DeleteJob", "GetJob",
+    "GetJobs", "UpdateJob", "StartJobRun", "GetJobRun", "GetJobRuns", "BatchStopJobRun",
+    "CreateSecurityConfiguration", "DeleteSecurityConfiguration", "GetSecurityConfiguration",
+    "GetSecurityConfigurations", "ListSecurityConfigurations", "CreateClassifier",
+    "DeleteClassifier", "GetClassifier", "GetClassifiers", "UpdateClassifier",
+    "CreateTrigger", "DeleteTrigger", "GetTrigger", "GetTriggers", "UpdateTrigger",
+    "StartTrigger", "StopTrigger", "CreateWorkflow", "DeleteWorkflow", "GetWorkflow",
+    "GetWorkflows", "UpdateWorkflow", "StartWorkflowRun", "GetWorkflowRun",
+    "GetWorkflowRuns", "GetWorkflowRunProperties", "TagResource", "UntagResource",
+    "ListTagsForResource",
+]
+
+
+def get_state() -> dict:
+    return {
+        "databases": {"count": len(_databases), "names": list(_databases.keys())},
+        "crawlers": {"count": len(_crawlers), "names": list(_crawlers.keys())},
+        "jobs": {"count": len(_jobs), "names": list(_jobs.keys())},
+        "connections": {"count": len(_connections), "names": list(_connections.keys())},
+        "workflows": {"count": len(_workflows), "names": list(_workflows.keys())},
+    }
+
+
 def reset():
     _databases.clear()
     _tables.clear()

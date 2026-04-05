@@ -45,6 +45,28 @@ _hc_caller_refs: dict = {}  # caller_reference -> hc_id
 _lock = threading.Lock()
 
 
+SUPPORTED_ACTIONS = [
+    "CreateHostedZone", "DeleteHostedZone", "ListHostedZones", "GetHostedZone",
+    "UpdateHostedZoneComment", "GetChange", "ListResourceRecordSets",
+    "ChangeResourceRecordSets", "GetHostedZoneCount", "GetDNSSEC", "CreateHealthCheck",
+    "DeleteHealthCheck", "GetHealthCheck", "ListHealthChecks", "UpdateHealthCheckComment",
+    "GetHealthCheckStatus", "GetHealthCheckCount", "ChangeTagsForResource",
+    "ListTagsForResource", "ListTagsForResources", "CreateQueryLoggingConfig",
+    "DeleteQueryLoggingConfig", "ListQueryLoggingConfigs", "GetQueryLoggingConfig",
+    "ListHostedZonesByName", "CreateReusableDelegationSet", "DeleteReusableDelegationSet",
+    "ListReusableDelegationSets", "GetReusableDelegationSet",
+]
+
+
+def get_state() -> dict:
+    return {
+        "hosted_zones": {"count": len(_zones), "ids": list(_zones.keys())},
+        "health_checks": {"count": len(_health_checks), "ids": list(_health_checks.keys())},
+        "tags": {"count": len(_tags), "resources": list(_tags.keys())},
+        "record_sets": {"count": sum(len(recs) for recs in _records.values())},
+    }
+
+
 def reset():
     global _zones, _records, _changes, _health_checks, _tags, _caller_refs, _hc_caller_refs
     with _lock:

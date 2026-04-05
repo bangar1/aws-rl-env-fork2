@@ -950,6 +950,27 @@ def _build_envelope(topic_arn: str, msg_id: str, message: str, subject: str,
     return json.dumps({k: v for k, v in envelope.items() if v is not None})
 
 
+SUPPORTED_ACTIONS = [
+    "CreateTopic", "DeleteTopic", "ListTopics",
+    "GetTopicAttributes", "SetTopicAttributes",
+    "Subscribe", "Unsubscribe", "ConfirmSubscription",
+    "ListSubscriptions", "ListSubscriptionsByTopic",
+    "GetSubscriptionAttributes", "SetSubscriptionAttributes",
+    "Publish", "PublishBatch",
+    "ListTagsForResource", "TagResource", "UntagResource",
+    "CreatePlatformApplication", "CreatePlatformEndpoint",
+]
+
+
+def get_state() -> dict:
+    return {
+        "topics": {"count": len(_topics), "names": list(_topics.keys())},
+        "platform_applications": {"count": len(_platform_applications), "names": list(_platform_applications.keys())},
+        "platform_endpoints": {"count": len(_platform_endpoints), "names": list(_platform_endpoints.keys())},
+        "subscriptions": {"count": len(_sub_arn_to_topic), "sub_arn_to_topic": dict(_sub_arn_to_topic.items())},
+    }
+
+
 def reset():
     _topics.clear()
     _sub_arn_to_topic.clear()

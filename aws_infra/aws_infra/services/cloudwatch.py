@@ -1382,8 +1382,32 @@ def _error(code, message, status, use_json=False):
     return status, {"Content-Type": "application/xml"}, body
 
 
+SUPPORTED_ACTIONS = [
+    "PutMetricData", "GetMetricStatistics", "GetMetricData", "ListMetrics",
+    "PutMetricAlarm", "PutCompositeAlarm", "DescribeAlarms",
+    "DescribeAlarmsForMetric", "DescribeAlarmHistory", "DeleteAlarms",
+    "EnableAlarmActions", "DisableAlarmActions", "SetAlarmState",
+    "TagResource", "UntagResource", "ListTagsForResource",
+    "PutDashboard", "GetDashboard", "DeleteDashboards", "ListDashboards",
+]
+
+
+def get_state() -> dict:
+    return {
+        "metrics": {"count": len(_metrics), "names": [f"{ns}:{mn}" for (ns, mn, _), _ in _metrics.items()]},
+        "alarms": {"count": len(_alarms), "names": list(_alarms.keys())},
+        "composite_alarms": {"count": len(_composite_alarms), "names": list(_composite_alarms.keys())},
+        "dashboards": {"count": len(_dashboards), "names": list(_dashboards.keys())},
+        "alarm_history": {"count": len(_alarm_history)},
+        "resource_tags": {"count": len(_resource_tags), "arns": list(_resource_tags.keys())},
+
+    }
+
+
 def reset():
     _alarms.clear()
     _composite_alarms.clear()
     _alarm_history.clear()
     _resource_tags.clear()
+    _dashboards.clear()
+    _metrics.clear()

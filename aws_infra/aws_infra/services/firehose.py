@@ -41,6 +41,20 @@ _lock = threading.Lock()
 _dest_counter = 0
 
 
+SUPPORTED_ACTIONS = [
+    "CreateDeliveryStream", "DeleteDeliveryStream", "DescribeDeliveryStream",
+    "ListDeliveryStreams", "PutRecord", "PutRecordBatch", "UpdateDestination",
+    "StartDeliveryStreamEncryption", "StopDeliveryStreamEncryption",
+    "ListTagsForResource", "TagResource", "UntagResource",
+]
+
+
+def get_state() -> dict:
+    return {
+        "delivery_streams": {"count": len(_streams), "names": list(_streams.keys())},
+    }
+
+
 def reset():
     global _streams, _dest_counter
     with _lock:

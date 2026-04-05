@@ -1229,6 +1229,26 @@ _ACTION_MAP = {
 }
 
 
+SUPPORTED_ACTIONS = [
+    "CreateCluster", "DeleteCluster", "DescribeClusters", "ListClusters", "UpdateCluster",
+    "UpdateClusterSettings", "RegisterTaskDefinition", "DeregisterTaskDefinition",
+    "DescribeTaskDefinition", "ListTaskDefinitions", "CreateService", "DeleteService",
+    "DescribeServices", "UpdateService", "ListServices", "RunTask", "StopTask",
+    "DescribeTasks", "ListTasks", "TagResource", "UntagResource", "ListTagsForResource",
+    "ExecuteCommand", "ListAccountSettings", "PutAccountSetting", "CreateCapacityProvider",
+    "DeleteCapacityProvider", "DescribeCapacityProviders", "PutClusterCapacityProviders",
+]
+
+
+def get_state() -> dict:
+    return {
+        "clusters": {"count": len(_clusters), "names": list(_clusters.keys())},
+        "task_definitions": {"count": len(_task_defs), "names": list(_task_defs.keys())},
+        "services": {"count": len(_services), "names": list(_services.keys())},
+        "tasks": {"count": len(_tasks), "ids": list(_tasks.keys())},
+    }
+
+
 def reset():
     docker_client = _get_docker()
     if docker_client:

@@ -358,6 +358,27 @@ def _describe_managed_rule_group(data):
     })
 
 
+SUPPORTED_ACTIONS = [
+    "CreateWebACL", "GetWebACL", "UpdateWebACL", "DeleteWebACL", "ListWebACLs",
+    "AssociateWebACL", "DisassociateWebACL", "GetWebACLForResource",
+    "ListResourcesForWebACL", "CreateIPSet", "GetIPSet", "UpdateIPSet",
+    "DeleteIPSet", "ListIPSets", "CreateRuleGroup", "GetRuleGroup",
+    "UpdateRuleGroup", "DeleteRuleGroup", "ListRuleGroups",
+    "TagResource", "UntagResource", "ListTagsForResource",
+    "CheckCapacity", "DescribeManagedRuleGroup",
+]
+
+
+def get_state() -> dict:
+    return {
+        "web_acls": {"count": len(_web_acls), "ids": list(_web_acls.keys())},
+        "ip_sets": {"count": len(_ip_sets), "ids": list(_ip_sets.keys())},
+        "rule_groups": {"count": len(_rule_groups), "ids": list(_rule_groups.keys())},
+        "associations": {"count": len(_associations), "resources": list(_associations.keys())},
+        "waf_tags": {"count": len(_waf_tags), "resources": list(_waf_tags.keys())},
+    }
+
+
 def reset():
     _web_acls.clear()
     _ip_sets.clear()

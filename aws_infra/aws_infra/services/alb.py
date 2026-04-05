@@ -1044,6 +1044,38 @@ async def dispatch_request(lb, method, path, headers, body, query_params, port=8
             json.dumps({"message": "No matching ALB rule found"}).encode())
 
 
+# ---------------------------------------------------------------------------
+# Supported Actions
+# ---------------------------------------------------------------------------
+
+SUPPORTED_ACTIONS = [
+    "CreateLoadBalancer", "DeleteLoadBalancer", "DescribeLoadBalancers",
+    "ModifyLoadBalancerAttributes", "AddTags", "RemoveTags", "DescribeTags",
+    "CreateTargetGroup", "DeleteTargetGroup", "DescribeTargetGroups",
+    "ModifyTargetGroup", "ModifyTargetGroupAttributes", "CreateListener",
+    "DeleteListener", "DescribeListeners", "ModifyListener", "CreateRule",
+    "DeleteRule", "DescribeRules", "ModifyRule", "RegisterTargets",
+    "DeregisterTargets", "DescribeTargetHealth", "SetRulePriorities",
+]
+
+
+# ---------------------------------------------------------------------------
+# State
+# ---------------------------------------------------------------------------
+
+def get_state() -> dict:
+    return {
+        "load_balancers": {"count": len(_lbs), "names": list(_lbs.keys())},
+        "target_groups": {"count": len(_tgs), "names": list(_tgs.keys())},
+        "listeners": {"count": len(_listeners), "ids": list(_listeners.keys())},
+        "rules": {"count": len(_rules), "ids": list(_rules.keys())},
+        "targets": {"count": sum(len(tgts) for tgts in _targets.values())},
+        "tags": {"count": sum(len(tags) for tags in _tags.values())},
+        "load_balancer_attributes": {"count": sum(len(attrs) for attrs in _lb_attrs.values())},
+        "target_group_attributes": {"count": sum(len(attrs) for attrs in _tg_attrs.values())},
+    }
+
+
 def reset():
     _lbs.clear()
     _tgs.clear()

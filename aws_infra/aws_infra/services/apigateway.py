@@ -83,6 +83,18 @@ def _api_arn(api_id: str) -> str:
     return f"arn:aws:apigateway:{REGION}::/apis/{api_id}"
 
 
+SUPPORTED_ACTIONS = [
+    "CreateApi", "GetApis", "GetApi", "UpdateApi", "DeleteApi",
+    "CreateRoute", "GetRoutes", "GetRoute", "UpdateRoute", "DeleteRoute",
+    "CreateIntegration", "GetIntegrations", "GetIntegration",
+    "UpdateIntegration", "DeleteIntegration", "CreateStage", "GetStages",
+    "GetStage", "UpdateStage", "DeleteStage", "CreateDeployment",
+    "GetDeployments", "GetDeployment", "DeleteDeployment", "GetTags",
+    "TagResource", "UntagResource", "CreateAuthorizer", "GetAuthorizers",
+    "GetAuthorizer", "UpdateAuthorizer", "DeleteAuthorizer",
+]
+
+
 # ---- Persistence hooks ----
 
 def get_state() -> dict:

@@ -54,6 +54,33 @@ async def handle_request(method: str, path: str, headers: dict,
     return handler(params)
 
 
+# ---------------------------------------------------------------------------
+# Supported Actions
+# ---------------------------------------------------------------------------
+
+SUPPORTED_ACTIONS = [
+    "CreateStack", "UpdateStack", "DeleteStack", "DescribeStacks",
+    "ListStacks", "DescribeStackEvents", "DescribeStackResource",
+    "DescribeStackResources", "GetTemplate", "ValidateTemplate",
+    "ListExports", "CreateChangeSet", "DescribeChangeSet",
+    "ExecuteChangeSet", "DeleteChangeSet", "ListChangeSets",
+    "GetTemplateSummary",
+]
+
+
+# ---------------------------------------------------------------------------
+# State
+# ---------------------------------------------------------------------------
+
+def get_state() -> dict:
+    return {
+        "stacks": {"count": len(_stacks), "names": list(_stacks.keys())},
+        "change_sets": {"count": len(_change_sets), "ids": list(_change_sets.keys())},
+        "stack_events": {"count": len(_stack_events), "ids": list(_stack_events.keys())},
+        "exports": {"count": len(_exports), "names": list(_exports.keys())},
+    }
+
+
 def reset():
     _stacks.clear()
     _stack_events.clear()

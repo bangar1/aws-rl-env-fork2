@@ -569,6 +569,37 @@ async def handle_request(method, path, headers, body, query_params):
 
 
 # ---------------------------------------------------------------------------
+# Supported Actions
+# ---------------------------------------------------------------------------
+
+SUPPORTED_ACTIONS = [
+    "CreateCluster", "DescribeCluster", "ListClusters", "TerminateJobFlows",
+    "SetTerminationProtection", "AddJobFlowSteps", "DescribeStep",
+    "ListSteps", "ModifyInstanceGroups",
+    "GetBlockPublicAccessConfiguration",
+    "PutBlockPublicAccessConfiguration", "ListInstances",
+    "DescribeInstance", "ListBootstrapActions", "GetAutoScalingPolicy",
+    "PutAutoScalingPolicy", "RemoveAutoScalingPolicy",
+    "ListSecurityConfigurations", "CreateSecurityConfiguration",
+    "DeleteSecurityConfiguration", "DescribeSecurityConfiguration",
+    "ListStudios", "CreateStudio", "DeleteStudio", "DescribeStudio",
+    "ListStudioSessions", "CreateStudioSession", "DeleteStudioSession",
+    "GetStudioSessionMapping", "CreateStudioSessionMapping",
+    "UpdateStudioSessionMapping", "DeleteStudioSessionMapping",
+]
+
+
+# ---------------------------------------------------------------------------
+# State
+# ---------------------------------------------------------------------------
+
+def get_state() -> dict:
+    return {
+        "clusters": {"count": len(_clusters), "ids": list(_clusters.keys())},
+    }
+
+
+# ---------------------------------------------------------------------------
 # Reset
 # ---------------------------------------------------------------------------
 

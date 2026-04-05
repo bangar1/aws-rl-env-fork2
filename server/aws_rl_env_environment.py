@@ -71,17 +71,11 @@ class AwsRlEnvironment(Environment[AwsRlAction, AwsRlObservation, State]):
             reward=0.0,
         )
 
-    def step(
-        self,
-        action: AwsRlAction,
-        timeout_s: Optional[float] = None,
-        **kwargs: Any,
-    ) -> AwsRlObservation:
-        assert self._current_task is not None, "Call reset() before step()"
-        self._state.step_count += 1
+    def _intercept_command(self, command: str) -> AwsRlObservation | None:
+        """Handle anti-hack validation, hint requests, and help commands.
 
-        # Anti-hack: only allow AWS CLI commands
-        command = action.command.strip()
+        Returns an observation if the command was intercepted, None otherwise.
+        """
         if not command.startswith("aws "):
             return AwsRlObservation(
                 episode_id=EpisodeID(self._state.episode_id or ""),
@@ -95,7 +89,6 @@ class AwsRlEnvironment(Environment[AwsRlAction, AwsRlObservation, State]):
                 reward=0.0,
             )
 
-        # Intercept hint requests before reaching MiniStack
         if command == "aws help --task-hint":
             hint_level = self._tracker.record_hint()
             clamped_level = min(hint_level, MAX_HINT_LEVEL)
@@ -112,6 +105,44 @@ class AwsRlEnvironment(Environment[AwsRlAction, AwsRlObservation, State]):
                 hints_used=self._tracker.hints_used,
                 hint_text=hint_text,
             )
+
+        parts = command.split()
+        if len(parts) == 3 and parts[0] == "aws":
+            service_name = None
+            if parts[2] == "help":
+                service_name = parts[1]
+            elif parts[1] == "help":
+                service_name = parts[2]
+
+            if service_name is not None:
+                svc_success, help_text = self._backend.get_service_help(service_name)
+                return AwsRlObservation(
+                    episode_id=EpisodeID(self._state.episode_id or ""),
+                    step_count=StepCount(self._state.step_count),
+                    command_success=svc_success,
+                    command_output=help_text if svc_success else "",
+                    error="" if svc_success else help_text,
+                    task=self._current_task,
+                    task_achieved=False,
+                    done=False,
+                    reward=0.0,
+                )
+
+        return None
+
+    def step(
+        self,
+        action: AwsRlAction,
+        timeout_s: Optional[float] = None,
+        **kwargs: Any,
+    ) -> AwsRlObservation:
+        assert self._current_task is not None, "Call reset() before step()"
+        self._state.step_count += 1
+
+        command = action.command.strip()
+        intercepted = self._intercept_command(command)
+        if intercepted is not None:
+            return intercepted
 
         success, stdout, stderr = self._backend.execute_command(command)
 

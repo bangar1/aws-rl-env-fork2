@@ -488,6 +488,21 @@ def _param_out(param, with_decryption=False):
     return out
 
 
+SUPPORTED_ACTIONS = [
+    "PutParameter", "GetParameter", "GetParameters", "GetParametersByPath",
+    "DeleteParameter", "DeleteParameters", "DescribeParameters",
+    "GetParameterHistory", "LabelParameterVersion", "AddTagsToResource",
+    "RemoveTagsFromResource", "ListTagsForResource",
+]
+
+
+def get_state() -> dict:
+    return {
+        "parameters": {"count": len(_parameters), "names": list(_parameters.keys())},
+        "tags": {"count": len(_tags), "arns": list(_tags.keys())},
+    }
+
+
 def reset():
     _parameters.clear()
     _parameter_history.clear()

@@ -1532,6 +1532,43 @@ _IAM_HANDLERS = {
 }
 
 
+SUPPORTED_ACTIONS = [
+    "CreateUser", "GetUser", "ListUsers", "DeleteUser",
+    "CreateRole", "GetRole", "ListRoles", "DeleteRole",
+    "CreatePolicy", "GetPolicy", "GetPolicyVersion", "ListPolicyVersions",
+    "ListPolicies", "DeletePolicy", "CreatePolicyVersion", "DeletePolicyVersion",
+    "AttachRolePolicy", "DetachRolePolicy", "ListAttachedRolePolicies",
+    "PutRolePolicy", "GetRolePolicy", "DeleteRolePolicy", "ListRolePolicies",
+    "AttachUserPolicy", "DetachUserPolicy", "ListAttachedUserPolicies",
+    "PutUserPolicy", "GetUserPolicy", "DeleteUserPolicy", "ListUserPolicies",
+    "CreateAccessKey", "ListAccessKeys", "DeleteAccessKey",
+    "CreateInstanceProfile", "DeleteInstanceProfile", "GetInstanceProfile",
+    "AddRoleToInstanceProfile", "RemoveRoleFromInstanceProfile",
+    "ListInstanceProfiles", "ListInstanceProfilesForRole",
+    "UpdateAssumeRolePolicy",
+    "CreateGroup", "GetGroup", "DeleteGroup", "ListGroups",
+    "AddUserToGroup", "RemoveUserFromGroup", "ListGroupsForUser",
+    "CreateServiceLinkedRole",
+    "CreateOpenIDConnectProvider", "GetOpenIDConnectProvider", "DeleteOpenIDConnectProvider",
+    "TagRole", "UntagRole", "ListRoleTags",
+    "TagUser", "UntagUser", "ListUserTags",
+    "TagPolicy", "UntagPolicy", "ListPolicyTags",
+    "SimulatePrincipalPolicy", "SimulateCustomPolicy",
+    "GetCallerIdentity", "AssumeRole", "GetSessionToken",
+]
+
+
+def get_state() -> dict:
+    return {
+        "users": {"count": len(_users), "names": list(_users.keys())},
+        "roles": {"count": len(_roles), "names": list(_roles.keys())},
+        "policies": {"count": len(_policies), "names": list(_policies.keys())},
+        "instance_profiles": {"count": len(_instance_profiles), "names": list(_instance_profiles.keys())},
+        "groups": {"count": len(_groups), "names": list(_groups.keys())},
+        "oidc_providers": {"count": len(_oidc_providers), "names": list(_oidc_providers.keys())},
+    }
+
+
 def reset():
     _users.clear()
     _roles.clear()

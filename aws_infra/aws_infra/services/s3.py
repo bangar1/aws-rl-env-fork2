@@ -2718,6 +2718,39 @@ def _load_persisted_data():
 _load_persisted_data()
 
 
+SUPPORTED_ACTIONS = [
+    "CreateBucket", "DeleteBucket", "ListBuckets", "HeadBucket",
+    "PutObject", "GetObject", "DeleteObject", "HeadObject", "CopyObject",
+    "ListObjectsV1", "ListObjectsV2", "DeleteObjects",
+    "PutObjectTagging", "GetObjectTagging", "DeleteObjectTagging",
+    "ListObjectVersions", "PutBucketVersioning", "GetBucketVersioning",
+    "PutBucketPolicy", "GetBucketPolicy", "DeleteBucketPolicy",
+    "PutBucketNotificationConfiguration", "GetBucketNotificationConfiguration",
+    "PutBucketEncryption", "GetBucketEncryption", "DeleteBucketEncryption",
+    "PutBucketLifecycleConfiguration", "GetBucketLifecycleConfiguration", "DeleteBucketLifecycle",
+    "PutBucketCors", "GetBucketCors", "DeleteBucketCors",
+    "PutBucketAcl", "GetBucketAcl",
+    "PutBucketWebsite", "GetBucketWebsite", "DeleteBucketWebsite",
+    "PutBucketLogging", "GetBucketLogging",
+    "PutBucketAccelerateConfiguration", "GetBucketAccelerateConfiguration",
+    "PutBucketRequestPayment", "GetBucketRequestPayment",
+    "PutObjectLockConfiguration", "GetObjectLockConfiguration",
+    "PutObjectRetention", "GetObjectRetention",
+    "PutObjectLegalHold", "GetObjectLegalHold",
+    "PutBucketReplication", "GetBucketReplication", "DeleteBucketReplication",
+    "CreateMultipartUpload", "UploadPart", "CompleteMultipartUpload",
+    "AbortMultipartUpload", "ListMultipartUploads",
+    "GetBucketLocation",
+    "GetBucketTagging", "PutBucketTagging", "DeleteBucketTagging",
+]
+
+
+def get_state() -> dict:
+    return {
+        "buckets": {"count": len(_buckets), "names": list(_buckets.keys())},
+    }
+
+
 def reset():
     """Wipe all in-memory state (used by /_ministack/reset)."""
     global _buckets, _bucket_policies, _bucket_notifications, _bucket_tags

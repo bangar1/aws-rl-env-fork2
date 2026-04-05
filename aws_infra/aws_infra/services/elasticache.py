@@ -1266,6 +1266,32 @@ def _error(code, message, status):
     return status, {"Content-Type": "application/xml"}, body
 
 
+SUPPORTED_ACTIONS = [
+    "CreateCacheCluster", "DeleteCacheCluster", "DescribeCacheClusters", "ModifyCacheCluster",
+    "RebootCacheCluster", "CreateReplicationGroup", "DeleteReplicationGroup",
+    "DescribeReplicationGroups", "ModifyReplicationGroup", "IncreaseReplicaCount",
+    "DecreaseReplicaCount", "CreateCacheSubnetGroup", "DescribeCacheSubnetGroups",
+    "DeleteCacheSubnetGroup", "ModifyCacheSubnetGroup", "CreateCacheParameterGroup",
+    "DescribeCacheParameterGroups", "DeleteCacheParameterGroup", "DescribeCacheParameters",
+    "ModifyCacheParameterGroup", "ResetCacheParameterGroup", "CreateUser", "DescribeUsers",
+    "DeleteUser", "ModifyUser", "CreateUserGroup", "DescribeUserGroups", "DeleteUserGroup",
+    "ModifyUserGroup", "DescribeCacheEngineVersions", "ListTagsForResource",
+    "AddTagsToResource", "RemoveTagsFromResource", "CreateSnapshot", "DeleteSnapshot",
+    "DescribeSnapshots", "DescribeEvents",
+]
+
+
+def get_state() -> dict:
+    return {
+        "clusters": {"count": len(_clusters), "ids": list(_clusters.keys())},
+        "replication_groups": {"count": len(_replication_groups), "ids": list(_replication_groups.keys())},
+        "users": {"count": len(_users), "ids": list(_users.keys())},
+        "subnet_groups": {"count": len(_subnet_groups), "ids": list(_subnet_groups.keys())},
+        "parameter_groups": {"count": len(_param_groups), "ids": list(_param_groups.keys())},
+        "snapshots": {"count": len(_snapshots), "ids": list(_snapshots.keys())},
+    }
+
+
 def reset():
     docker_client = _get_docker()
     if docker_client:

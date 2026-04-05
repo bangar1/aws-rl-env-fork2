@@ -2225,6 +2225,74 @@ def _delete_egress_only_igw(params):
 
 
 # ---------------------------------------------------------------------------
+# Supported Actions
+# ---------------------------------------------------------------------------
+
+SUPPORTED_ACTIONS = [
+    "RunInstances", "TerminateInstances", "DescribeInstances", "StartInstances",
+    "StopInstances", "RebootInstances", "DescribeImages", "CreateSecurityGroup",
+    "DeleteSecurityGroup", "DescribeSecurityGroups",
+    "AuthorizeSecurityGroupIngress", "RevokeSecurityGroupIngress",
+    "AuthorizeSecurityGroupEgress", "RevokeSecurityGroupEgress",
+    "CreateKeyPair", "DeleteKeyPair", "DescribeKeyPairs", "ImportKeyPair",
+    "DescribeVpcs", "DescribeSubnets", "DescribeAvailabilityZones",
+    "CreateVpc", "DeleteVpc", "CreateSubnet", "DeleteSubnet",
+    "CreateInternetGateway", "DeleteInternetGateway",
+    "DescribeInternetGateways", "AttachInternetGateway",
+    "DetachInternetGateway", "AllocateAddress", "ReleaseAddress",
+    "AssociateAddress", "DisassociateAddress", "DescribeAddresses",
+    "CreateTags", "DeleteTags", "DescribeTags", "ModifyVpcAttribute",
+    "ModifySubnetAttribute", "CreateRouteTable", "DeleteRouteTable",
+    "DescribeRouteTables", "AssociateRouteTable", "DisassociateRouteTable",
+    "CreateRoute", "ReplaceRoute", "DeleteRoute", "CreateNetworkInterface",
+    "DeleteNetworkInterface", "DescribeNetworkInterfaces",
+    "AttachNetworkInterface", "DetachNetworkInterface", "CreateVpcEndpoint",
+    "DeleteVpcEndpoints", "DescribeVpcEndpoints", "CreateVolume",
+    "DeleteVolume", "DescribeVolumes", "DescribeVolumeStatus", "AttachVolume",
+    "DetachVolume", "ModifyVolume", "DescribeVolumesModifications",
+    "EnableVolumeIO", "ModifyVolumeAttribute", "DescribeVolumeAttribute",
+    "CreateSnapshot", "DeleteSnapshot", "DescribeSnapshots",
+    "ModifySnapshotAttribute", "DescribeSnapshotAttribute", "CopySnapshot",
+    "CreateNatGateway", "DescribeNatGateways", "DeleteNatGateway",
+    "CreateNetworkAcl", "DescribeNetworkAcls", "DeleteNetworkAcl",
+    "CreateNetworkAclEntry", "DeleteNetworkAclEntry",
+    "ReplaceNetworkAclEntry", "ReplaceNetworkAclAssociation",
+    "CreateFlowLogs", "DescribeFlowLogs", "DeleteFlowLogs",
+    "CreateVpcPeeringConnection", "AcceptVpcPeeringConnection",
+    "DescribeVpcPeeringConnections", "DeleteVpcPeeringConnection",
+    "CreateDhcpOptions", "AssociateDhcpOptions", "DescribeDhcpOptions",
+    "DeleteDhcpOptions", "CreateEgressOnlyInternetGateway",
+    "DescribeEgressOnlyInternetGateways", "DeleteEgressOnlyInternetGateway",
+]
+
+
+# ---------------------------------------------------------------------------
+# State
+# ---------------------------------------------------------------------------
+
+def get_state() -> dict:
+    return {
+        "instances": {"count": len(_instances), "ids": list(_instances.keys())},
+        "security_groups": {"count": len(_security_groups), "ids": list(_security_groups.keys())},
+        "vpcs": {"count": len(_vpcs), "ids": list(_vpcs.keys())},
+        "subnets": {"count": len(_subnets), "ids": list(_subnets.keys())},
+        "volumes": {"count": len(_volumes), "ids": list(_volumes.keys())},
+        "key_pairs": {"count": len(_key_pairs), "names": list(_key_pairs.keys())},
+        "internet_gateways": {"count": len(_internet_gateways), "ids": list(_internet_gateways.keys())},
+        "nat_gateways": {"count": len(_nat_gateways), "ids": list(_nat_gateways.keys())},
+        "route_tables": {"count": len(_route_tables), "ids": list(_route_tables.keys())},
+        "network_interfaces": {"count": len(_network_interfaces), "ids": list(_network_interfaces.keys())},
+        "vpc_endpoints": {"count": len(_vpc_endpoints), "ids": list(_vpc_endpoints.keys())},
+        "snapshots": {"count": len(_snapshots), "ids": list(_snapshots.keys())},
+        "network_acls": {"count": len(_network_acls), "ids": list(_network_acls.keys())},
+        "flow_logs": {"count": len(_flow_logs), "ids": list(_flow_logs.keys())},
+        "vpc_peering": {"count": len(_vpc_peering), "ids": list(_vpc_peering.keys())},
+        "dhcp_options": {"count": len(_dhcp_options), "ids": list(_dhcp_options.keys())},
+        "egress_igws": {"count": len(_egress_igws), "ids": list(_egress_igws.keys())},
+    }
+
+
+# ---------------------------------------------------------------------------
 # Reset
 # ---------------------------------------------------------------------------
 

@@ -1905,6 +1905,49 @@ def _apply_user_filter(users: list, filter_str: str) -> list:
 
 
 # ===========================================================================
+# SUPPORTED ACTIONS
+# ===========================================================================
+
+SUPPORTED_ACTIONS = [
+    "CreateUserPool", "DeleteUserPool", "DescribeUserPool", "ListUserPools",
+    "UpdateUserPool", "CreateUserPoolClient", "DeleteUserPoolClient",
+    "DescribeUserPoolClient", "ListUserPoolClients", "UpdateUserPoolClient",
+    "AdminCreateUser", "AdminDeleteUser", "AdminGetUser", "ListUsers",
+    "AdminSetUserPassword", "AdminUpdateUserAttributes", "AdminInitiateAuth",
+    "AdminRespondToAuthChallenge", "InitiateAuth", "RespondToAuthChallenge",
+    "SignUp", "ConfirmSignUp", "ForgotPassword", "ConfirmForgotPassword",
+    "ChangePassword", "GetUser", "UpdateUserAttributes", "DeleteUser",
+    "AdminAddUserToGroup", "AdminRemoveUserFromGroup",
+    "AdminListGroupsForUser", "AdminListUserAuthEvents", "CreateGroup",
+    "DeleteGroup", "GetGroup", "ListGroups", "AdminConfirmSignUp",
+    "AdminDisableUser", "AdminEnableUser", "AdminResetUserPassword",
+    "AdminUserGlobalSignOut", "GlobalSignOut", "RevokeToken",
+    "CreateUserPoolDomain", "DeleteUserPoolDomain", "DescribeUserPoolDomain",
+    "GetUserPoolMfaConfig", "SetUserPoolMfaConfig", "AssociateSoftwareToken",
+    "VerifySoftwareToken", "TagResource", "UntagResource",
+    "ListTagsForResource", "CreateIdentityPool", "DeleteIdentityPool",
+    "DescribeIdentityPool", "ListIdentityPools", "UpdateIdentityPool",
+    "GetId", "GetCredentialsForIdentity", "GetOpenIdToken",
+    "SetIdentityPoolRoles", "GetIdentityPoolRoles", "ListIdentities",
+    "DescribeIdentity", "MergeDeveloperIdentities",
+    "UnlinkDeveloperIdentity", "UnlinkIdentity",
+]
+
+
+# ===========================================================================
+# STATE
+# ===========================================================================
+
+def get_state() -> dict:
+    return {
+        "user_pools": {"count": len(_user_pools), "ids": list(_user_pools.keys())},
+        "identity_pools": {"count": len(_identity_pools), "ids": list(_identity_pools.keys())},
+        "pool_domain_map": {"count": len(_pool_domain_map), "domains": list(_pool_domain_map.keys())},
+        "identity_tags": {"count": len(_identity_tags), "arns": list(_identity_tags.keys())},
+    }
+
+
+# ===========================================================================
 # RESET
 # ===========================================================================
 

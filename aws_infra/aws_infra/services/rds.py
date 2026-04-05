@@ -1972,6 +1972,34 @@ _ACTION_MAP = {
 }
 
 
+SUPPORTED_ACTIONS = [
+    "CreateDBInstance", "DeleteDBInstance", "DescribeDBInstances", "ModifyDBInstance",
+    "StartDBInstance", "StopDBInstance", "RebootDBInstance", "CreateDBCluster",
+    "DeleteDBCluster", "DescribeDBClusters", "ModifyDBCluster", "StartDBCluster",
+    "StopDBCluster", "CreateDBSubnetGroup", "DeleteDBSubnetGroup", "DescribeDBSubnetGroups",
+    "ModifyDBSubnetGroup", "CreateDBParameterGroup", "DeleteDBParameterGroup",
+    "DescribeDBParameterGroups", "DescribeDBParameters", "ModifyDBParameterGroup",
+    "CreateDBClusterParameterGroup", "DescribeDBClusterParameterGroups",
+    "DeleteDBClusterParameterGroup", "DescribeDBClusterParameters",
+    "ModifyDBClusterParameterGroup", "CreateDBSnapshot", "DeleteDBSnapshot",
+    "DescribeDBSnapshots", "CreateDBClusterSnapshot", "DescribeDBClusterSnapshots",
+    "DeleteDBClusterSnapshot", "CreateOptionGroup", "DeleteOptionGroup",
+    "DescribeOptionGroups", "DescribeOptionGroupOptions", "CreateDBInstanceReadReplica",
+    "RestoreDBInstanceFromDBSnapshot", "ListTagsForResource", "AddTagsToResource",
+    "RemoveTagsFromResource", "DescribeDBEngineVersions", "DescribeOrderableDBInstanceOptions",
+]
+
+
+def get_state() -> dict:
+    return {
+        "instances": {"count": len(_instances), "ids": list(_instances.keys())},
+        "clusters": {"count": len(_clusters), "ids": list(_clusters.keys())},
+        "subnet_groups": {"count": len(_subnet_groups), "names": list(_subnet_groups.keys())},
+        "snapshots": {"count": len(_snapshots), "ids": list(_snapshots.keys())},
+        "db_cluster_snapshots": {"count": len(_db_cluster_snapshots), "ids": list(_db_cluster_snapshots.keys())},
+    }
+
+
 def reset():
     docker_client = _get_docker()
     if docker_client:

@@ -234,5 +234,20 @@ def _resend_validation_email(data):
     return json_response({})
 
 
+SUPPORTED_ACTIONS = [
+    "RequestCertificate", "DescribeCertificate", "ListCertificates",
+    "DeleteCertificate", "GetCertificate", "ImportCertificate",
+    "AddTagsToCertificate", "RemoveTagsFromCertificate",
+    "ListTagsForCertificate", "UpdateCertificateOptions",
+    "RenewCertificate", "ResendValidationEmail",
+]
+
+
+def get_state() -> dict:
+    return {
+        "certificates": {"count": len(_certificates), "ids": list(_certificates.keys())},
+    }
+
+
 def reset():
     _certificates.clear()

@@ -1801,6 +1801,29 @@ def _diff_attributes(old_item, new_item, return_old=True):
     return result
 
 
+SUPPORTED_ACTIONS = [
+    "CreateTable", "DeleteTable", "DescribeTable", "ListTables", "UpdateTable",
+    "PutItem", "GetItem", "DeleteItem", "UpdateItem",
+    "Query", "Scan",
+    "BatchWriteItem", "BatchGetItem",
+    "TransactWriteItems", "TransactGetItems",
+    "DescribeTimeToLive", "UpdateTimeToLive",
+    "DescribeContinuousBackups", "UpdateContinuousBackups",
+    "DescribeEndpoints",
+    "TagResource", "UntagResource", "ListTagsOfResource",
+]
+
+
+def get_state() -> dict:
+    return {
+        "tables": {"count": len(_tables), "names": list(_tables.keys())},
+        "tags": {"count": len(_tags), "names": list(_tags.keys())},
+        "ttl_settings": {"count": len(_ttl_settings), "names": list(_ttl_settings.keys())},
+        "pitr_settings": {"count": len(_pitr_settings), "names": list(_pitr_settings.keys())},
+        "stream_records": {"count": len(_stream_records), "names": list(_stream_records.keys())},
+    }
+
+
 def reset():
     with _lock:
         _tables.clear()

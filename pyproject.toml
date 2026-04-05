@@ -49,6 +49,11 @@ include-package-data = true
 packages = ["aws_rl_env", "aws_rl_env.server"]
 package-dir = { "aws_rl_env" = ".", "aws_rl_env.server" = "server" }
 
+[tool.pytest.ini_options]
+addopts = "--import-mode=importlib"
+testpaths = ["tests"]
+pythonpath = ["."]
+
 [tool.ruff]
 exclude = ["aws_infra/"]
 

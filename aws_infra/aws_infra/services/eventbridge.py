@@ -991,6 +991,29 @@ def _update_api_destination(data):
     })
 
 
+SUPPORTED_ACTIONS = [
+    "CreateEventBus", "DeleteEventBus", "ListEventBuses", "DescribeEventBus",
+    "PutRule", "DeleteRule", "ListRules", "DescribeRule", "EnableRule", "DisableRule",
+    "PutTargets", "RemoveTargets", "ListTargetsByRule", "PutEvents",
+    "TagResource", "UntagResource", "ListTagsForResource",
+    "CreateArchive", "DeleteArchive", "DescribeArchive", "ListArchives",
+    "PutPermission", "RemovePermission",
+    "CreateConnection", "DescribeConnection", "DeleteConnection", "ListConnections",
+    "UpdateConnection", "CreateApiDestination", "DescribeApiDestination",
+    "DeleteApiDestination", "ListApiDestinations", "UpdateApiDestination",
+]
+
+
+def get_state() -> dict:
+    return {
+        "event_buses": {"count": len(_event_buses), "names": list(_event_buses.keys())},
+        "rules": {"count": len(_rules), "names": list(_rules.keys())},
+        "archives": {"count": len(_archives), "names": list(_archives.keys())},
+        "connections": {"count": len(_connections), "names": list(_connections.keys())},
+        "api_destinations": {"count": len(_api_destinations), "names": list(_api_destinations.keys())},
+    }
+
+
 def reset():
     global _event_buses
     _rules.clear()

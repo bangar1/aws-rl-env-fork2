@@ -156,6 +156,23 @@ async def handle_request(method, path, headers, body, query_params):
     return _json_err("NotFoundException", f"Unknown SES v2 path: {method} {path}", 404)
 
 
+SUPPORTED_ACTIONS = [
+    "SendEmail", "CreateEmailIdentity", "GetEmailIdentity", "DeleteEmailIdentity",
+    "ListEmailIdentities", "CreateConfigurationSet", "GetConfigurationSet",
+    "DeleteConfigurationSet", "ListConfigurationSets", "GetAccount",
+    "ListSuppressedDestinations", "PutAccountSuppressionAttributes",
+    "TagResource", "UntagResource", "ListTagsForResource",
+]
+
+
+def get_state() -> dict:
+    return {
+        "identities": {"count": len(_identities), "names": list(_identities.keys())},
+        "configuration_sets": {"count": len(_config_sets), "names": list(_config_sets.keys())},
+        "tags": {"count": len(_ses_tags), "resources": list(_ses_tags.keys())},
+    }
+
+
 def reset():
     _identities.clear()
     _config_sets.clear()

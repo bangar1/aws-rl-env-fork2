@@ -245,6 +245,27 @@ async def _call_lambda(func_name, event):
         return {"statusCode": 200, "body": "Mock response"}, None
 
 
+SUPPORTED_ACTIONS = [
+    "CreateRestApi", "GetRestApis", "GetRestApi", "UpdateRestApi",
+    "DeleteRestApi", "GetResources", "GetResource", "CreateResource",
+    "UpdateResource", "DeleteResource", "PutMethod", "GetMethod",
+    "DeleteMethod", "PutMethodResponse", "GetMethodResponse",
+    "DeleteMethodResponse", "PutIntegration", "GetIntegration",
+    "DeleteIntegration", "PutIntegrationResponse", "GetIntegrationResponse",
+    "DeleteIntegrationResponse", "CreateDeployment", "GetDeployments",
+    "GetDeployment", "UpdateDeployment", "DeleteDeployment", "CreateStage",
+    "GetStages", "GetStage", "UpdateStage", "DeleteStage",
+    "CreateAuthorizer", "GetAuthorizers", "GetAuthorizer",
+    "UpdateAuthorizer", "DeleteAuthorizer", "CreateModel", "GetModels",
+    "GetModel", "DeleteModel", "GetApiKeys", "CreateApiKey", "GetApiKey",
+    "DeleteApiKey", "GetUsagePlans", "CreateUsagePlan", "GetUsagePlan",
+    "DeleteUsagePlan", "GetUsagePlanKeys", "CreateUsagePlanKey",
+    "DeleteUsagePlanKey", "GetDomainNames", "CreateDomainName",
+    "GetDomainName", "DeleteDomainName", "GetTags", "TagResource",
+    "UntagResource",
+]
+
+
 # ---- Persistence hooks ----
 
 def get_state():

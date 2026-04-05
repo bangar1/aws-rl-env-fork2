@@ -899,6 +899,25 @@ def _stream_desc(stream, shard_ids=None):
     }
 
 
+SUPPORTED_ACTIONS = [
+    "CreateStream", "DeleteStream", "DescribeStream", "DescribeStreamSummary",
+    "ListStreams", "PutRecord", "PutRecords", "GetShardIterator", "GetRecords",
+    "MergeShards", "SplitShard", "UpdateShardCount", "ListShards",
+    "IncreaseStreamRetentionPeriod", "DecreaseStreamRetentionPeriod",
+    "AddTagsToStream", "RemoveTagsFromStream", "ListTagsForStream",
+    "RegisterStreamConsumer", "DeregisterStreamConsumer", "ListStreamConsumers",
+    "DescribeStreamConsumer", "StartStreamEncryption", "StopStreamEncryption",
+    "EnableEnhancedMonitoring", "DisableEnhancedMonitoring",
+]
+
+
+def get_state() -> dict:
+    return {
+        "streams": {"count": len(_streams), "names": list(_streams.keys())},
+        "consumers": {"count": len(_consumers), "names": list(_consumers.keys())},
+    }
+
+
 def reset():
     _streams.clear()
     _shard_iterators.clear()

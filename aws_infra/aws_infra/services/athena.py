@@ -853,6 +853,29 @@ def _execution_out(ex):
     return {k: v for k, v in ex.items() if not k.startswith("_")}
 
 
+SUPPORTED_ACTIONS = [
+    "StartQueryExecution", "GetQueryExecution", "GetQueryResults", "StopQueryExecution",
+    "ListQueryExecutions", "CreateWorkGroup", "DeleteWorkGroup", "GetWorkGroup",
+    "ListWorkGroups", "UpdateWorkGroup", "CreateNamedQuery", "DeleteNamedQuery",
+    "GetNamedQuery", "ListNamedQueries", "BatchGetNamedQuery", "BatchGetQueryExecution",
+    "CreateDataCatalog", "GetDataCatalog", "ListDataCatalogs", "DeleteDataCatalog",
+    "UpdateDataCatalog", "CreatePreparedStatement", "GetPreparedStatement",
+    "DeletePreparedStatement", "ListPreparedStatements", "GetTableMetadata",
+    "ListTableMetadata", "TagResource", "UntagResource", "ListTagsForResource",
+]
+
+
+def get_state() -> dict:
+    return {
+        "workgroups": {"count": len(_workgroups), "names": list(_workgroups.keys())},
+        "named_queries": {"count": len(_named_queries), "ids": list(_named_queries.keys())},
+        "data_catalogs": {"count": len(_data_catalogs), "names": list(_data_catalogs.keys())},
+        "executions": {"count": len(_executions), "ids": list(_executions.keys())},
+        "prepared_statements": {"count": len(_prepared_statements), "keys": list(_prepared_statements.keys())},
+        "tags": {"count": len(_tags), "arns": list(_tags.keys())},
+    }
+
+
 def reset():
     import time as _time
 

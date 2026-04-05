@@ -848,6 +848,29 @@ def _stop_query(data):
     return json_response({"success": True})
 
 
+SUPPORTED_ACTIONS = [
+    "CreateLogGroup", "DeleteLogGroup", "DescribeLogGroups",
+    "CreateLogStream", "DeleteLogStream", "DescribeLogStreams",
+    "PutLogEvents", "GetLogEvents", "FilterLogEvents",
+    "PutRetentionPolicy", "DeleteRetentionPolicy",
+    "PutSubscriptionFilter", "DeleteSubscriptionFilter", "DescribeSubscriptionFilters",
+    "TagLogGroup", "UntagLogGroup", "ListTagsLogGroup",
+    "TagResource", "UntagResource", "ListTagsForResource",
+    "PutDestination", "DeleteDestination", "DescribeDestinations", "PutDestinationPolicy",
+    "PutMetricFilter", "DeleteMetricFilter", "DescribeMetricFilters",
+    "StartQuery", "GetQueryResults", "StopQuery",
+]
+
+
+def get_state() -> dict:
+    return {
+        "log_groups": {"count": len(_log_groups), "names": list(_log_groups.keys())},
+        "destinations": {"count": len(_destinations), "names": list(_destinations.keys())},
+        "metric_filters": {"count": len(_metric_filters), "keys": list(_metric_filters.keys())},
+        "queries": {"count": len(_queries), "ids": list(_queries.keys())},
+    }
+
+
 def reset():
     _log_groups.clear()
     _destinations.clear()

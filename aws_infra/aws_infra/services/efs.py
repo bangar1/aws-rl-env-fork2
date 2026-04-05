@@ -498,6 +498,38 @@ def _error(status, code, message):
 
 
 # ---------------------------------------------------------------------------
+# Supported Actions
+# ---------------------------------------------------------------------------
+
+SUPPORTED_ACTIONS = [
+    "CreateFileSystem", "DeleteFileSystem", "DescribeFileSystems",
+    "DescribeFileSystemPolicy", "PutFileSystemPolicy",
+    "DeleteFileSystemPolicy", "CreateMountTarget", "DeleteMountTarget",
+    "DescribeMountTargets", "ModifyMountTargetSecurityGroups",
+    "CreateAccessPoint", "DeleteAccessPoint", "DescribeAccessPoints",
+    "TagResource", "UntagResource", "ListTagsForResource",
+    "CreateReplicationConfiguration", "DeleteReplicationConfiguration",
+    "DescribeReplicationConfigurations", "PutLifecycleConfiguration",
+    "GetLifecycleConfiguration", "PutBackupPolicy", "GetBackupPolicy",
+    "DescribeAccountPreferences", "PutAccountPreferences",
+]
+
+
+# ---------------------------------------------------------------------------
+# State
+# ---------------------------------------------------------------------------
+
+def get_state() -> dict:
+    return {
+        "file_systems": {"count": len(_file_systems), "ids": list(_file_systems.keys())},
+        "mount_targets": {"count": len(_mount_targets), "ids": list(_mount_targets.keys())},
+        "access_points": {"count": len(_access_points), "ids": list(_access_points.keys())},
+        "lifecycle_configs": {"count": len(_lifecycle_configs), "file_systems": list(_lifecycle_configs.keys())},
+        "backup_policies": {"count": len(_backup_policies), "file_systems": list(_backup_policies.keys())},
+    }
+
+
+# ---------------------------------------------------------------------------
 # Reset
 # ---------------------------------------------------------------------------
 

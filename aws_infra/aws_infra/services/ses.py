@@ -1002,6 +1002,28 @@ def _json_error(code, message, status):
     return _json_response(status, {"__type": code, "message": message})
 
 
+SUPPORTED_ACTIONS = [
+    "SendEmail", "SendRawEmail", "SendTemplatedEmail", "SendBulkTemplatedEmail",
+    "VerifyEmailIdentity", "VerifyEmailAddress", "VerifyDomainIdentity",
+    "VerifyDomainDkim", "ListIdentities", "GetIdentityVerificationAttributes",
+    "DeleteIdentity", "GetSendQuota", "GetSendStatistics",
+    "ListVerifiedEmailAddresses", "CreateConfigurationSet",
+    "DeleteConfigurationSet", "DescribeConfigurationSet", "ListConfigurationSets",
+    "CreateTemplate", "GetTemplate", "DeleteTemplate", "ListTemplates",
+    "UpdateTemplate", "GetIdentityDkimAttributes", "SetIdentityNotificationTopic",
+    "SetIdentityFeedbackForwardingEnabled",
+]
+
+
+def get_state() -> dict:
+    return {
+        "identities": {"count": len(_identities), "names": list(_identities.keys())},
+        "templates": {"count": len(_templates), "names": list(_templates.keys())},
+        "configuration_sets": {"count": len(_configuration_sets), "names": list(_configuration_sets.keys())},
+        "sent_emails": {"count": len(_sent_emails)},
+    }
+
+
 def reset():
     _identities.clear()
     _sent_emails.clear()

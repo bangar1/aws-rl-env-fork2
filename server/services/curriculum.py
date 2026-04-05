@@ -136,9 +136,7 @@ def _parse_task_entries(
             ],
             desired_state_spec=entry.get("desired_state_spec"),
             possible_drifts=[
-                SetupCommand(command=d)
-                if isinstance(d, str)
-                else SetupCommand(**d)
+                SetupCommand(command=d) if isinstance(d, str) else SetupCommand(**d)
                 for d in entry.get("possible_drifts", [])
             ],
         )
@@ -179,9 +177,7 @@ def load_tier(difficulty: TaskDifficulty, tasks_dir: Path = TASKS_DIR) -> list[T
             extra_file,
         )
 
-    logger.info(
-        "Loaded %d %s tasks total", len(tasks), difficulty.value
-    )
+    logger.info("Loaded %d %s tasks total", len(tasks), difficulty.value)
     return tasks
 
 

@@ -235,6 +235,29 @@ async def app(scope, receive, send):
                              json.dumps({"reset": "ok"}).encode())
         return
 
+    if path == "/_ministack/state" and method == "GET":
+        state = _get_all_state()
+        await _send_response(send, 200, {"Content-Type": "application/json"},
+                             json.dumps(state).encode())
+        return
+
+    if path == "/_ministack/handlers" and method == "GET":
+        handlers = _get_all_handlers()
+        await _send_response(send, 200, {"Content-Type": "application/json"},
+                             json.dumps(handlers).encode())
+        return
+
+    if path.startswith("/_ministack/handlers/") and method == "GET":
+        service_name = path[len("/_ministack/handlers/"):].strip("/")
+        info = _get_service_info(service_name)
+        if info is None:
+            await _send_response(send, 404, {"Content-Type": "application/json"},
+                                 json.dumps({"error": f"Unknown service: {service_name}"}).encode())
+        else:
+            await _send_response(send, 200, {"Content-Type": "application/json"},
+                                 json.dumps(info).encode())
+        return
+
     if path == "/_ministack/config" and method == "POST":
         _ALLOWED_CONFIG_KEYS = {
             "athena.ATHENA_ENGINE", "athena.ATHENA_DATA_DIR",
@@ -568,6 +591,105 @@ def _run_init_scripts():
             logger.error("Init script %s timed out after 300s", script_path)
         except Exception as e:
             logger.error("Failed to execute init script %s: %s", script_path, e)
+
+
+def _service_modules() -> list:
+    """Return list of (canonical_name, module) for all service modules."""
+    from aws_infra.services import iam_sts
+    return [
+        ("s3", s3), ("sqs", sqs), ("sns", sns), ("dynamodb", dynamodb),
+        ("lambda", lambda_svc), ("iam", iam_sts), ("secretsmanager", secretsmanager),
+        ("logs", cloudwatch_logs), ("ssm", ssm), ("events", eventbridge),
+        ("kinesis", kinesis), ("monitoring", cloudwatch), ("ses", ses),
+        ("ses_v2", ses_v2), ("acm", acm), ("wafv2", waf),
+        ("states", stepfunctions), ("ecs", ecs), ("rds", rds),
+        ("elasticache", elasticache), ("glue", glue), ("athena", athena),
+        ("apigateway", apigateway), ("apigateway_v1", apigateway_v1),
+        ("firehose", firehose), ("route53", route53), ("cognito", cognito),
+        ("ec2", ec2), ("elasticmapreduce", emr), ("elasticloadbalancing", alb),
+        ("elasticfilesystem", efs), ("cloudformation", cloudformation),
+    ]
+
+
+# Extra aliases for the /_ministack/handlers/<service> endpoint so users can
+# look up services using common short names (e.g. "lambda", "stepfunctions").
+_HANDLER_LOOKUP_ALIASES = {
+    **SERVICE_NAME_ALIASES,
+    "lambda": "lambda",
+    "iam": "iam",
+    "sts": "iam",
+    "ses-v2": "ses_v2",
+    "sesv2": "ses_v2",
+    "apigateway-v1": "apigateway_v1",
+    "apigatewayv1": "apigateway_v1",
+    "logs": "logs",
+    "emr": "elasticmapreduce",
+    "alb": "elasticloadbalancing",
+    "efs": "elasticfilesystem",
+    "cfn": "cloudformation",
+    "sf": "states",
+    "sfn": "states",
+    "cw": "monitoring",
+    "cwl": "logs",
+    "sm": "secretsmanager",
+    "eb": "events",
+    "ddb": "dynamodb",
+}
+
+
+def _resolve_service_module(service_name: str):
+    """Resolve a service name (or alias) to its (canonical_name, module) pair."""
+    name = service_name.lower().strip()
+    canonical = _HANDLER_LOOKUP_ALIASES.get(name, name)
+    for svc_name, mod in _service_modules():
+        if svc_name == canonical:
+            return svc_name, mod
+    return None, None
+
+
+def _get_all_state() -> dict:
+    """Collect summary state from every service module."""
+    state = {}
+    for name, mod in _service_modules():
+        if name not in SERVICE_HANDLERS and name not in ("iam", "ses_v2", "apigateway_v1"):
+            continue
+        try:
+            state[name] = mod.get_state()
+        except Exception as e:
+            logger.warning("get_state() failed for %s: %s", name, e)
+            state[name] = {"error": str(e)}
+    return {"services": state}
+
+
+def _get_all_handlers() -> dict:
+    """Collect SUPPORTED_ACTIONS from every service module."""
+    handlers = {}
+    for name, mod in _service_modules():
+        if name not in SERVICE_HANDLERS and name not in ("iam", "ses_v2", "apigateway_v1"):
+            continue
+        actions = getattr(mod, "SUPPORTED_ACTIONS", [])
+        handlers[name] = {"actions": actions, "count": len(actions)}
+    return {"services": handlers}
+
+
+def _get_service_info(service_name: str) -> dict | None:
+    """Return detailed info for a single service: docstring, actions, and current state."""
+    name, mod = _resolve_service_module(service_name)
+    if mod is None:
+        return None
+    docstring = (mod.__doc__ or "").strip()
+    actions = getattr(mod, "SUPPORTED_ACTIONS", [])
+    try:
+        state = mod.get_state()
+    except Exception:
+        state = {}
+    return {
+        "service": name,
+        "description": docstring,
+        "supported_actions": actions,
+        "action_count": len(actions),
+        "state": state,
+    }
 
 
 def _reset_all_state():

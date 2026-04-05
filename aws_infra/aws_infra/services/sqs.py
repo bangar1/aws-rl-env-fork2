@@ -1231,6 +1231,23 @@ def _url_from_path(path: str) -> str:
     return ""
 
 
+SUPPORTED_ACTIONS = [
+    "CreateQueue", "DeleteQueue", "ListQueues", "GetQueueUrl",
+    "GetQueueAttributes", "SetQueueAttributes", "PurgeQueue",
+    "SendMessage", "ReceiveMessage", "DeleteMessage",
+    "ChangeMessageVisibility", "ChangeMessageVisibilityBatch",
+    "SendMessageBatch", "DeleteMessageBatch",
+    "ListQueueTags", "TagQueue", "UntagQueue",
+]
+
+
+def get_state() -> dict:
+    return {
+        "queues": {"count": len(_queues), "names": list(_queues.keys())},
+        "queue_name_to_url": dict(_queue_name_to_url),
+    }
+
+
 def reset():
     _queues.clear()
     _queue_name_to_url.clear()

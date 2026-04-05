@@ -708,6 +708,23 @@ def _validate_resource_policy(data):
     })
 
 
+SUPPORTED_ACTIONS = [
+    "CreateSecret", "GetSecretValue", "ListSecrets", "DeleteSecret",
+    "RestoreSecret", "UpdateSecret", "DescribeSecret", "PutSecretValue",
+    "TagResource", "UntagResource", "ListSecretVersionIds",
+    "RotateSecret", "GetRandomPassword", "ReplicateSecretToRegions",
+    "PutResourcePolicy", "GetResourcePolicy", "DeleteResourcePolicy",
+    "ValidateResourcePolicy",
+]
+
+
+def get_state() -> dict:
+    return {
+        "secrets": {"count": len(_secrets), "names": list(_secrets.keys())},
+        "resource_policies": {"count": len(_resource_policies), "arns": list(_resource_policies.keys())},
+    }
+
+
 def reset():
     _secrets.clear()
     _resource_policies.clear()

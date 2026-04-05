@@ -2531,6 +2531,36 @@ def _list_function_url_configs(func_name: str, query_params: dict):
     return json_response({"FunctionUrlConfigs": configs})
 
 
+SUPPORTED_ACTIONS = [
+    "CreateFunction", "DeleteFunction", "GetFunction", "GetFunctionConfiguration",
+    "ListFunctions", "Invoke",
+    "UpdateFunctionCode", "UpdateFunctionConfiguration",
+    "PublishVersion", "ListVersionsByFunction",
+    "CreateAlias", "GetAlias", "UpdateAlias", "DeleteAlias", "ListAliases",
+    "AddPermission", "RemovePermission", "GetPolicy",
+    "ListTags", "TagResource", "UntagResource",
+    "PublishLayerVersion", "GetLayerVersion", "GetLayerVersionByArn",
+    "ListLayerVersions", "DeleteLayerVersion", "ListLayers",
+    "AddLayerVersionPermission", "RemoveLayerVersionPermission", "GetLayerVersionPolicy",
+    "CreateEventSourceMapping", "DeleteEventSourceMapping",
+    "GetEventSourceMapping", "ListEventSourceMappings", "UpdateEventSourceMapping",
+    "GetFunctionEventInvokeConfig", "PutFunctionEventInvokeConfig",
+    "PutFunctionConcurrency", "GetFunctionConcurrency", "DeleteFunctionConcurrency",
+    "GetFunctionCodeSigningConfig",
+    "CreateFunctionUrlConfig", "GetFunctionUrlConfig",
+    "UpdateFunctionUrlConfig", "DeleteFunctionUrlConfig", "ListFunctionUrlConfigs",
+]
+
+
+def get_state() -> dict:
+    return {
+        "functions": {"count": len(_functions), "names": list(_functions.keys())},
+        "layers": {"count": len(_layers), "names": list(_layers.keys())},
+        "event_source_mappings": {"count": len(_esms), "ids": list(_esms.keys())},
+        "function_urls": {"count": len(_function_urls), "keys": list(_function_urls.keys())},
+    }
+
+
 def reset():
     from aws_infra.core import lambda_runtime
 
