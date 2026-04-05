@@ -18,9 +18,16 @@ from typing import Any, Optional
 from uuid import uuid4
 
 from openenv.core.env_server.interfaces import Environment
-from openenv.core.env_server.types import State
 
-from models import AwsRlAction, AwsRlObservation, EpisodeID, StepCount, Task
+from models import (
+    AwsRlAction,
+    AwsRlObservation,
+    AwsRlState,
+    EpisodeID,
+    StepCount,
+    Task,
+    TrackerState,
+)
 from server.services.aws_backend import AwsBackend
 from server.services.chaos_engine import ChaosEngine
 from server.services.curriculum import Curriculum
@@ -32,12 +39,12 @@ from server.services.task_grader import TaskGrader
 logger = logging.getLogger(__name__)
 
 
-class AwsRlEnvironment(Environment[AwsRlAction, AwsRlObservation, State]):
+class AwsRlEnvironment(Environment[AwsRlAction, AwsRlObservation, AwsRlState]):
     SUPPORTS_CONCURRENT_SESSIONS: bool = True
 
     def __init__(self) -> None:
         print("Initializing AWS RL Environment...")
-        self._state = State(episode_id=str(uuid4()), step_count=0)
+        self._state = AwsRlState(episode_id=str(uuid4()), step_count=0)
         self._backend = AwsBackend()
         self._curriculum = Curriculum()
         self._grader = TaskGrader(self._backend)
@@ -47,6 +54,22 @@ class AwsRlEnvironment(Environment[AwsRlAction, AwsRlObservation, State]):
         self._hint_provider = HintProvider()
         self._current_task: Task | None = None
 
+    def _sync_state(self) -> None:
+        """Sync internal state to the AwsRlState object."""
+        self._state.current_task = self._current_task
+        self._state.tracker = TrackerState(
+            step_count=self._tracker.step_count,
+            hints_used=self._tracker.hints_used,
+            progress=self._tracker.previous_progress,
+            commands_executed=[s.command for s in self._tracker.command_history],
+            credited_operations=[
+                f"{op}:{res}" for op, res in self._tracker._credited_operations
+            ],
+        )
+        self._state.chaos_occurred = self._chaos_engine.chaos_occurred
+        self._state.current_tier = self._curriculum.current_difficulty.value
+        self._state.infra_state = self._backend.get_infra_state()
+
     def reset(
         self,
         seed: Optional[int] = None,
@@ -54,12 +77,13 @@ class AwsRlEnvironment(Environment[AwsRlAction, AwsRlObservation, State]):
         **kwargs: Any,
     ) -> AwsRlObservation:
         self._backend.reset_environment()
-        self._state = State(episode_id=episode_id or str(uuid4()), step_count=0)
+        self._state = AwsRlState(episode_id=episode_id or str(uuid4()), step_count=0)
         self._tracker.reset()
         self._chaos_engine.reset()
         self._current_task = self._curriculum.next_task()
 
         self._designer.apply(self._current_task)
+        self._sync_state()
 
         return AwsRlObservation(
             episode_id=EpisodeID(self._state.episode_id or ""),
@@ -92,6 +116,7 @@ class AwsRlEnvironment(Environment[AwsRlAction, AwsRlObservation, State]):
         if command == "aws help --task-hint":
             hint_level = self._tracker.record_hint()
             clamped_level = min(hint_level, MAX_HINT_LEVEL)
+            assert self._current_task is not None
             hint_text = self._hint_provider.get_hint(self._current_task, clamped_level)
             return AwsRlObservation(
                 episode_id=EpisodeID(self._state.episode_id or ""),
@@ -172,6 +197,8 @@ class AwsRlEnvironment(Environment[AwsRlAction, AwsRlObservation, State]):
             self._curriculum.chaos_probability,
         )
 
+        self._sync_state()
+
         return AwsRlObservation(
             episode_id=EpisodeID(self._state.episode_id or ""),
             step_count=StepCount(self._state.step_count),
@@ -186,5 +213,5 @@ class AwsRlEnvironment(Environment[AwsRlAction, AwsRlObservation, State]):
         )
 
     @property
-    def state(self) -> State:
+    def state(self) -> AwsRlState:
         return self._state

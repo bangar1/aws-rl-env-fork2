@@ -28,6 +28,16 @@ class AwsBackend:
             logger.warning("Failed to reset MiniStack state: %s", e)
             raise
 
+    def get_infra_state(self) -> dict:
+        """Fetch current infrastructure state from MiniStack via GET /_ministack/state."""
+        try:
+            resp = httpx.get(f"{self._aws_infra_url}/_ministack/state", timeout=10)
+            resp.raise_for_status()
+            return resp.json()
+        except httpx.HTTPError as e:
+            logger.warning("Failed to fetch MiniStack state: %s", e)
+            return {}
+
     def get_service_help(self, service_name: str) -> tuple[bool, str]:
         """Fetch service info from MiniStack via GET /_ministack/handlers/<service>.
 

@@ -90,6 +90,7 @@ async def web_solution():
         return {"command": None, "error": "No active task. Start a new episode first."}
 
     from server.services.task_solutions import get_next_solution
+
     result = get_next_solution(
         task_id=_env._current_task.task_id,
         backend=_env._backend,

@@ -13,7 +13,6 @@ Run inside Docker:
 
 import json
 import re
-import zipfile
 
 import pytest
 import yaml

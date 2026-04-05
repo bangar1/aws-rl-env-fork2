@@ -10,12 +10,11 @@ from typing import Dict
 
 from openenv.core import EnvClient
 from openenv.core.client_types import StepResult
-from openenv.core.env_server.types import State
 
-from models import AwsRlAction, AwsRlObservation, EpisodeID, StepCount
+from models import AwsRlAction, AwsRlObservation, EpisodeID, StepCount, AwsRlState
 
 
-class AwsRlEnv(EnvClient[AwsRlAction, AwsRlObservation, State]):
+class AwsRlEnv(EnvClient[AwsRlAction, AwsRlObservation, AwsRlState]):
     """
     Client for the Aws Rl Env Environment.
 
@@ -65,9 +64,19 @@ class AwsRlEnv(EnvClient[AwsRlAction, AwsRlObservation, State]):
             done=payload.get("done", False),
         )
 
-    def _parse_state(self, payload: Dict) -> State:
-        """Parse server response into State object."""
-        return State(
+    def _parse_state(self, payload: Dict) -> AwsRlState:
+        """Parse server response into AwsRlState object."""
+        from models import TrackerState, Task
+
+        tracker_data = payload.get("tracker", {})
+        task_data = payload.get("current_task")
+
+        return AwsRlState(
             episode_id=payload.get("episode_id"),
             step_count=payload.get("step_count", 0),
+            current_task=Task(**task_data) if task_data else None,
+            tracker=TrackerState(**tracker_data) if tracker_data else TrackerState(),
+            infra_state=payload.get("infra_state", {}),
+            chaos_occurred=payload.get("chaos_occurred", False),
+            current_tier=payload.get("current_tier", "warmup"),
         )

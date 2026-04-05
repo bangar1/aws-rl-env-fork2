@@ -61,6 +61,8 @@ def _load_static() -> dict[int, list[str]]:
         if not fpath.exists():
             continue
         spec = importlib.util.spec_from_file_location(fname.replace(".py", ""), fpath)
+        if spec is None or spec.loader is None:
+            continue
         mod = importlib.util.module_from_spec(spec)
         try:
             spec.loader.exec_module(mod)

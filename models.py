@@ -5,7 +5,7 @@ Data models for the Aws Rl Env Environment.
 from enum import Enum
 from typing import NewType, Union
 
-from openenv.core.env_server.types import Action, Observation
+from openenv.core.env_server.types import Action, Observation, State
 from pydantic import BaseModel, Field
 
 # ---------------------------------------------------------------------------
@@ -208,6 +208,50 @@ class Task(BaseModel):
     possible_drifts: list[SetupCommand] = Field(
         default_factory=list,
         description="Pool of mutations the DriftEngine may randomly apply after setup",
+    )
+
+
+# ---------------------------------------------------------------------------
+# Environment State
+# ---------------------------------------------------------------------------
+
+
+class TrackerState(BaseModel):
+    """Serializable snapshot of the EpisodeTracker."""
+
+    step_count: int = Field(default=0, ge=0, description="Steps taken this episode")
+    hints_used: int = Field(default=0, ge=0, description="Hints requested this episode")
+    progress: float = Field(
+        default=0.0, ge=0.0, le=1.0, description="Current partial progress"
+    )
+    commands_executed: list[str] = Field(
+        default_factory=list, description="Commands executed this episode"
+    )
+    credited_operations: list[str] = Field(
+        default_factory=list,
+        description="(operation, resource) pairs that earned credit",
+    )
+
+
+class AwsRlState(State):
+    """Full environment state including task, tracker, and infrastructure."""
+
+    current_task: Task | None = Field(
+        default=None, description="The task assigned for this episode"
+    )
+    tracker: TrackerState = Field(
+        default_factory=TrackerState,
+        description="Episode tracker snapshot",
+    )
+    infra_state: dict = Field(
+        default_factory=dict,
+        description="AWS infrastructure state keyed by service name",
+    )
+    chaos_occurred: bool = Field(
+        default=False, description="Whether chaos was injected this episode"
+    )
+    current_tier: str = Field(
+        default="warmup", description="Agent's current difficulty tier"
     )
 
 

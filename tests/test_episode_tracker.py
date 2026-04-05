@@ -6,7 +6,6 @@ Run:
     python -m pytest tests/test_episode_tracker.py -v
 """
 
-import pytest
 
 from server.services.episode_tracker import (
     EpisodeTracker,

@@ -7,7 +7,7 @@ Run:
     docker exec <container> python -m pytest env/tests/test_aws_rl_env_environment.py -v
 """
 
-from unittest.mock import MagicMock, patch, PropertyMock
+from unittest.mock import patch
 
 import pytest
 
@@ -20,7 +20,6 @@ from models import (
     SuccessCriteria,
 )
 from server.services.task_grader import GradeResult
-from server.services.episode_tracker import StepRecord
 
 
 # ---------------------------------------------------------------------------

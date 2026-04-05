@@ -20,7 +20,7 @@ from models import (
     StepCriteria,
     StateCheck,
 )
-from server.services.task_grader import TaskGrader, GradeResult
+from server.services.task_grader import TaskGrader
 from server.services.episode_tracker import EpisodeTracker, StepRecord
 
 

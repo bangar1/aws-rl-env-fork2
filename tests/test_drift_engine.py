@@ -4,7 +4,7 @@ Run:
     docker exec <container> python -m pytest env/tests/test_drift_engine.py -v
 """
 
-from unittest.mock import MagicMock, call
+from unittest.mock import MagicMock
 
 import pytest
 

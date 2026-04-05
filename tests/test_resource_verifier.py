@@ -9,10 +9,8 @@ Run:
 from __future__ import annotations
 
 import json
-from typing import Any
 from unittest.mock import MagicMock
 
-import pytest
 
 from server.services.aws_backend import AwsBackend
 from server.services.resource_verifier import ResourceVerifier, _extract_json_path
