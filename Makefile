@@ -21,9 +21,6 @@ install: ## Install project dependencies
 install-dev: ## Install project with dev dependencies
 	$(UV) sync --frozen --extra dev
 
-.PHONY: install-train
-install-train: ## Install project with training dependencies (trl, torch, peft, etc.)
-	$(UV) sync --frozen --extra training
 
 .PHONY: install-all
 install-all: ## Install project with all dependencies (dev + training)
@@ -39,7 +36,7 @@ lock: ## Update the lockfile
 
 .PHONY: run
 run: ## Run with MiniStack + FastAPI server (mirrors Docker CMD)
-	ministack & sleep 2 && $(UV) run uvicorn server.app:app --host $(SERVER_HOST) --port $(SERVER_PORT)
+	aws_infra -d & sleep 2 && $(UV) run uvicorn server.app:app --host $(SERVER_HOST) --port $(SERVER_PORT) --reload
 
 # ──────────────────────────────────────────────
 # Code Quality
@@ -102,7 +99,7 @@ docker-clean: ## Stop and remove all running containers for this image
 
 .PHONY: docker-test
 docker-test: ## Run tests inside the running Docker container
-	docker exec $(DOCKER_IMAGE) python -m pytest env/tests/test_intermediate_tasks.py -v
+	docker exec $(DOCKER_IMAGE) python -m pytest env/tests -v
 
 .PHONY: docker-health
 docker-health: ## Check health of the running container

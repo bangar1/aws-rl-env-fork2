@@ -83,6 +83,22 @@ async def web_reset():
     }
 
 
+@app.get("/web/solution", include_in_schema=False)
+async def web_solution():
+    """Return the next solution command for the current task step."""
+    if not _env._current_task:
+        return {"command": None, "error": "No active task. Start a new episode first."}
+
+    from server.services.task_solutions import get_next_solution
+    result = get_next_solution(
+        task_id=_env._current_task.task_id,
+        backend=_env._backend,
+        tracker=_env._tracker,
+    )
+    result["task_id"] = _env._current_task.task_id
+    return result
+
+
 @app.post("/web/step", include_in_schema=False)
 async def web_step(request: WebStepRequest = Body(...)):
     action = AwsRlAction(**request.action)

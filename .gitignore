@@ -211,3 +211,7 @@ __marimo__/
 .repowise/
 .mcp.json
 .claude
+repowise.db
+
+# repowise API keys (local)
+.repowise/.env

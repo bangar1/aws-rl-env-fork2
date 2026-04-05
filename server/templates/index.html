@@ -14,7 +14,7 @@
   <nav id="navbar">
     <ul class="nav-links">
       <li><a href="#about" class="nav-link active">About</a></li>
-      <li><a href="#tiers" class="nav-link">Tiers</a></li>
+      <li><a href="#tiers" class="nav-link">Tasks</a></li>
       <li><a href="#features" class="nav-link">Features</a></li>
       <li><a href="#api" class="nav-link">API</a></li>
       <li><a href="#playground" class="nav-link">Playground</a></li>
@@ -25,8 +25,11 @@
   <section class="hero">
     <div class="hero-bg"></div>
     <div class="hero-content">
-      <h1 id="hero-title" class="type-animate">AWS RL Environment</h1>
-      <h2 id="hero-subtitle" class="type-animate">Train AI agents on real AWS cloud tasks</h2>
+      <h1 id="hero-title" class="type-animate">AWS Cloud CLI and SRE
+        Reinforcement Learning Environment</h1>
+      <h2 id="hero-subtitle" class="type-animate">Train AI agents on real AWS cloud operations. The agent sends AWS CLI
+        commands as actions, receives structured observations, and progresses through a set of curriculum tasks
+        across 5 difficulty tiers — from basic listing to SRE incident response.</h2>
       <div class="hero-cta-container hero-fade-up">
         <a href="#playground" class="btn-primary">
           Try the Playground
@@ -62,9 +65,10 @@
         <div class="card animate-up">
           <h3>Learn AWS by doing.</h3>
           <p>An OpenEnv-compliant RL environment where agents execute real AWS CLI commands against a simulated cloud
-            powered by MiniStack. A progressive curriculum tracks mastery and adapts difficulty in real-time.</p>
+            infra in real time. A progressive curriculum tracks mastery and adapts difficulty in real-time.</p>
           <div class="skills-container">
             <span class="skill-tag">S3</span>
+            <span class="skill-tag">ALB</span>
             <span class="skill-tag">EC2</span>
             <span class="skill-tag">DynamoDB</span>
             <span class="skill-tag">Lambda</span>
@@ -84,7 +88,7 @@
       </div>
     </div>
 
-    <!-- Difficulty Tiers -->
+    <!-- Task Tiers (Timeline) -->
     <div class="section-wrapper" id="tiers">
       <div class="left-col">
         <div class="icon-container">
@@ -92,40 +96,96 @@
             <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
           </svg>
         </div>
-        <span class="section-title">Tiers</span>
+        <span class="section-title">Tasks</span>
       </div>
       <div class="right-col">
-        <div class="animate-up">
-          <div class="tier-item">
-            <span class="tier-badge warmup">Warmup</span>
-            <span class="tier-tasks">0 &ndash; 5</span>
-            <span class="tier-desc">List resources &mdash; S3 buckets, EC2 instances, DynamoDB tables</span>
-          </div>
-          <div class="tier-item">
-            <span class="tier-badge beginner">Beginner</span>
-            <span class="tier-tasks">6 &ndash; 10</span>
-            <span class="tier-desc">Create basic resources &mdash; buckets, tables, queues, functions</span>
-          </div>
-          <div class="tier-item">
-            <span class="tier-badge intermediate">Intermediate</span>
-            <span class="tier-tasks">11 &ndash; 14</span>
-            <span class="tier-desc">Multi-step operations &mdash; create, configure, and connect</span>
-          </div>
-          <div class="tier-item">
-            <span class="tier-badge advanced">Advanced</span>
-            <span class="tier-tasks">15 &ndash; 17</span>
-            <span class="tier-desc">Cross-service architectures &mdash; Lambda + SQS, API Gateway</span>
-          </div>
-          <div class="tier-item">
-            <span class="tier-badge expert">Expert</span>
-            <span class="tier-tasks">18 &ndash; 20</span>
-            <span class="tier-desc">SRE incidents &mdash; diagnose and fix broken infrastructure</span>
+        <div class="card animate-up">
+          <div class="timeline">
+
+            <div class="timeline-item active" style="--dot-color: #137333; --dot-bg: #e6f4ea;">
+              <div class="timeline-header">
+                <div class="role-title">Warmup</div>
+                <div class="date-badge">20 tasks</div>
+              </div>
+              <p class="timeline-subtitle">List resources &mdash; single read-only commands</p>
+              <ul class="timeline-points">
+                <li>Run one AWS CLI command to list or describe a resource type</li>
+                <li>S3 buckets, EC2 instances, DynamoDB tables, Lambda functions, RDS, EBS volumes</li>
+                <li>Graded by <strong>command_match</strong> &mdash; checks operation + service pair</li>
+                <li>No setup required, no state mutations</li>
+              </ul>
+            </div>
+
+            <div class="timeline-item active" style="--dot-color: #174ea6; --dot-bg: #e8f0fe;">
+              <div class="timeline-header">
+                <div class="role-title">Beginner</div>
+                <div class="date-badge">20 tasks</div>
+              </div>
+              <p class="timeline-subtitle">Create single resources with verification</p>
+              <ul class="timeline-points">
+                <li>Create an S3 bucket, DynamoDB table, SQS queue, or Lambda function</li>
+                <li>Graded by <strong>resource_creation</strong> &mdash; verifies the exact resource exists in MiniStack
+                </li>
+                <li>Introduces resource name validation &mdash; "my-bucket-2" won't satisfy a check for "my-bucket"</li>
+                <li>First tier where idempotency bonus (+0.02) can be earned</li>
+              </ul>
+            </div>
+
+            <div class="timeline-item active" style="--dot-color: #b05a00; --dot-bg: #fef7e0;">
+              <div class="timeline-header">
+                <div class="role-title">Intermediate</div>
+                <div class="date-badge">20 tasks</div>
+              </div>
+              <p class="timeline-subtitle">Multi-step workflows &mdash; create, configure, connect</p>
+              <ul class="timeline-points">
+                <li>Ordered sequences: create a bucket then enable versioning, create a table then add an item</li>
+                <li>Graded by <strong>multi_step</strong> &mdash; validates each step was completed in order</li>
+                <li>Chaos injection begins at <strong>10% probability</strong> &mdash; resources may be silently mutated
+                  mid-episode</li>
+                <li>Rollback penalty (-0.1) starts to matter with multi-step create/delete patterns</li>
+              </ul>
+            </div>
+
+            <div class="timeline-item active" style="--dot-color: #c5221f; --dot-bg: #fce8e6;">
+              <div class="timeline-header">
+                <div class="role-title">Advanced</div>
+                <div class="date-badge">20 tasks</div>
+              </div>
+              <p class="timeline-subtitle">Cross-service architectures spanning multiple AWS services</p>
+              <ul class="timeline-points">
+                <li>Wire Lambda to SQS, configure API Gateway with integrations, build event-driven pipelines</li>
+                <li>Graded by <strong>multi_step + services</strong> &mdash; all required services must be configured
+                </li>
+                <li>Chaos injection escalates to <strong>20% probability</strong> &mdash; DynamoDB throughput, Lambda
+                  configs may change</li>
+                <li>Hints cost more: 3 hints = only 61% of max reward (0.85&sup3; decay)</li>
+              </ul>
+            </div>
+
+            <div class="timeline-item active" style="--dot-color: #7627bb; --dot-bg: #f3e8fd;">
+              <div class="timeline-header">
+                <div class="role-title">Expert</div>
+                <div class="date-badge">20 tasks</div>
+              </div>
+              <p class="timeline-subtitle">SRE incidents &amp; drift detection &mdash; diagnose and fix</p>
+              <ul class="timeline-points">
+                <li>Fix overly permissive S3 policies, replace broad IAM inline policies, repair broken infra</li>
+                <li>Graded by <strong>state_checks</strong> &mdash; actual CLI commands run against MiniStack at grading
+                  time</li>
+                <li>Chaos injection at <strong>30% probability</strong> &mdash; maximum perturbation frequency</li>
+                <li><strong>6 drift detection tasks</strong> &mdash; correct infra is provisioned, then 2-3 random
+                  mutations applied from a pool</li>
+                <li>Agent must audit environment, discover which resources drifted, and fix only those</li>
+                <li>Drift is randomized per episode &mdash; prevents memorization of fix sequences</li>
+              </ul>
+            </div>
+
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Curriculum Features -->
+    <!-- Features -->
     <div class="section-wrapper" id="features">
       <div class="left-col">
         <div class="icon-container">
@@ -137,28 +197,226 @@
         <span class="section-title">Features</span>
       </div>
       <div class="right-col">
-        <div class="feature-grid animate-up">
-          <div class="minimal-card">
-            <div class="feature-icon">&#x2191;</div>
-            <h3 style="font-size:1.1rem;margin-bottom:.5rem;">Progressive Difficulty</h3>
-            <p style="font-size:.95rem;">Start easy, advance as you master each tier automatically.</p>
-          </div>
-          <div class="minimal-card">
-            <div class="feature-icon">&#x2713;</div>
-            <h3 style="font-size:1.1rem;margin-bottom:.5rem;">Mastery Tracking</h3>
-            <p style="font-size:.95rem;">Per-task graduation with sustained performance tracking.</p>
-          </div>
-          <div class="minimal-card">
-            <div class="feature-icon">&#x21BB;</div>
-            <h3 style="font-size:1.1rem;margin-bottom:.5rem;">Spaced Repetition</h3>
-            <p style="font-size:.95rem;">Graduated tasks resurface at increasing intervals.</p>
-          </div>
-          <div class="minimal-card">
-            <div class="feature-icon">&#x25CE;</div>
-            <h3 style="font-size:1.1rem;margin-bottom:.5rem;">Priority Selection</h3>
-            <p style="font-size:.95rem;">Focuses on your weakest skills for efficient learning.</p>
+
+        <!-- Curriculum & Training -->
+        <div class="card animate-up">
+          <h3>Curriculum & Training</h3>
+          <p>Adaptive learning system that tracks mastery and selects optimal tasks.</p>
+          <div class="feature-chips">
+            <div class="feature-chip" data-feature-id="progressive-difficulty">
+              <span class="feature-chip-icon">&#x2191;</span>
+              <div>
+                <strong>Progressive Difficulty</strong>
+                <span>5 tiers from warmup to expert SRE</span>
+              </div>
+              <svg class="feature-chip-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2">
+                <path d="M9 18l6-6-6-6" />
+              </svg>
+            </div>
+            <div class="feature-chip" data-feature-id="mastery-tracking">
+              <span class="feature-chip-icon">&#x2713;</span>
+              <div>
+                <strong>Mastery Tracking</strong>
+                <span>Per-task graduation with sustained performance</span>
+              </div>
+              <svg class="feature-chip-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2">
+                <path d="M9 18l6-6-6-6" />
+              </svg>
+            </div>
+            <div class="feature-chip" data-feature-id="spaced-repetition">
+              <span class="feature-chip-icon">&#x21BB;</span>
+              <div>
+                <strong>Spaced Repetition</strong>
+                <span>Graduated tasks resurface at increasing intervals</span>
+              </div>
+              <svg class="feature-chip-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2">
+                <path d="M9 18l6-6-6-6" />
+              </svg>
+            </div>
+            <div class="feature-chip" data-feature-id="priority-selection">
+              <span class="feature-chip-icon">&#x25CE;</span>
+              <div>
+                <strong>Priority Selection</strong>
+                <span>Novelty, weakness, and recency scoring</span>
+              </div>
+              <svg class="feature-chip-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2">
+                <path d="M9 18l6-6-6-6" />
+              </svg>
+            </div>
+            <div class="feature-chip" data-feature-id="tier-progression">
+              <span class="feature-chip-icon">&#x2B06;</span>
+              <div>
+                <strong>Tier Progression</strong>
+                <span>Standard promotion and fast-track system</span>
+              </div>
+              <svg class="feature-chip-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2">
+                <path d="M9 18l6-6-6-6" />
+              </svg>
+            </div>
           </div>
         </div>
+
+        <!-- Reward Shaping -->
+        <div class="card animate-up">
+          <h3>Reward Shaping</h3>
+          <p>Dense reward signals that encourage operational discipline and real progress.</p>
+          <div class="feature-chips">
+            <div class="feature-chip" data-feature-id="rollback-penalty">
+              <span class="feature-chip-icon">&#x2696;</span>
+              <div>
+                <strong>Rollback Penalty &amp; Idempotency Bonus</strong>
+                <span>Operational discipline rewards</span>
+              </div>
+              <svg class="feature-chip-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2">
+                <path d="M9 18l6-6-6-6" />
+              </svg>
+            </div>
+            <div class="feature-chip" data-feature-id="shaped-rewards">
+              <span class="feature-chip-icon">&#x1F4C8;</span>
+              <div>
+                <strong>Shaped Reward System</strong>
+                <span>Progress bonus, failure penalty, clamped rewards</span>
+              </div>
+              <svg class="feature-chip-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2">
+                <path d="M9 18l6-6-6-6" />
+              </svg>
+            </div>
+            <div class="feature-chip" data-feature-id="multi-strategy-grading">
+              <span class="feature-chip-icon">&#x2605;</span>
+              <div>
+                <strong>Multi-Strategy Grading</strong>
+                <span>5 grading strategies across tiers</span>
+              </div>
+              <svg class="feature-chip-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2">
+                <path d="M9 18l6-6-6-6" />
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <!-- Resilience & Adaptability -->
+        <div class="card animate-up">
+          <h3>Resilience & Adaptability</h3>
+          <p>Features that test agent robustness under unpredictable conditions.</p>
+          <div class="feature-chips">
+            <div class="feature-chip" data-feature-id="progressive-hints">
+              <span class="feature-chip-icon">&#x1F4A1;</span>
+              <div>
+                <strong>Progressive Hint System</strong>
+                <span>3-level hints with reward decay</span>
+              </div>
+              <svg class="feature-chip-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2">
+                <path d="M9 18l6-6-6-6" />
+              </svg>
+            </div>
+            <div class="feature-chip" data-feature-id="chaos-injection">
+              <span class="feature-chip-icon">&#x26A1;</span>
+              <div>
+                <strong>Chaos Injection Engine</strong>
+                <span>Silent mid-episode perturbations</span>
+              </div>
+              <svg class="feature-chip-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2">
+                <path d="M9 18l6-6-6-6" />
+              </svg>
+            </div>
+            <div class="feature-chip" data-feature-id="drift-detection">
+              <span class="feature-chip-icon">&#x1F50D;</span>
+              <div>
+                <strong>Drift Detection Tasks</strong>
+                <span>Randomized config drift per episode</span>
+              </div>
+              <svg class="feature-chip-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2">
+                <path d="M9 18l6-6-6-6" />
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <!-- Anti-Reward-Hacking -->
+        <div class="card animate-up">
+          <h3>Anti-Reward-Hacking</h3>
+          <p>8 defense layers that prevent the agent from gaming the reward system.</p>
+          <div class="feature-chips">
+            <div class="feature-chip" data-feature-id="ground-truth">
+              <span class="feature-chip-icon">&#x1F50E;</span>
+              <div>
+                <strong>Ground-Truth Verification</strong>
+                <span>MiniStack queries for 20+ services</span>
+              </div>
+              <svg class="feature-chip-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2">
+                <path d="M9 18l6-6-6-6" />
+              </svg>
+            </div>
+            <div class="feature-chip" data-feature-id="command-allowlisting">
+              <span class="feature-chip-icon">&#x1F6E1;</span>
+              <div>
+                <strong>Command Allowlisting</strong>
+                <span>Only <code>aws</code> CLI commands allowed</span>
+              </div>
+              <svg class="feature-chip-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2">
+                <path d="M9 18l6-6-6-6" />
+              </svg>
+            </div>
+            <div class="feature-chip" data-feature-id="deduplication">
+              <span class="feature-chip-icon">&#x1F6AB;</span>
+              <div>
+                <strong>Deduplication</strong>
+                <span>No reward for repeated commands</span>
+              </div>
+              <svg class="feature-chip-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2">
+                <path d="M9 18l6-6-6-6" />
+              </svg>
+            </div>
+            <div class="feature-chip" data-feature-id="monotonic-progress">
+              <span class="feature-chip-icon">&#x2197;</span>
+              <div>
+                <strong>Monotonic Progress</strong>
+                <span>Progress can only increase, never re-earn</span>
+              </div>
+              <svg class="feature-chip-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2">
+                <path d="M9 18l6-6-6-6" />
+              </svg>
+            </div>
+            <div class="feature-chip" data-feature-id="resource-validation">
+              <span class="feature-chip-icon">&#x1F3AF;</span>
+              <div>
+                <strong>Resource Name Validation</strong>
+                <span>Exact name match required</span>
+              </div>
+              <svg class="feature-chip-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2">
+                <path d="M9 18l6-6-6-6" />
+              </svg>
+            </div>
+            <div class="feature-chip" data-feature-id="state-checks">
+              <span class="feature-chip-icon">&#x2611;</span>
+              <div>
+                <strong>State Checks</strong>
+                <span>Verify final state, not command history</span>
+              </div>
+              <svg class="feature-chip-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2">
+                <path d="M9 18l6-6-6-6" />
+              </svg>
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
 
@@ -173,38 +431,54 @@
         <span class="section-title">API</span>
       </div>
       <div class="right-col">
-        <div class="grid-2 animate-up">
-          <div class="card" style="margin-bottom:0;">
-            <h3 style="font-size:1.1rem;">WebSocket</h3>
-            <div class="code-block">import websockets, json
+        <div class="animate-up">
+          <div class="card">
+            <div class="code-header">
+              <h3 style="font-size:1.1rem;margin-bottom:0;">WebSocket</h3>
+              <button class="copy-btn" onclick="copyCode(this)">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="9" y="9" width="13" height="13" rx="2" />
+                  <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
+                </svg>
+                Copy
+              </button>
+            </div>
+            <div class="code-block" data-lang="python">import websockets, json
 
               async with websockets.connect(
-              "wss://your-space.hf.space/ws"
+              "wss://sizzing-aws-rl-env.hf.space/ws"
               ) as ws:
+              # Reset environment
               await ws.send(json.dumps({
               "type": "reset"
               }))
               obs = json.loads(await ws.recv())
 
+              # Execute a command
               await ws.send(json.dumps({
               "type": "step",
               "data": {"command": "aws s3 ls"}
               }))
               obs = json.loads(await ws.recv())</div>
           </div>
-          <div class="card" style="margin-bottom:0;">
-            <h3 style="font-size:1.1rem;">Python Client</h3>
-            <div class="code-block">from aws_rl_env import (
-              AwsRlEnv, AwsRlAction
-              )
+          <div class="card">
+            <div class="code-header">
+              <h3 style="font-size:1.1rem;margin-bottom:0;">Python Client</h3>
+              <button class="copy-btn" onclick="copyCode(this)">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="9" y="9" width="13" height="13" rx="2" />
+                  <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
+                </svg>
+                Copy
+              </button>
+            </div>
+            <div class="code-block" data-lang="python">from aws_rl_env import AwsRlEnv, AwsRlAction
 
-              with AwsRlEnv.from_env(
-              "your-hf-user/aws-rl-env"
+              async with AwsRlEnv.from_env(
+              "sizzing/aws-rl-env"
               ) as env:
               result = await env.step(
-              AwsRlAction(
-              command="aws s3 ls"
-              )
+              AwsRlAction(command="aws s3 ls")
               )</div>
           </div>
         </div>
@@ -236,21 +510,36 @@
               <span class="card-label">Command</span>
               <input class="cmd-input" id="cmdInput" type="text"
                 placeholder="aws s3 ls"
-                onkeydown="if(event.key==='Enter')runCmd()">
-              <button class="btn-secondary btn-full" id="runBtn" onclick="runCmd()" style="margin-top:0.75rem;">Run
+                onkeydown="if(event.key==='Enter')runCmd()" disabled>
+              <button class="btn-secondary btn-full" id="runBtn" onclick="runCmd()" style="margin-top:0.75rem;"
+                disabled>Run
                 Command</button>
+              <button class="btn-solution btn-full" id="solutionBtn" onclick="toggleSolution()" style="margin-top:0.5rem;" disabled>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
+                Show Solution
+              </button>
             </div>
             <div class="minimal-card">
-              <span class="card-label">Services</span>
-              <div class="skills-container">
-                <span class="skill-tag">S3</span>
-                <span class="skill-tag">EC2</span>
-                <span class="skill-tag">DynamoDB</span>
-                <span class="skill-tag">Lambda</span>
-                <span class="skill-tag">SQS</span>
-                <span class="skill-tag">SNS</span>
-                <span class="skill-tag">IAM</span>
-                <span class="skill-tag">API GW</span>
+              <span class="card-label">State</span>
+              <div class="state-info">
+                <div class="state-row">
+                  <span class="state-label">Tier</span>
+                  <span class="state-value" id="stateTier">&mdash;</span>
+                </div>
+                <div class="state-row">
+                  <span class="state-label">Episode</span>
+                  <span class="state-value" id="stateEpisode">&mdash;</span>
+                </div>
+                <div class="state-row">
+                  <span class="state-label">Progress</span>
+                  <div class="progress-bar-container">
+                    <div class="progress-bar-fill" id="stateProgress" style="width:0%"></div>
+                  </div>
+                </div>
+                <div class="state-row">
+                  <span class="state-label">Reward</span>
+                  <span class="state-value" id="stateReward">0.00</span>
+                </div>
               </div>
             </div>
           </div>
@@ -264,6 +553,12 @@
             </div>
 
             <div class="status-bar" id="statusBar" style="margin-bottom:1rem;">Ready.</div>
+
+            <!-- Solution Panel -->
+            <div class="solution-panel" id="solutionPanel" style="margin-bottom:1rem;display:none;">
+              <span class="card-label" style="margin-bottom:0.75rem;">Solution Steps</span>
+              <div class="solution-commands" id="solutionCommands"></div>
+            </div>
 
             <div class="card" style="margin-bottom:1rem;">
               <span class="card-label">Output</span>
@@ -296,11 +591,703 @@
 
   </div>
 
+  <!-- Feature Detail Modal -->
+  <div id="feature-modal">
+    <div class="modal-container">
+      <button class="close-modal" id="close-modal-btn">&times;</button>
+      <h2 id="modal-title"></h2>
+      <div class="modal-grid">
+        <div class="modal-section">
+          <span class="modal-label">What it does</span>
+          <p id="modal-what"></p>
+          <span class="modal-label">Why it matters</span>
+          <p id="modal-why"></p>
+          <span class="modal-label">How it works</span>
+          <p id="modal-how"></p>
+        </div>
+        <div class="modal-section">
+          <span class="modal-label">Key metrics</span>
+          <div id="modal-metrics"></div>
+          <span class="modal-label">Architecture</span>
+          <div class="diag-container" id="modal-diagram"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <footer>
-    <p>AWS RL Environment &mdash; An OpenEnv environment powered by MiniStack</p>
+    <p>AWS CLI Reinforcement Learning Environment &mdash; An OpenEnv environment</p>
   </footer>
 
   <script src="/static/js/app.js"></script>
+  <script>
+    // Python syntax highlighting
+    function highlightPython(code) {
+      const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      const tokens = [];
+      let i = 0;
+      while (i < code.length) {
+        // Comments
+        if (code[i] === '#') {
+          let end = code.indexOf('\n', i);
+          if (end === -1) end = code.length;
+          tokens.push('<span class="hl-comment">' + esc(code.slice(i, end)) + '</span>');
+          i = end;
+        }
+        // Strings (double or single quoted)
+        else if (code[i] === '"' || code[i] === "'") {
+          const q = code[i];
+          let j = i + 1;
+          while (j < code.length && code[j] !== q) { if (code[j] === '\\') j++; j++; }
+          j = Math.min(j + 1, code.length);
+          tokens.push('<span class="hl-string">' + esc(code.slice(i, j)) + '</span>');
+          i = j;
+        }
+        // Words (keywords, builtins, etc)
+        else if (/[a-zA-Z_]/.test(code[i])) {
+          let j = i;
+          while (j < code.length && /[a-zA-Z0-9_]/.test(code[j])) j++;
+          const word = code.slice(i, j);
+          const kw = ['import', 'from', 'as', 'with', 'async', 'await', 'if', 'else', 'elif', 'for', 'while', 'return', 'def', 'class', 'try', 'except', 'finally', 'raise', 'yield', 'pass', 'break', 'continue', 'and', 'or', 'not', 'in', 'is', 'True', 'False', 'None'];
+          const bi = ['print', 'len', 'range', 'type', 'str', 'int', 'float', 'list', 'dict', 'set', 'tuple', 'json', 'self'];
+          if (kw.includes(word)) tokens.push('<span class="hl-keyword">' + esc(word) + '</span>');
+          else if (bi.includes(word)) tokens.push('<span class="hl-builtin">' + esc(word) + '</span>');
+          else tokens.push(esc(word));
+          i = j;
+        }
+        // Parens/brackets
+        else if ('()[]{}:'.includes(code[i])) {
+          tokens.push('<span class="hl-punct">' + esc(code[i]) + '</span>');
+          i++;
+        }
+        else {
+          tokens.push(esc(code[i]));
+          i++;
+        }
+      }
+      return tokens.join('');
+    }
+
+    document.querySelectorAll('.code-block[data-lang="python"]').forEach(block => {
+      const raw = block.textContent;
+      block.dataset.raw = raw;
+      block.innerHTML = highlightPython(raw);
+    });
+
+    // Copy code to clipboard
+    function copyCode(btn) {
+      var codeBlock = btn.closest('.card').querySelector('.code-block');
+      var text = codeBlock.dataset.raw || codeBlock.textContent;
+
+      function onSuccess() {
+        btn.classList.add('copied');
+        btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg> Copied!';
+        setTimeout(function () {
+          btn.classList.remove('copied');
+          btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg> Copy';
+        }, 2000);
+      }
+
+      function fallbackCopy() {
+        var textarea = document.createElement('textarea');
+        textarea.value = text;
+        textarea.setAttribute('readonly', '');
+        textarea.style.position = 'absolute';
+        textarea.style.left = '-9999px';
+        document.body.appendChild(textarea);
+        textarea.select();
+        try { document.execCommand('copy'); onSuccess(); }
+        catch (e) { /* silent */ }
+        document.body.removeChild(textarea);
+      }
+
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(onSuccess).catch(fallbackCopy);
+      } else {
+        fallbackCopy();
+      }
+    }
+
+    // Solution — show next step
+    async function toggleSolution() {
+      var panel = document.getElementById('solutionPanel');
+      var btn = document.getElementById('solutionBtn');
+      var container = document.getElementById('solutionCommands');
+      var cmdInput = document.getElementById('cmdInput');
+      try {
+        var res = await fetch('/web/solution');
+        var data = await res.json();
+        if (data.error) {
+          setStatus(data.error, 'error');
+          return;
+        }
+        if (!data.command) {
+          container.innerHTML = '<div class="solution-cmd is-note"><span class="solution-step">&#x2713;</span><code>All solution steps shown. Run the commands above to complete the task.</code></div>';
+          panel.style.display = 'block';
+          return;
+        }
+        // Append to solution panel
+        var stepEl = document.createElement('div');
+        stepEl.className = 'solution-cmd';
+        stepEl.innerHTML = '<span class="solution-step">' + data.step + '</span><code>' + escHtml(data.command) + '</code>';
+        container.appendChild(stepEl);
+        panel.style.display = 'block';
+
+        // Auto-fill the command input
+        cmdInput.value = data.command;
+        cmdInput.focus();
+
+        // Update button text with step info
+        btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg> Next Step (' + data.step + '/' + data.total_steps + ')';
+      } catch(e) {
+        setStatus('Failed to load solution: ' + escHtml(e.message), 'error');
+      }
+    }
+
+    // Feature details database
+    const featureDetails = {
+      'progressive-difficulty': {
+        title: 'Progressive Difficulty',
+        what: 'The environment organizes 27 tasks across 5 tiers: Warmup, Beginner, Intermediate, Advanced, and Expert. Tasks progress from simple listing operations to complex SRE incident response and drift detection scenarios.',
+        why: 'Prevents the agent from being overwhelmed by complex tasks early on. Scaffolded difficulty ensures the agent builds foundational skills before tackling multi-service architectures.',
+        how: 'The CurriculumManager maintains per-agent tier state. Promotion requires meeting a minimum episode count and success rate threshold. A fast-track mechanism allows agents scoring 90%+ on 3 consecutive episodes to skip the minimum wait.',
+        metrics: [
+          { v: '5', l: 'Difficulty Tiers' },
+          { v: '27', l: 'Total Tasks' },
+          { v: '90%', l: 'Fast-track Threshold' }
+        ],
+        diagram: `<svg viewBox="0 0 320 180" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="10" y="140" width="56" height="30" rx="6" fill="#e6f4ea" stroke="#137333" stroke-width="1.5"/>
+          <text x="38" y="159" text-anchor="middle" font-size="9" fill="#137333" font-weight="500">Warmup</text>
+          <rect x="76" y="110" width="56" height="60" rx="6" fill="#e8f0fe" stroke="#174ea6" stroke-width="1.5"/>
+          <text x="104" y="145" text-anchor="middle" font-size="9" fill="#174ea6" font-weight="500">Beginner</text>
+          <rect x="142" y="80" width="56" height="90" rx="6" fill="#fef7e0" stroke="#b05a00" stroke-width="1.5"/>
+          <text x="170" y="130" text-anchor="middle" font-size="9" fill="#b05a00" font-weight="500">Intermed.</text>
+          <rect x="208" y="50" width="56" height="120" rx="6" fill="#fce8e6" stroke="#c5221f" stroke-width="1.5"/>
+          <text x="236" y="115" text-anchor="middle" font-size="9" fill="#c5221f" font-weight="500">Advanced</text>
+          <rect x="274" y="20" width="42" height="150" rx="6" fill="#f3e8fd" stroke="#7627bb" stroke-width="1.5"/>
+          <text x="295" y="100" text-anchor="middle" font-size="9" fill="#7627bb" font-weight="500">Expert</text>
+          <path d="M66 155 L76 140" stroke="#dadce0" stroke-width="1.5" stroke-dasharray="4 2"/>
+          <path d="M132 140 L142 125" stroke="#dadce0" stroke-width="1.5" stroke-dasharray="4 2"/>
+          <path d="M198 125 L208 110" stroke="#dadce0" stroke-width="1.5" stroke-dasharray="4 2"/>
+          <path d="M264 110 L274 95" stroke="#dadce0" stroke-width="1.5" stroke-dasharray="4 2"/>
+          <text x="160" y="12" text-anchor="middle" font-size="10" fill="#5f6368">Task Complexity Staircase</text>
+        </svg>`
+      },
+
+      'mastery-tracking': {
+        title: 'Mastery Tracking',
+        what: 'Each task independently tracks the agent\'s performance using a weighted success rate over a sliding window. Tasks "graduate" when performance exceeds the mastery threshold consistently.',
+        why: 'Ensures the agent truly masters a skill before moving on. Prevents lucky single completions from being treated as mastery. Un-graduation catches skill decay.',
+        how: 'A mastery_window of 10 episodes and mastery_threshold of 0.7 (70% success). Minimum 3 attempts required before graduation. Recent results are weighted more heavily using exponential decay (factor 0.85). Graduated tasks can un-graduate if performance drops.',
+        metrics: [
+          { v: '70%', l: 'Mastery Threshold' },
+          { v: '10', l: 'Window Size (episodes)' },
+          { v: '0.85', l: 'Decay Factor' }
+        ],
+        diagram: `<svg viewBox="0 0 320 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <line x1="30" y1="130" x2="300" y2="130" stroke="#dadce0" stroke-width="1"/>
+          <line x1="30" y1="130" x2="30" y2="20" stroke="#dadce0" stroke-width="1"/>
+          <line x1="30" y1="52" x2="300" y2="52" stroke="#1a73e8" stroke-width="1" stroke-dasharray="6 3"/>
+          <text x="305" y="55" font-size="8" fill="#1a73e8">70% threshold</text>
+          <polyline points="50,120 80,100 110,90 140,70 170,60 200,45 230,40 260,38" stroke="#34a853" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="200" cy="45" r="4" fill="#34a853"/>
+          <text x="200" y="38" text-anchor="middle" font-size="8" fill="#34a853">Graduated!</text>
+          <text x="165" y="150" text-anchor="middle" font-size="9" fill="#5f6368">Episodes</text>
+          <text x="15" y="75" font-size="9" fill="#5f6368" transform="rotate(-90 15 75)">Success %</text>
+        </svg>`
+      },
+
+      'spaced-repetition': {
+        title: 'Spaced Repetition',
+        what: 'Graduated tasks don\'t disappear — they resurface at exponentially increasing intervals (3, 6, 12, 24, 48 episodes) for re-testing, earning a +30 priority bonus when due.',
+        why: 'Prevents catastrophic forgetting. The agent must retain skills even as it learns new ones. Exponential spacing is the most efficient retention schedule, borrowed from cognitive science.',
+        how: 'Each task tracks a spaced_rep_interval starting at 3 episodes. When the task is re-tested and passes, the interval doubles (up to 48). If it fails, the interval resets. The _is_spaced_rep_due() method checks elapsed episodes against the interval.',
+        metrics: [
+          { v: '+30', l: 'Spaced Rep Bonus' },
+          { v: '3\u219248', l: 'Interval Range (episodes)' },
+          { v: '2x', l: 'Interval Growth' }
+        ],
+        diagram: `<svg viewBox="0 0 320 140" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <text x="160" y="15" text-anchor="middle" font-size="10" fill="#202124" font-weight="500">Spaced Repetition Schedule</text>
+          <rect x="20" y="35" width="30" height="20" rx="4" fill="#e8f0fe" stroke="#1a73e8" stroke-width="1"/>
+          <text x="35" y="49" text-anchor="middle" font-size="8" fill="#1a73e8">3</text>
+          <rect x="70" y="35" width="40" height="20" rx="4" fill="#e8f0fe" stroke="#1a73e8" stroke-width="1"/>
+          <text x="90" y="49" text-anchor="middle" font-size="8" fill="#1a73e8">6</text>
+          <rect x="130" y="35" width="50" height="20" rx="4" fill="#e8f0fe" stroke="#1a73e8" stroke-width="1"/>
+          <text x="155" y="49" text-anchor="middle" font-size="8" fill="#1a73e8">12</text>
+          <rect x="200" y="35" width="50" height="20" rx="4" fill="#e8f0fe" stroke="#1a73e8" stroke-width="1"/>
+          <text x="225" y="49" text-anchor="middle" font-size="8" fill="#1a73e8">24</text>
+          <rect x="270" y="35" width="40" height="20" rx="4" fill="#e8f0fe" stroke="#1a73e8" stroke-width="1"/>
+          <text x="290" y="49" text-anchor="middle" font-size="8" fill="#1a73e8">48</text>
+          <path d="M50 45 L70 45" stroke="#dadce0" stroke-width="1.5" marker-end="url(#arr)"/>
+          <path d="M110 45 L130 45" stroke="#dadce0" stroke-width="1.5" marker-end="url(#arr)"/>
+          <path d="M180 45 L200 45" stroke="#dadce0" stroke-width="1.5" marker-end="url(#arr)"/>
+          <path d="M250 45 L270 45" stroke="#dadce0" stroke-width="1.5" marker-end="url(#arr)"/>
+          <defs><marker id="arr" markerWidth="6" markerHeight="4" refX="6" refY="2" orient="auto"><path d="M0 0 L6 2 L0 4" fill="#dadce0"/></marker></defs>
+          <text x="160" y="80" text-anchor="middle" font-size="9" fill="#5f6368">Episodes between reviews (doubles on success)</text>
+          <rect x="60" y="95" width="200" height="35" rx="8" fill="#f8f9fa" stroke="#dadce0" stroke-width="1"/>
+          <text x="160" y="110" text-anchor="middle" font-size="9" fill="#202124">Pass \u2192 interval doubles</text>
+          <text x="160" y="122" text-anchor="middle" font-size="9" fill="#ea4335">Fail \u2192 interval resets to 3</text>
+        </svg>`
+      },
+
+      'priority-selection': {
+        title: 'Priority Selection',
+        what: 'Tasks are ranked by a composite score combining novelty, weakness, spaced repetition due dates, and recency. The highest-scoring task is selected for each episode.',
+        why: 'Optimizes the training curriculum by ensuring the agent explores new tasks, practices weak areas, revisits graduated skills, and maintains variety \u2014 all balanced automatically.',
+        how: 'score = novelty_bonus (+100 if never attempted) + weakness_weight (+50 \u00d7 (1 - success_rate)) + spaced_rep_bonus (+30 if due) - recency_penalty (-20 if attempted in last 2 episodes). The weighted success rate uses exponential decay (0.85) to emphasize recent performance.',
+        metrics: [
+          { v: '+100', l: 'Novelty Bonus' },
+          { v: '+50', l: 'Max Weakness Weight' },
+          { v: '-20', l: 'Recency Penalty' }
+        ],
+        diagram: `<svg viewBox="0 0 320 170" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <text x="160" y="15" text-anchor="middle" font-size="10" fill="#202124" font-weight="500">Priority Score Formula</text>
+          <rect x="20" y="30" width="130" height="28" rx="6" fill="#e6f4ea" stroke="#137333" stroke-width="1"/>
+          <text x="85" y="48" text-anchor="middle" font-size="9" fill="#137333">novelty_bonus: +100</text>
+          <rect x="170" y="30" width="130" height="28" rx="6" fill="#fef7e0" stroke="#b05a00" stroke-width="1"/>
+          <text x="235" y="48" text-anchor="middle" font-size="9" fill="#b05a00">weakness: +50\u00d7(1-rate)</text>
+          <rect x="20" y="70" width="130" height="28" rx="6" fill="#e8f0fe" stroke="#1a73e8" stroke-width="1"/>
+          <text x="85" y="88" text-anchor="middle" font-size="9" fill="#1a73e8">spaced_rep: +30</text>
+          <rect x="170" y="70" width="130" height="28" rx="6" fill="#fce8e6" stroke="#c5221f" stroke-width="1"/>
+          <text x="235" y="88" text-anchor="middle" font-size="9" fill="#c5221f">recency: -20</text>
+          <text x="160" y="120" text-anchor="middle" font-size="11" fill="#202124" font-weight="500">= priority score</text>
+          <rect x="60" y="130" width="200" height="30" rx="8" fill="#f8f9fa" stroke="#dadce0" stroke-width="1"/>
+          <text x="160" y="149" text-anchor="middle" font-size="9" fill="#5f6368">Highest score \u2192 next task selected</text>
+        </svg>`
+      },
+
+      'tier-progression': {
+        title: 'Tier Progression',
+        what: 'Agents advance through tiers via standard promotion (minimum episodes + success rate) or fast-track (3 consecutive high-scoring episodes). Tiers gate access to increasingly complex task pools.',
+        why: 'Provides structure to the learning process. Standard promotion ensures sufficient exposure; fast-track rewards agents that demonstrate immediate competence.',
+        how: 'Standard: complete min_episodes at current tier with success_rate >= advance_rate. Fast-track: 3 consecutive episodes at >= 90% success bypasses the minimum episode requirement. Un-promotion is not supported \u2014 agents cannot drop tiers.',
+        metrics: [
+          { v: '3', l: 'Fast-track Streak' },
+          { v: '90%', l: 'Fast-track Rate' },
+          { v: '5', l: 'Total Tiers' }
+        ],
+        diagram: `<svg viewBox="0 0 320 140" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="10" y="90" width="55" height="24" rx="6" fill="#e6f4ea" stroke="#137333" stroke-width="1.5"/>
+          <text x="37" y="106" text-anchor="middle" font-size="8" fill="#137333">Warmup</text>
+          <rect x="80" y="90" width="55" height="24" rx="6" fill="#e8f0fe" stroke="#174ea6" stroke-width="1.5"/>
+          <text x="107" y="106" text-anchor="middle" font-size="8" fill="#174ea6">Beginner</text>
+          <rect x="150" y="90" width="55" height="24" rx="6" fill="#fef7e0" stroke="#b05a00" stroke-width="1.5"/>
+          <text x="177" y="106" text-anchor="middle" font-size="8" fill="#b05a00">Intermed.</text>
+          <rect x="220" y="90" width="55" height="24" rx="6" fill="#fce8e6" stroke="#c5221f" stroke-width="1.5"/>
+          <text x="247" y="106" text-anchor="middle" font-size="8" fill="#c5221f">Advanced</text>
+          <rect x="290" y="90" width="25" height="24" rx="6" fill="#f3e8fd" stroke="#7627bb" stroke-width="1.5"/>
+          <text x="302" y="106" text-anchor="middle" font-size="7" fill="#7627bb">Exp</text>
+          <path d="M65 102 L80 102" stroke="#34a853" stroke-width="2" marker-end="url(#arr2)"/>
+          <path d="M135 102 L150 102" stroke="#34a853" stroke-width="2" marker-end="url(#arr2)"/>
+          <path d="M205 102 L220 102" stroke="#34a853" stroke-width="2" marker-end="url(#arr2)"/>
+          <path d="M275 102 L290 102" stroke="#34a853" stroke-width="2" marker-end="url(#arr2)"/>
+          <defs><marker id="arr2" markerWidth="6" markerHeight="4" refX="6" refY="2" orient="auto"><path d="M0 0 L6 2 L0 4" fill="#34a853"/></marker></defs>
+          <path d="M37 90 Q37 50 107 50 Q177 50 177 90" stroke="#1a73e8" stroke-width="1.5" stroke-dasharray="4 2" fill="none"/>
+          <text x="107" y="42" text-anchor="middle" font-size="8" fill="#1a73e8">Fast-track (3x 90%+)</text>
+          <text x="107" y="130" text-anchor="middle" font-size="8" fill="#5f6368">Standard: min episodes + success rate</text>
+        </svg>`
+      },
+
+      'rollback-penalty': {
+        title: 'Rollback Penalty & Idempotency Bonus',
+        what: 'Detects create\u2192delete pairs on the same resource (rollbacks) and penalizes them (-0.1 each). Rewards graceful "already exists" handling (+0.02) where the agent retries idempotently.',
+        why: 'First RL environment rewarding operational discipline. In production, create-then-delete cycles are wasteful. Handling "already exists" gracefully is a sign of robust automation.',
+        how: 'EpisodeTracker.detect_rollbacks() scans command history for paired create/delete operations on the same resource. Idempotency detection looks for commands that fail with "already exists" patterns (BucketAlreadyExists, ResourceInUseException, etc.) followed by successful continuation.',
+        metrics: [
+          { v: '-0.1', l: 'Rollback Penalty' },
+          { v: '+0.02', l: 'Idempotency Bonus' },
+          { v: 'Per pair', l: 'Detection Granularity' }
+        ],
+        diagram: `<svg viewBox="0 0 320 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <text x="160" y="15" text-anchor="middle" font-size="10" fill="#202124" font-weight="500">Operational Discipline Detection</text>
+          <rect x="20" y="35" width="130" height="50" rx="8" fill="#fce8e6" stroke="#c5221f" stroke-width="1.5"/>
+          <text x="85" y="53" text-anchor="middle" font-size="9" fill="#c5221f" font-weight="500">Rollback</text>
+          <text x="85" y="66" text-anchor="middle" font-size="8" fill="#5f6368">create-bucket \u2192 delete-bucket</text>
+          <text x="85" y="78" text-anchor="middle" font-size="9" fill="#c5221f" font-weight="500">-0.1 penalty</text>
+          <rect x="170" y="35" width="130" height="50" rx="8" fill="#e6f4ea" stroke="#137333" stroke-width="1.5"/>
+          <text x="235" y="53" text-anchor="middle" font-size="9" fill="#137333" font-weight="500">Idempotent</text>
+          <text x="235" y="66" text-anchor="middle" font-size="8" fill="#5f6368">create fails \u2192 continues ok</text>
+          <text x="235" y="78" text-anchor="middle" font-size="9" fill="#137333" font-weight="500">+0.02 bonus</text>
+          <rect x="40" y="105" width="240" height="40" rx="8" fill="#f8f9fa" stroke="#dadce0" stroke-width="1"/>
+          <text x="160" y="122" text-anchor="middle" font-size="9" fill="#202124">episode_tracker.detect_rollbacks()</text>
+          <text x="160" y="136" text-anchor="middle" font-size="8" fill="#5f6368">Scans full command history at grading time</text>
+        </svg>`
+      },
+
+      'shaped-rewards': {
+        title: 'Shaped Reward System',
+        what: 'Rewards are carefully shaped: 1.0 for full completion, 0.0-0.8 for partial progress, +0.1 progress bonus for advancing, \u00d70.5 for failures, capped at 0.99 without completion. Chaos bonus (\u00d71.05) and hint decay (\u00d70.85^n) layer on top.',
+        why: 'Dense reward signal prevents sparse-reward stagnation. The agent gets meaningful feedback on every step, not just at episode end. Capping at 0.99 ensures only real completion earns full credit.',
+        how: 'TaskGrader dispatches to 5 strategies by tier: command_match (warmup), resource_creation (beginner), multi_step (intermediate), multi_step+services (advanced), and state_checks (expert). Each returns partial_progress which is converted to reward with bonuses/penalties applied.',
+        metrics: [
+          { v: '1.0', l: 'Max Reward' },
+          { v: '0.99', l: 'Progress Cap' },
+          { v: '\u00d71.05', l: 'Chaos Bonus' }
+        ],
+        diagram: `<svg viewBox="0 0 320 170" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <text x="160" y="15" text-anchor="middle" font-size="10" fill="#202124" font-weight="500">Reward Pipeline</text>
+          <rect x="10" y="30" width="70" height="30" rx="6" fill="#e8f0fe" stroke="#1a73e8" stroke-width="1"/>
+          <text x="45" y="49" text-anchor="middle" font-size="8" fill="#1a73e8">Base grade</text>
+          <rect x="90" y="30" width="70" height="30" rx="6" fill="#e6f4ea" stroke="#137333" stroke-width="1"/>
+          <text x="125" y="49" text-anchor="middle" font-size="8" fill="#137333">+0.1 progress</text>
+          <rect x="170" y="30" width="70" height="30" rx="6" fill="#fce8e6" stroke="#c5221f" stroke-width="1"/>
+          <text x="205" y="49" text-anchor="middle" font-size="8" fill="#c5221f">\u00d70.5 fail</text>
+          <rect x="250" y="30" width="60" height="30" rx="6" fill="#f3e8fd" stroke="#7627bb" stroke-width="1"/>
+          <text x="280" y="49" text-anchor="middle" font-size="8" fill="#7627bb">Clamp</text>
+          <path d="M80 45 L90 45" stroke="#dadce0" stroke-width="1.5"/>
+          <path d="M160 45 L170 45" stroke="#dadce0" stroke-width="1.5"/>
+          <path d="M240 45 L250 45" stroke="#dadce0" stroke-width="1.5"/>
+          <rect x="40" y="80" width="100" height="25" rx="6" fill="#fef7e0" stroke="#b05a00" stroke-width="1"/>
+          <text x="90" y="96" text-anchor="middle" font-size="8" fill="#b05a00">\u00d70.85^hints decay</text>
+          <rect x="180" y="80" width="100" height="25" rx="6" fill="#e6f4ea" stroke="#137333" stroke-width="1"/>
+          <text x="230" y="96" text-anchor="middle" font-size="8" fill="#137333">\u00d71.05 chaos bonus</text>
+          <rect x="80" y="120" width="160" height="30" rx="8" fill="#1a73e8"/>
+          <text x="160" y="139" text-anchor="middle" font-size="10" fill="white" font-weight="500">Final Reward</text>
+        </svg>`
+      },
+
+      'multi-strategy-grading': {
+        title: 'Multi-Strategy Grading',
+        what: 'Five distinct grading strategies, one per tier: command_match checks operation+service pairs, resource_creation verifies resources exist, multi_step validates ordered sequences, advanced adds service coverage, and expert runs state_checks against MiniStack.',
+        why: 'Each tier tests fundamentally different skills. A single grading strategy would either be too lenient for beginners or miss the nuance needed for expert SRE tasks.',
+        how: 'TaskGrader.grade() dispatches based on the task\'s grading_strategy field. Each strategy returns a GradeResult with partial_progress (0.0-1.0), completed flag, and details. The grading is deterministic and fully automated.',
+        metrics: [
+          { v: '5', l: 'Grading Strategies' },
+          { v: '100%', l: 'Automated' },
+          { v: 'Per-tier', l: 'Strategy Selection' }
+        ],
+        diagram: `<svg viewBox="0 0 320 170" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <text x="160" y="15" text-anchor="middle" font-size="10" fill="#202124" font-weight="500">Grading Strategy Dispatch</text>
+          <rect x="110" y="25" width="100" height="28" rx="6" fill="#1a73e8"/>
+          <text x="160" y="43" text-anchor="middle" font-size="9" fill="white" font-weight="500">TaskGrader</text>
+          <line x1="130" y1="53" x2="40" y2="75" stroke="#dadce0" stroke-width="1"/>
+          <line x1="145" y1="53" x2="100" y2="75" stroke="#dadce0" stroke-width="1"/>
+          <line x1="160" y1="53" x2="160" y2="75" stroke="#dadce0" stroke-width="1"/>
+          <line x1="175" y1="53" x2="220" y2="75" stroke="#dadce0" stroke-width="1"/>
+          <line x1="190" y1="53" x2="280" y2="75" stroke="#dadce0" stroke-width="1"/>
+          <rect x="10" y="75" width="60" height="40" rx="6" fill="#e6f4ea" stroke="#137333" stroke-width="1"/>
+          <text x="40" y="92" text-anchor="middle" font-size="7" fill="#137333">command</text>
+          <text x="40" y="103" text-anchor="middle" font-size="7" fill="#137333">_match</text>
+          <rect x="80" y="75" width="60" height="40" rx="6" fill="#e8f0fe" stroke="#174ea6" stroke-width="1"/>
+          <text x="110" y="92" text-anchor="middle" font-size="7" fill="#174ea6">resource</text>
+          <text x="110" y="103" text-anchor="middle" font-size="7" fill="#174ea6">_creation</text>
+          <rect x="150" y="75" width="60" height="40" rx="6" fill="#fef7e0" stroke="#b05a00" stroke-width="1"/>
+          <text x="180" y="92" text-anchor="middle" font-size="7" fill="#b05a00">multi</text>
+          <text x="180" y="103" text-anchor="middle" font-size="7" fill="#b05a00">_step</text>
+          <rect x="220" y="75" width="60" height="40" rx="6" fill="#fce8e6" stroke="#c5221f" stroke-width="1"/>
+          <text x="250" y="92" text-anchor="middle" font-size="7" fill="#c5221f">multi_step</text>
+          <text x="250" y="103" text-anchor="middle" font-size="7" fill="#c5221f">+services</text>
+          <rect x="290" y="75" width="25" height="40" rx="6" fill="#f3e8fd" stroke="#7627bb" stroke-width="1"/>
+          <text x="302" y="98" text-anchor="middle" font-size="7" fill="#7627bb">state</text>
+          <text x="40" y="128" text-anchor="middle" font-size="7" fill="#5f6368">Warmup</text>
+          <text x="110" y="128" text-anchor="middle" font-size="7" fill="#5f6368">Beginner</text>
+          <text x="180" y="128" text-anchor="middle" font-size="7" fill="#5f6368">Intermed.</text>
+          <text x="250" y="128" text-anchor="middle" font-size="7" fill="#5f6368">Advanced</text>
+          <text x="302" y="128" text-anchor="middle" font-size="7" fill="#5f6368">Expert</text>
+        </svg>`
+      },
+
+      'progressive-hints': {
+        title: 'Progressive Hint System',
+        what: 'A 3-level hint system where each level reveals progressively more detail: Level 1 names the AWS services, Level 2 describes the operations, Level 3 gives near-complete command structure. Each hint reduces the final reward by \u00d70.85.',
+        why: 'Creates an information-reward tradeoff. The agent learns to wean off hints over time \u2014 initially relying on them for unfamiliar tasks, then solving independently for maximum reward.',
+        how: 'The agent requests hints via the special command "aws help --task-hint". HintProvider generates level-appropriate guidance from the task definition. EpisodeTracker records hint usage. At grading time, reward is multiplied by 0.85^hints_used (3 hints = ~61% of max reward).',
+        metrics: [
+          { v: '3', l: 'Hint Levels' },
+          { v: '\u00d70.85', l: 'Decay Per Hint' },
+          { v: '~61%', l: 'Reward with 3 Hints' }
+        ],
+        diagram: `<svg viewBox="0 0 320 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <text x="160" y="15" text-anchor="middle" font-size="10" fill="#202124" font-weight="500">Hint Levels and Reward Decay</text>
+          <rect x="20" y="35" width="80" height="45" rx="8" fill="#e6f4ea" stroke="#137333" stroke-width="1.5"/>
+          <text x="60" y="52" text-anchor="middle" font-size="9" fill="#137333" font-weight="500">Level 1</text>
+          <text x="60" y="66" text-anchor="middle" font-size="7" fill="#5f6368">Which services</text>
+          <text x="60" y="76" text-anchor="middle" font-size="8" fill="#137333">\u00d70.85</text>
+          <rect x="120" y="35" width="80" height="45" rx="8" fill="#fef7e0" stroke="#b05a00" stroke-width="1.5"/>
+          <text x="160" y="52" text-anchor="middle" font-size="9" fill="#b05a00" font-weight="500">Level 2</text>
+          <text x="160" y="66" text-anchor="middle" font-size="7" fill="#5f6368">Which operations</text>
+          <text x="160" y="76" text-anchor="middle" font-size="8" fill="#b05a00">\u00d70.72</text>
+          <rect x="220" y="35" width="80" height="45" rx="8" fill="#fce8e6" stroke="#c5221f" stroke-width="1.5"/>
+          <text x="260" y="52" text-anchor="middle" font-size="9" fill="#c5221f" font-weight="500">Level 3</text>
+          <text x="260" y="66" text-anchor="middle" font-size="7" fill="#5f6368">Full structure</text>
+          <text x="260" y="76" text-anchor="middle" font-size="8" fill="#c5221f">\u00d70.61</text>
+          <path d="M100 57 L120 57" stroke="#dadce0" stroke-width="1.5" marker-end="url(#arr3)"/>
+          <path d="M200 57 L220 57" stroke="#dadce0" stroke-width="1.5" marker-end="url(#arr3)"/>
+          <defs><marker id="arr3" markerWidth="6" markerHeight="4" refX="6" refY="2" orient="auto"><path d="M0 0 L6 2 L0 4" fill="#dadce0"/></marker></defs>
+          <rect x="40" y="100" width="240" height="40" rx="8" fill="#f8f9fa" stroke="#dadce0" stroke-width="1"/>
+          <text x="160" y="117" text-anchor="middle" font-size="9" fill="#202124">Agent calls: aws help --task-hint</text>
+          <text x="160" y="132" text-anchor="middle" font-size="8" fill="#5f6368">Reward = base_reward \u00d7 0.85^hints_used</text>
+        </svg>`
+      },
+
+      'chaos-injection': {
+        title: 'Chaos Injection Engine',
+        what: 'Silently mutates AWS resource state mid-episode to test agent resilience. Perturbations are scoped to services the current task uses. If the agent completes despite chaos, it earns a \u00d71.05 bonus.',
+        why: 'Tests whether the agent can handle unexpected state changes \u2014 a critical SRE skill. Prevents brittle memorization of exact command sequences. Probability scales with tier difficulty.',
+        how: 'ChaosEngine selects perturbation templates specific to the services in use (S3 policy changes, DynamoDB throughput modifications, Lambda config alterations, etc.). Resource names are extracted from successful commands via regex. Chaos probability: 10% (Intermediate), 20% (Advanced), 30% (Expert). Controlled via ENABLE_CHAOS env var.',
+        metrics: [
+          { v: '\u00d71.05', l: 'Chaos Survival Bonus' },
+          { v: '10-30%', l: 'Probability by Tier' },
+          { v: '5', l: 'Service Templates' }
+        ],
+        diagram: `<svg viewBox="0 0 320 170" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <text x="160" y="15" text-anchor="middle" font-size="10" fill="#202124" font-weight="500">Chaos Injection Flow</text>
+          <rect x="110" y="30" width="100" height="28" rx="6" fill="#e8f0fe" stroke="#1a73e8" stroke-width="1.5"/>
+          <text x="160" y="48" text-anchor="middle" font-size="9" fill="#1a73e8">Agent Step</text>
+          <path d="M160 58 L160 75" stroke="#dadce0" stroke-width="1.5"/>
+          <rect x="90" y="75" width="140" height="28" rx="6" fill="#fef7e0" stroke="#b05a00" stroke-width="1.5"/>
+          <text x="160" y="93" text-anchor="middle" font-size="9" fill="#b05a00">Chaos Check (10-30%)</text>
+          <path d="M160 103 L160 115" stroke="#dadce0" stroke-width="1.5"/>
+          <path d="M90 89 L30 89 L30 120" stroke="#34a853" stroke-width="1" stroke-dasharray="4 2"/>
+          <rect x="5" y="120" width="60" height="24" rx="6" fill="#e6f4ea" stroke="#137333" stroke-width="1"/>
+          <text x="35" y="136" text-anchor="middle" font-size="8" fill="#137333">No chaos</text>
+          <rect x="80" y="115" width="160" height="40" rx="6" fill="#fce8e6" stroke="#c5221f" stroke-width="1.5"/>
+          <text x="160" y="132" text-anchor="middle" font-size="8" fill="#c5221f" font-weight="500">Mutate resource state</text>
+          <text x="160" y="147" text-anchor="middle" font-size="7" fill="#5f6368">S3 policy | DynamoDB throughput | Lambda config</text>
+        </svg>`
+      },
+
+      'drift-detection': {
+        title: 'Drift Detection Tasks',
+        what: '6 expert-tier tasks (24-29) where infrastructure is provisioned correctly, then 2-3 random mutations are applied from a pool. The agent must audit, discover drifted resources, and fix only those \u2014 without knowing which drifted.',
+        why: 'Randomized per episode, preventing memorization. Tests real SRE audit skills: the agent must reason about desired vs. actual state, not just follow a script.',
+        how: 'DriftEngine randomly selects 2-3 mutations from a task\'s possible_drifts pool and applies them after setup. Each task defines a desired_state_spec (natural language) and state_checks (ground truth CLI commands). Examples: S3 versioning/encryption drift, DynamoDB throughput changes, SNS subscription modifications.',
+        metrics: [
+          { v: '6', l: 'Drift Tasks' },
+          { v: '2-3', l: 'Mutations Per Episode' },
+          { v: 'Random', l: 'Selection Per Run' }
+        ],
+        diagram: `<svg viewBox="0 0 320 170" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <text x="160" y="15" text-anchor="middle" font-size="10" fill="#202124" font-weight="500">Drift Detection Flow</text>
+          <rect x="20" y="35" width="80" height="30" rx="6" fill="#e6f4ea" stroke="#137333" stroke-width="1.5"/>
+          <text x="60" y="54" text-anchor="middle" font-size="9" fill="#137333">Setup OK</text>
+          <path d="M100 50 L120 50" stroke="#dadce0" stroke-width="1.5" marker-end="url(#arr4)"/>
+          <rect x="120" y="35" width="80" height="30" rx="6" fill="#fce8e6" stroke="#c5221f" stroke-width="1.5"/>
+          <text x="160" y="49" text-anchor="middle" font-size="8" fill="#c5221f">Apply 2-3</text>
+          <text x="160" y="59" text-anchor="middle" font-size="8" fill="#c5221f">random drifts</text>
+          <path d="M200 50 L220 50" stroke="#dadce0" stroke-width="1.5" marker-end="url(#arr4)"/>
+          <rect x="220" y="35" width="80" height="30" rx="6" fill="#e8f0fe" stroke="#1a73e8" stroke-width="1.5"/>
+          <text x="260" y="54" text-anchor="middle" font-size="9" fill="#1a73e8">Agent audits</text>
+          <defs><marker id="arr4" markerWidth="6" markerHeight="4" refX="6" refY="2" orient="auto"><path d="M0 0 L6 2 L0 4" fill="#dadce0"/></marker></defs>
+          <rect x="40" y="85" width="240" height="65" rx="8" fill="#f8f9fa" stroke="#dadce0" stroke-width="1"/>
+          <text x="160" y="100" text-anchor="middle" font-size="9" fill="#202124" font-weight="500">Possible Drift Pool</text>
+          <text x="160" y="115" text-anchor="middle" font-size="8" fill="#5f6368">S3 versioning off | Encryption disabled | Lifecycle removed</text>
+          <text x="160" y="128" text-anchor="middle" font-size="8" fill="#5f6368">DynamoDB throughput changed | SNS subscriptions altered</text>
+          <text x="160" y="141" text-anchor="middle" font-size="8" fill="#ea4335">Random 2-3 selected each episode</text>
+        </svg>`
+      },
+
+      'ground-truth': {
+        title: 'Ground-Truth Verification via MiniStack',
+        what: 'The grader never trusts agent command output. It independently queries MiniStack (the simulated AWS backend) to verify resource state for 20+ services. Even if the agent crafts fake-looking stdout, the grader checks actual state.',
+        why: 'Prevents reward hacking through output fabrication. The agent cannot game the system by producing convincing but fake CLI output \u2014 ground truth is always checked server-side.',
+        how: 'ResourceVerifier has per-service verification methods that query MiniStack directly. For expert tasks, StateCheck assertions run actual AWS CLI commands against MiniStack at grading time, checking either output_contains (substring) or json_path extraction with expected values.',
+        metrics: [
+          { v: '20+', l: 'Verified Services' },
+          { v: '100%', l: 'Server-side' },
+          { v: '0', l: 'Agent Visibility' }
+        ],
+        diagram: `<svg viewBox="0 0 320 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <text x="160" y="15" text-anchor="middle" font-size="10" fill="#202124" font-weight="500">Ground-Truth Verification</text>
+          <rect x="20" y="35" width="90" height="35" rx="8" fill="#e8f0fe" stroke="#1a73e8" stroke-width="1.5"/>
+          <text x="65" y="50" text-anchor="middle" font-size="9" fill="#1a73e8">Agent</text>
+          <text x="65" y="62" text-anchor="middle" font-size="7" fill="#5f6368">runs commands</text>
+          <rect x="210" y="35" width="90" height="35" rx="8" fill="#e6f4ea" stroke="#137333" stroke-width="1.5"/>
+          <text x="255" y="50" text-anchor="middle" font-size="9" fill="#137333">MiniStack</text>
+          <text x="255" y="62" text-anchor="middle" font-size="7" fill="#5f6368">actual state</text>
+          <path d="M110 52 L210 52" stroke="#dadce0" stroke-width="1.5"/>
+          <rect x="130" y="85" width="120" height="35" rx="8" fill="#fef7e0" stroke="#b05a00" stroke-width="1.5"/>
+          <text x="190" y="100" text-anchor="middle" font-size="9" fill="#b05a00">ResourceVerifier</text>
+          <text x="190" y="112" text-anchor="middle" font-size="7" fill="#5f6368">queries MiniStack directly</text>
+          <path d="M255 70 L190 85" stroke="#137333" stroke-width="1" stroke-dasharray="4 2"/>
+          <path d="M65 70 L150 85" stroke="#1a73e8" stroke-width="1" stroke-dasharray="4 2"/>
+          <text x="160" y="140" text-anchor="middle" font-size="8" fill="#c5221f">Agent output is NEVER trusted \u2014 grader verifies independently</text>
+        </svg>`
+      },
+
+      'command-allowlisting': {
+        title: 'Command Allowlisting',
+        what: 'Only commands starting with "aws" are executed. Any attempt to run shell commands, pipe to other tools, use redirects, or escape the sandbox is rejected with success=False.',
+        why: 'Prevents the agent from escaping the AWS CLI sandbox. Without this, the agent could potentially execute arbitrary shell commands, access the filesystem, or interfere with the environment.',
+        how: 'The environment\'s step() method validates the command before execution. Commands not starting with "aws" are immediately rejected. This is tested extensively in TestStepRejection.',
+        metrics: [
+          { v: 'aws *', l: 'Allowed Pattern' },
+          { v: '0', l: 'Shell Access' },
+          { v: 'Instant', l: 'Rejection Speed' }
+        ],
+        diagram: `<svg viewBox="0 0 320 130" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <text x="160" y="15" text-anchor="middle" font-size="10" fill="#202124" font-weight="500">Command Validation Gate</text>
+          <rect x="20" y="35" width="100" height="30" rx="6" fill="#e8f0fe" stroke="#1a73e8" stroke-width="1.5"/>
+          <text x="70" y="54" text-anchor="middle" font-size="9" fill="#1a73e8">Agent command</text>
+          <path d="M120 50 L150 50" stroke="#dadce0" stroke-width="1.5"/>
+          <polygon points="160,35 180,50 160,65" fill="#fef7e0" stroke="#b05a00" stroke-width="1.5"/>
+          <text x="165" y="53" font-size="8" fill="#b05a00">?</text>
+          <path d="M180 42 L220 30" stroke="#34a853" stroke-width="1.5"/>
+          <path d="M180 58 L220 75" stroke="#c5221f" stroke-width="1.5"/>
+          <rect x="220" y="18" width="85" height="25" rx="6" fill="#e6f4ea" stroke="#137333" stroke-width="1"/>
+          <text x="262" y="35" text-anchor="middle" font-size="8" fill="#137333">aws * \u2192 Execute</text>
+          <rect x="220" y="65" width="85" height="25" rx="6" fill="#fce8e6" stroke="#c5221f" stroke-width="1"/>
+          <text x="262" y="82" text-anchor="middle" font-size="8" fill="#c5221f">else \u2192 Reject</text>
+          <text x="160" y="110" text-anchor="middle" font-size="8" fill="#5f6368">No pipes | No redirects | No shell escape</text>
+        </svg>`
+      },
+
+      'deduplication': {
+        title: 'Deduplication',
+        what: 'EpisodeTracker.has_executed_operation() tracks which (operation, resource) pairs have been credited. Running the same successful command twice does NOT increase partial_progress. Progress can only increase, never re-earn.',
+        why: 'Prevents the agent from gaming the reward system by repeating the same command to accumulate credit. Each unique operation earns credit exactly once.',
+        how: 'The credit_operation() method records each (operation, resource) pair. Before granting credit, is_operation_already_credited() checks if this exact pair was already rewarded. The check is deterministic and happens at grading time.',
+        metrics: [
+          { v: '1x', l: 'Credit Per Operation' },
+          { v: 'Exact', l: 'Match Type' },
+          { v: '(op, res)', l: 'Tracking Granularity' }
+        ],
+        diagram: `<svg viewBox="0 0 320 130" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <text x="160" y="15" text-anchor="middle" font-size="10" fill="#202124" font-weight="500">Operation Deduplication</text>
+          <rect x="20" y="35" width="100" height="28" rx="6" fill="#e6f4ea" stroke="#137333" stroke-width="1.5"/>
+          <text x="70" y="53" text-anchor="middle" font-size="8" fill="#137333">1st: create-bucket OK</text>
+          <rect x="20" y="73" width="100" height="28" rx="6" fill="#fce8e6" stroke="#c5221f" stroke-width="1.5"/>
+          <text x="70" y="91" text-anchor="middle" font-size="8" fill="#c5221f">2nd: create-bucket X</text>
+          <path d="M120 49 L160 49" stroke="#34a853" stroke-width="1.5" marker-end="url(#arr5)"/>
+          <path d="M120 87 L160 87" stroke="#c5221f" stroke-width="1.5"/>
+          <text x="175" y="91" font-size="8" fill="#c5221f">blocked</text>
+          <rect x="160" y="35" width="140" height="28" rx="6" fill="#e8f0fe" stroke="#1a73e8" stroke-width="1"/>
+          <text x="230" y="53" text-anchor="middle" font-size="8" fill="#1a73e8">+credit \u2192 progress increases</text>
+          <defs><marker id="arr5" markerWidth="6" markerHeight="4" refX="6" refY="2" orient="auto"><path d="M0 0 L6 2 L0 4" fill="#34a853"/></marker></defs>
+          <text x="160" y="120" text-anchor="middle" font-size="8" fill="#5f6368">Same (operation, resource) pair \u2192 no additional reward</text>
+        </svg>`
+      },
+
+      'monotonic-progress': {
+        title: 'Monotonic Progress',
+        what: 'partial_progress can only increase within an episode. It is clamped to [0.0, 0.99] \u2014 reaching 1.0 requires actual task completion. The agent cannot lose progress, but also cannot re-earn it.',
+        why: 'Prevents cycling strategies where the agent creates and destroys resources repeatedly. Combined with deduplication, this ensures steady forward progress.',
+        how: 'In TaskGrader, previous_progress tracks the highest progress seen. New progress is always max(previous, current). Reward is clamped at 0.99 for partial completion, reserving 1.0 exclusively for verified full completion.',
+        metrics: [
+          { v: '0.99', l: 'Max Without Completion' },
+          { v: '1.0', l: 'Requires Full Completion' },
+          { v: 'max()', l: 'Progress Function' }
+        ],
+        diagram: `<svg viewBox="0 0 320 130" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <text x="160" y="15" text-anchor="middle" font-size="10" fill="#202124" font-weight="500">Monotonic Progress</text>
+          <line x1="30" y1="100" x2="290" y2="100" stroke="#dadce0" stroke-width="1"/>
+          <line x1="30" y1="100" x2="30" y2="30" stroke="#dadce0" stroke-width="1"/>
+          <line x1="30" y1="35" x2="290" y2="35" stroke="#c5221f" stroke-width="1" stroke-dasharray="4 2"/>
+          <text x="296" y="38" font-size="7" fill="#c5221f">0.99 cap</text>
+          <polyline points="50,95 90,80 130,80 170,60 210,45 250,40 270,38" stroke="#34a853" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+          <polyline points="90,80 130,85" stroke="#c5221f" stroke-width="1" stroke-dasharray="3 2"/>
+          <text x="130" y="93" font-size="7" fill="#c5221f">can't drop</text>
+          <text x="160" y="115" text-anchor="middle" font-size="8" fill="#5f6368">Steps \u2192</text>
+          <text x="20" y="65" font-size="7" fill="#5f6368" transform="rotate(-90 20 65)">Progress</text>
+        </svg>`
+      },
+
+      'resource-validation': {
+        title: 'Resource Name Validation',
+        what: 'For resource_exists checks, the verifier matches the exact resource name, not just any resource of that type. Creating "my-test-bucket-2" doesn\'t satisfy a check for "my-test-bucket".',
+        why: 'Prevents the agent from creating arbitrarily named resources to game the verification system. Forces precise execution of the task requirements.',
+        how: 'ResourceVerifier\'s per-service methods (verify_s3_bucket, verify_dynamodb_table, etc.) compare against the exact expected resource name from the task definition. Each of the 20+ supported services has its own verification logic.',
+        metrics: [
+          { v: 'Exact', l: 'Name Matching' },
+          { v: '20+', l: 'Verified Services' },
+          { v: '0', l: 'Partial Matches' }
+        ],
+        diagram: `<svg viewBox="0 0 320 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <text x="160" y="15" text-anchor="middle" font-size="10" fill="#202124" font-weight="500">Exact Name Validation</text>
+          <rect x="20" y="35" width="120" height="30" rx="6" fill="#e6f4ea" stroke="#137333" stroke-width="1.5"/>
+          <text x="80" y="54" text-anchor="middle" font-size="8" fill="#137333">my-test-bucket OK</text>
+          <rect x="20" y="75" width="120" height="30" rx="6" fill="#fce8e6" stroke="#c5221f" stroke-width="1.5"/>
+          <text x="80" y="94" text-anchor="middle" font-size="8" fill="#c5221f">my-test-bucket-2 X</text>
+          <rect x="180" y="50" width="120" height="30" rx="6" fill="#e8f0fe" stroke="#1a73e8" stroke-width="1"/>
+          <text x="240" y="69" text-anchor="middle" font-size="8" fill="#1a73e8">Expected: my-test-bucket</text>
+          <path d="M140 50 L180 65" stroke="#34a853" stroke-width="1.5"/>
+          <path d="M140 90 L180 75" stroke="#c5221f" stroke-width="1" stroke-dasharray="3 2"/>
+        </svg>`
+      },
+
+      'state-checks': {
+        title: 'State Checks Verify Final State',
+        what: 'For expert SRE tasks, state_checks run actual AWS CLI commands against MiniStack at grading time. The grader verifies the final infrastructure state \u2014 not the commands the agent ran.',
+        why: 'The agent cannot fake the state. MiniStack is the ground truth. This decouples "what the agent did" from "what was actually achieved", making reward hacking extremely difficult.',
+        how: 'Each expert task defines state_checks with command + assertion pairs. Assertions support output_contains (substring match on CLI output) and json_path + expected (JSON extraction). The grader runs these checks against the live MiniStack state independently of the agent.',
+        metrics: [
+          { v: 'CLI', l: 'Verification Method' },
+          { v: '2', l: 'Assertion Types' },
+          { v: 'Live', l: 'State Source' }
+        ],
+        diagram: `<svg viewBox="0 0 320 150" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <text x="160" y="15" text-anchor="middle" font-size="10" fill="#202124" font-weight="500">State Check Verification</text>
+          <rect x="20" y="35" width="120" height="40" rx="8" fill="#e8f0fe" stroke="#1a73e8" stroke-width="1.5"/>
+          <text x="80" y="52" text-anchor="middle" font-size="8" fill="#1a73e8">Agent completes task</text>
+          <text x="80" y="64" text-anchor="middle" font-size="7" fill="#5f6368">(commands executed)</text>
+          <path d="M140 55 L170 55" stroke="#dadce0" stroke-width="1.5" marker-end="url(#arr6)"/>
+          <rect x="170" y="35" width="130" height="40" rx="8" fill="#fef7e0" stroke="#b05a00" stroke-width="1.5"/>
+          <text x="235" y="52" text-anchor="middle" font-size="8" fill="#b05a00">Grader runs state_checks</text>
+          <text x="235" y="64" text-anchor="middle" font-size="7" fill="#5f6368">against MiniStack directly</text>
+          <defs><marker id="arr6" markerWidth="6" markerHeight="4" refX="6" refY="2" orient="auto"><path d="M0 0 L6 2 L0 4" fill="#dadce0"/></marker></defs>
+          <rect x="40" y="95" width="110" height="35" rx="6" fill="#e6f4ea" stroke="#137333" stroke-width="1"/>
+          <text x="95" y="110" text-anchor="middle" font-size="8" fill="#137333">output_contains</text>
+          <text x="95" y="122" text-anchor="middle" font-size="7" fill="#5f6368">substring match</text>
+          <rect x="170" y="95" width="110" height="35" rx="6" fill="#e6f4ea" stroke="#137333" stroke-width="1"/>
+          <text x="225" y="110" text-anchor="middle" font-size="8" fill="#137333">json_path + expected</text>
+          <text x="225" y="122" text-anchor="middle" font-size="7" fill="#5f6368">JSON extraction</text>
+        </svg>`
+      }
+    };
+
+    // Modal logic
+    function openFeatureModal(id) {
+      const data = featureDetails[id];
+      if (!data) return;
+
+      document.getElementById('modal-title').textContent = data.title;
+      document.getElementById('modal-what').textContent = data.what;
+      document.getElementById('modal-why').textContent = data.why;
+      document.getElementById('modal-how').textContent = data.how;
+      document.getElementById('modal-diagram').innerHTML = data.diagram;
+
+      const metricsContainer = document.getElementById('modal-metrics');
+      metricsContainer.innerHTML = '';
+      data.metrics.forEach(m => {
+        const card = document.createElement('div');
+        card.className = 'perf-card';
+        card.innerHTML = `<span class="perf-val">${m.v}</span><span class="perf-label">${m.l}</span>`;
+        metricsContainer.appendChild(card);
+      });
+
+      const modal = document.getElementById('feature-modal');
+      modal.classList.add('open');
+      document.body.style.overflow = 'hidden';
+    }
+
+    document.getElementById('close-modal-btn').addEventListener('click', () => {
+      document.getElementById('feature-modal').classList.remove('open');
+      document.body.style.overflow = '';
+    });
+
+    document.getElementById('feature-modal').addEventListener('click', (e) => {
+      if (e.target.id === 'feature-modal') {
+        document.getElementById('feature-modal').classList.remove('open');
+        document.body.style.overflow = '';
+      }
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        document.getElementById('feature-modal').classList.remove('open');
+        document.body.style.overflow = '';
+      }
+    });
+
+    // Attach click listeners to feature chips
+    document.querySelectorAll('.feature-chip[data-feature-id]').forEach(chip => {
+      chip.addEventListener('click', () => {
+        openFeatureModal(chip.getAttribute('data-feature-id'));
+      });
+    });
+  </script>
 </body>
 
 </html>

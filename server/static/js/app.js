@@ -147,8 +147,10 @@ function setStatus(msg, type) {
 }
 
 function setLoading(btn, loading) {
-  btn.disabled = loading;
-  if (loading) btn.dataset.orig = btn.textContent;
+  if (loading) {
+    btn.disabled = true;
+    btn.dataset.orig = btn.textContent;
+  }
   btn.innerHTML = loading
     ? '<span class="spinner"></span>' + (btn.dataset.orig || '')
     : (btn.dataset.orig || btn.textContent);
@@ -190,13 +192,28 @@ async function resetEnv() {
     document.getElementById('outputBox').textContent = obs.command_output || '';
     document.getElementById('logBody').innerHTML =
       '<tr><td colspan="4" class="log-empty">No commands executed yet</td></tr>';
+    // Enable command controls
+    document.getElementById('cmdInput').disabled = false;
+    document.getElementById('runBtn').disabled = false;
+    delete document.getElementById('runBtn').dataset.ended;
+    document.getElementById('solutionBtn').disabled = false;
+    document.getElementById('solutionBtn').innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg> Show Solution';
+    document.getElementById('solutionPanel').style.display = 'none';
+    document.getElementById('solutionCommands').innerHTML = '';
     document.getElementById('cmdInput').value = '';
     document.getElementById('cmdInput').focus();
+
+    // Update state box
+    document.getElementById('stateTier').textContent = task ? task.difficulty : '\u2014';
+    document.getElementById('stateEpisode').textContent = obs.episode_id || '1';
+    document.getElementById('stateProgress').style.width = '0%';
+    document.getElementById('stateReward').textContent = '0.00';
     setStatus('New episode started. Difficulty: <strong>' + (task ? escHtml(task.difficulty) : 'unknown') + '</strong>', 'info');
   } catch (e) {
     setStatus('Reset failed: ' + escHtml(e.message), 'error');
   } finally {
     setLoading(btn, false);
+    btn.disabled = false;
   }
 }
 
@@ -240,10 +257,24 @@ async function runCmd() {
       '<td>' + (reward >= 0 ? '+' : '') + Number(reward).toFixed(2) + '</td>';
     tbody.appendChild(tr);
 
+    // Update state box
+    const progress = obs.partial_progress != null ? obs.partial_progress : 0;
+    document.getElementById('stateProgress').style.width = (progress * 100) + '%';
+    const cumReward = parseFloat(document.getElementById('stateReward').textContent) + reward;
+    document.getElementById('stateReward').textContent = cumReward.toFixed(2);
+
     if (obs.task_achieved) {
       setStatus('Task completed! Step ' + obs.step_count + ', reward: +' + Number(reward).toFixed(2) + '. Click <strong>New Episode</strong> for the next task.', 'success');
+      document.getElementById('cmdInput').disabled = true;
+      document.getElementById('runBtn').disabled = true;
+      document.getElementById('runBtn').dataset.ended = '1';
+      document.getElementById('solutionBtn').disabled = true;
     } else if (data.done) {
       setStatus('Episode ended. Click <strong>New Episode</strong> to try again.', 'error');
+      document.getElementById('cmdInput').disabled = true;
+      document.getElementById('runBtn').disabled = true;
+      document.getElementById('runBtn').dataset.ended = '1';
+      document.getElementById('solutionBtn').disabled = true;
     } else {
       setStatus('Step <strong>' + obs.step_count + '</strong> &mdash; ' + (obs.command_success ? 'Command succeeded.' : 'Command failed.'), obs.command_success ? 'info' : 'error');
     }
@@ -254,5 +285,9 @@ async function runCmd() {
     setStatus('Request failed: ' + escHtml(e.message), 'error');
   } finally {
     setLoading(btn, false);
+    // Re-enable if episode is still active (not disabled by completion/done handlers above)
+    if (!btn.dataset.ended) {
+      btn.disabled = false;
+    }
   }
 }
