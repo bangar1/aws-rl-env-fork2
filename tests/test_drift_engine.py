@@ -42,15 +42,20 @@ def engine(mock_backend: MagicMock) -> DriftEngine:
 # apply_drift
 # ===================================================================
 
+
 class TestApplyDrift:
     def test_no_drifts_returns_empty(self, engine: DriftEngine) -> None:
         task = Task(
-            task_id=TaskID(1), difficulty=TaskDifficulty.EXPERT,
-            description="t", success_criteria=SuccessCriteria(),
+            task_id=TaskID(1),
+            difficulty=TaskDifficulty.EXPERT,
+            description="t",
+            success_criteria=SuccessCriteria(),
         )
         assert engine.apply_drift(task) == []
 
-    def test_single_drift_always_selected(self, engine: DriftEngine, mock_backend: MagicMock) -> None:
+    def test_single_drift_always_selected(
+        self, engine: DriftEngine, mock_backend: MagicMock
+    ) -> None:
         task = _task_with_drifts(1)
         applied = engine.apply_drift(task)
         assert len(applied) == 1
@@ -75,13 +80,17 @@ class TestApplyDrift:
             applied = engine.apply_drift(task)
             assert len(applied) == len(set(applied))
 
-    def test_failed_drift_not_in_applied(self, engine: DriftEngine, mock_backend: MagicMock) -> None:
+    def test_failed_drift_not_in_applied(
+        self, engine: DriftEngine, mock_backend: MagicMock
+    ) -> None:
         mock_backend.execute_command.return_value = (False, "", "error")
         task = _task_with_drifts(1)
         applied = engine.apply_drift(task)
         assert len(applied) == 0
 
-    def test_partial_failure_only_returns_successful(self, engine: DriftEngine, mock_backend: MagicMock) -> None:
+    def test_partial_failure_only_returns_successful(
+        self, engine: DriftEngine, mock_backend: MagicMock
+    ) -> None:
         task = _task_with_drifts(2)
         mock_backend.execute_command.side_effect = [
             (True, "", ""),
@@ -92,8 +101,10 @@ class TestApplyDrift:
 
     def test_uses_description_as_label(self, engine: DriftEngine) -> None:
         task = Task(
-            task_id=TaskID(1), difficulty=TaskDifficulty.EXPERT,
-            description="t", success_criteria=SuccessCriteria(),
+            task_id=TaskID(1),
+            difficulty=TaskDifficulty.EXPERT,
+            description="t",
+            success_criteria=SuccessCriteria(),
             possible_drifts=[
                 SetupCommand(command="aws test", description="My drift label"),
             ],
@@ -103,8 +114,10 @@ class TestApplyDrift:
 
     def test_uses_command_as_fallback_label(self, engine: DriftEngine) -> None:
         task = Task(
-            task_id=TaskID(1), difficulty=TaskDifficulty.EXPERT,
-            description="t", success_criteria=SuccessCriteria(),
+            task_id=TaskID(1),
+            difficulty=TaskDifficulty.EXPERT,
+            description="t",
+            success_criteria=SuccessCriteria(),
             possible_drifts=[SetupCommand(command="aws fallback-cmd")],
         )
         applied = engine.apply_drift(task)
@@ -114,6 +127,7 @@ class TestApplyDrift:
 # ===================================================================
 # _pick_count
 # ===================================================================
+
 
 class TestPickCount:
     def test_zero_pool(self) -> None:

@@ -22,7 +22,13 @@ from server.services.task_grader import TaskGrader
 from server.services.episode_tracker import EpisodeTracker
 from server.services.resource_verifier import ResourceVerifier
 
-TASKS_FILE = Path(__file__).resolve().parent.parent / "server" / "services" / "tasks" / "drift.yaml"
+TASKS_FILE = (
+    Path(__file__).resolve().parent.parent
+    / "server"
+    / "services"
+    / "tasks"
+    / "drift.yaml"
+)
 
 
 @pytest.fixture(scope="module")
@@ -55,7 +61,9 @@ def _build_task(entry: dict) -> Task:
         ],
         desired_state_spec=entry.get("desired_state_spec"),
         possible_drifts=[
-            SetupCommand(command=d["command"]) if isinstance(d, dict) else SetupCommand(command=d)
+            SetupCommand(command=d["command"])
+            if isinstance(d, dict)
+            else SetupCommand(command=d)
             for d in entry.get("possible_drifts", [])
         ],
     )
@@ -71,14 +79,16 @@ with open(TASKS_FILE) as _f:
     _TASK_IDS = [t["task_id"] for t in _ALL_ENTRIES]
 
 
-
 # ---------------------------------------------------------------------------
 # Test 1: All setup_commands execute successfully
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.parametrize("task_id", _TASK_IDS, ids=[f"task_{t}" for t in _TASK_IDS])
 def test_drift_setup_commands_execute(
-    task_id: int, all_drift_tasks: list[dict], backend: AwsBackend,
+    task_id: int,
+    all_drift_tasks: list[dict],
+    backend: AwsBackend,
 ) -> None:
     """Every setup_command must succeed against MiniStack."""
     backend.reset_environment()
@@ -98,9 +108,12 @@ def test_drift_setup_commands_execute(
 # Test 2: After setup, all state_checks pass (no drift applied)
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.parametrize("task_id", _TASK_IDS, ids=[f"task_{t}" for t in _TASK_IDS])
 def test_drift_state_checks_pass_after_setup(
-    task_id: int, all_drift_tasks: list[dict], backend: AwsBackend,
+    task_id: int,
+    all_drift_tasks: list[dict],
+    backend: AwsBackend,
 ) -> None:
     """After running setup_commands, all state_checks must pass."""
     backend.reset_environment()
@@ -125,9 +138,13 @@ def test_drift_state_checks_pass_after_setup(
 # Test 3: Grader marks task as achieved after setup + fix commands
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.parametrize("task_id", _TASK_IDS, ids=[f"task_{t}" for t in _TASK_IDS])
 def test_drift_grading_after_setup(
-    task_id: int, all_drift_tasks: list[dict], backend: AwsBackend, grader: TaskGrader,
+    task_id: int,
+    all_drift_tasks: list[dict],
+    backend: AwsBackend,
+    grader: TaskGrader,
 ) -> None:
     """The grader should mark the task as achieved when state is correct."""
     backend.reset_environment()
@@ -156,9 +173,12 @@ def test_drift_grading_after_setup(
 # Test 4: Each possible drift breaks at least one state_check
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.parametrize("task_id", _TASK_IDS, ids=[f"task_{t}" for t in _TASK_IDS])
 def test_drift_mutations_break_state(
-    task_id: int, all_drift_tasks: list[dict], backend: AwsBackend,
+    task_id: int,
+    all_drift_tasks: list[dict],
+    backend: AwsBackend,
 ) -> None:
     """Applying each drift mutation should cause at least one state_check to fail."""
     entry = next(t for t in all_drift_tasks if t["task_id"] == task_id)
@@ -171,7 +191,11 @@ def test_drift_mutations_break_state(
 
     for drift in drifts:
         drift_cmd = drift["command"] if isinstance(drift, dict) else drift
-        drift_desc = drift.get("description", drift_cmd) if isinstance(drift, dict) else drift_cmd
+        drift_desc = (
+            drift.get("description", drift_cmd)
+            if isinstance(drift, dict)
+            else drift_cmd
+        )
 
         # Fresh setup
         backend.reset_environment()

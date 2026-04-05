@@ -101,10 +101,7 @@ class TestCommandMentionsResource:
 
 class TestExtractResourceName:
     def test_bucket(self) -> None:
-        assert (
-            _extract_resource_name("aws s3api create-bucket --bucket demo")
-            == "demo"
-        )
+        assert _extract_resource_name("aws s3api create-bucket --bucket demo") == "demo"
 
     def test_table_name_equals(self) -> None:
         assert (
@@ -348,12 +345,8 @@ class TestDetectRollbacks:
         t = EpisodeTracker()
         t.record_step("aws s3api create-bucket --bucket a", True, "", "")
         t.record_step("aws s3api delete-bucket --bucket a", True, "", "")
-        t.record_step(
-            "aws dynamodb create-table --table-name t1", True, "", ""
-        )
-        t.record_step(
-            "aws dynamodb delete-table --table-name t1", True, "", ""
-        )
+        t.record_step("aws dynamodb create-table --table-name t1", True, "", "")
+        t.record_step("aws dynamodb delete-table --table-name t1", True, "", "")
         assert t.detect_rollbacks() == 2
 
     def test_attach_detach_role_policy(self) -> None:
@@ -361,12 +354,16 @@ class TestDetectRollbacks:
         t.record_step(
             "aws iam attach-role-policy --role-name r1 "
             "--policy-arn arn:aws:iam::aws:policy/ReadOnly",
-            True, "", "",
+            True,
+            "",
+            "",
         )
         t.record_step(
             "aws iam detach-role-policy --role-name r1 "
             "--policy-arn arn:aws:iam::aws:policy/ReadOnly",
-            True, "", "",
+            True,
+            "",
+            "",
         )
         assert t.detect_rollbacks() == 1
 
@@ -392,7 +389,9 @@ class TestDetectIdempotentRetries:
         t = EpisodeTracker()
         t.record_step(
             "aws s3api create-bucket --bucket demo",
-            False, "", "BucketAlreadyOwnedByYou",
+            False,
+            "",
+            "BucketAlreadyOwnedByYou",
         )
         t.record_step("aws s3api put-object --bucket demo --key f", True, "", "")
         assert t.detect_idempotent_retries() == 1
@@ -401,7 +400,9 @@ class TestDetectIdempotentRetries:
         t = EpisodeTracker()
         t.record_step(
             "aws s3api create-bucket --bucket demo",
-            False, "", "BucketAlreadyExists",
+            False,
+            "",
+            "BucketAlreadyExists",
         )
         # No next step
         assert t.detect_idempotent_retries() == 0
@@ -410,7 +411,9 @@ class TestDetectIdempotentRetries:
         t = EpisodeTracker()
         t.record_step(
             "aws sqs create-queue --queue-name q",
-            False, "", "QueueNameExists",
+            False,
+            "",
+            "QueueNameExists",
         )
         t.record_step("aws sqs send-message --queue-url q", False, "", "err")
         assert t.detect_idempotent_retries() == 0
@@ -419,7 +422,9 @@ class TestDetectIdempotentRetries:
         t = EpisodeTracker()
         t.record_step(
             "aws lambda create-function --function-name fn",
-            False, "", "Resource already exists",
+            False,
+            "",
+            "Resource already exists",
         )
         t.record_step("aws lambda invoke --function-name fn", True, "", "")
         assert t.detect_idempotent_retries() == 1
@@ -428,7 +433,9 @@ class TestDetectIdempotentRetries:
         t = EpisodeTracker()
         t.record_step(
             "aws s3api delete-bucket --bucket demo",
-            False, "", "BucketAlreadyExists",  # nonsensical but tests the guard
+            False,
+            "",
+            "BucketAlreadyExists",  # nonsensical but tests the guard
         )
         t.record_step("aws s3 ls", True, "", "")
         assert t.detect_idempotent_retries() == 0
@@ -437,12 +444,16 @@ class TestDetectIdempotentRetries:
         t = EpisodeTracker()
         t.record_step(
             "aws s3api create-bucket --bucket a",
-            False, "", "BucketAlreadyExists",
+            False,
+            "",
+            "BucketAlreadyExists",
         )
         t.record_step("aws s3api put-object --bucket a --key f", True, "", "")
         t.record_step(
             "aws sqs create-queue --queue-name q",
-            False, "", "QueueNameExists",
+            False,
+            "",
+            "QueueNameExists",
         )
         t.record_step("aws sqs send-message --queue-url q", True, "", "")
         assert t.detect_idempotent_retries() == 2

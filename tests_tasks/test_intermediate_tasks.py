@@ -22,7 +22,13 @@ from server.services.aws_backend import AwsBackend
 from server.services.task_grader import TaskGrader
 from server.services.episode_tracker import EpisodeTracker
 
-TASKS_FILE = Path(__file__).resolve().parent.parent / "server" / "services" / "tasks" / "intermediate.yaml"
+TASKS_FILE = (
+    Path(__file__).resolve().parent.parent
+    / "server"
+    / "services"
+    / "tasks"
+    / "intermediate.yaml"
+)
 
 # Mapping of task_id -> ordered list of AWS CLI commands to complete the task
 INTERMEDIATE_COMMANDS: dict[int, list[str]] = {
@@ -55,8 +61,8 @@ INTERMEDIATE_COMMANDS: dict[int, list[str]] = {
         (
             "aws iam create-role --role-name lambda-exec-role "
             "--assume-role-policy-document "
-            "'{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\","
-            "\"Principal\":{\"Service\":\"lambda.amazonaws.com\"},\"Action\":\"sts:AssumeRole\"}]}'"
+            '\'{"Version":"2012-10-17","Statement":[{"Effect":"Allow",'
+            '"Principal":{"Service":"lambda.amazonaws.com"},"Action":"sts:AssumeRole"}]}\''
         ),
         (
             "aws iam attach-role-policy --role-name lambda-exec-role "
@@ -68,8 +74,8 @@ INTERMEDIATE_COMMANDS: dict[int, list[str]] = {
         (
             "aws iam create-policy --policy-name app-assets-read-policy "
             "--policy-document "
-            "'{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\","
-            "\"Action\":\"s3:GetObject\",\"Resource\":\"arn:aws:s3:::app-assets/*\"}]}'"
+            '\'{"Version":"2012-10-17","Statement":[{"Effect":"Allow",'
+            '"Action":"s3:GetObject","Resource":"arn:aws:s3:::app-assets/*"}]}\''
         ),
     ],
     67: [
@@ -85,8 +91,8 @@ INTERMEDIATE_COMMANDS: dict[int, list[str]] = {
         (
             "aws iam create-role --role-name data-processor-role "
             "--assume-role-policy-document "
-            "'{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\","
-            "\"Principal\":{\"Service\":\"lambda.amazonaws.com\"},\"Action\":\"sts:AssumeRole\"}]}'"
+            '\'{"Version":"2012-10-17","Statement":[{"Effect":"Allow",'
+            '"Principal":{"Service":"lambda.amazonaws.com"},"Action":"sts:AssumeRole"}]}\''
         ),
         (
             "aws lambda create-function --function-name data-processor "
@@ -108,13 +114,13 @@ INTERMEDIATE_COMMANDS: dict[int, list[str]] = {
     70: [
         (
             "aws secretsmanager create-secret --name db-credentials "
-            "--secret-string '{\"username\":\"admin\",\"password\":\"secret123\"}'"
+            '--secret-string \'{"username":"admin","password":"secret123"}\''
         ),
         (
             "aws iam create-role --role-name secret-reader-role "
             "--assume-role-policy-document "
-            "'{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\","
-            "\"Principal\":{\"Service\":\"lambda.amazonaws.com\"},\"Action\":\"sts:AssumeRole\"}]}'"
+            '\'{"Version":"2012-10-17","Statement":[{"Effect":"Allow",'
+            '"Principal":{"Service":"lambda.amazonaws.com"},"Action":"sts:AssumeRole"}]}\''
         ),
     ],
     71: [
@@ -146,8 +152,8 @@ INTERMEDIATE_COMMANDS: dict[int, list[str]] = {
         (
             "aws iam create-role --role-name ecs-task-role "
             "--assume-role-policy-document "
-            "'{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\","
-            "\"Principal\":{\"Service\":\"ecs-tasks.amazonaws.com\"},\"Action\":\"sts:AssumeRole\"}]}'"
+            '\'{"Version":"2012-10-17","Statement":[{"Effect":"Allow",'
+            '"Principal":{"Service":"ecs-tasks.amazonaws.com"},"Action":"sts:AssumeRole"}]}\''
         ),
         (
             "aws iam attach-role-policy --role-name ecs-task-role "
@@ -158,7 +164,7 @@ INTERMEDIATE_COMMANDS: dict[int, list[str]] = {
         (
             "aws secretsmanager create-secret --name rds-master-password "
             "--secret-string "
-            "'{\"host\":\"db.local\",\"port\":\"3306\",\"username\":\"admin\",\"password\":\"secret\"}'"
+            '\'{"host":"db.local","port":"3306","username":"admin","password":"secret"}\''
         ),
         (
             "aws rds create-db-instance --db-instance-identifier app-database "
@@ -205,18 +211,18 @@ INTERMEDIATE_COMMANDS: dict[int, list[str]] = {
         ),
     ],
     80: [
-        "aws glue create-database --database-input '{\"Name\":\"analytics-db\"}'",
+        'aws glue create-database --database-input \'{"Name":"analytics-db"}\'',
         (
             "aws glue create-crawler --name raw-data-crawler "
             "--role arn:aws:iam::000000000000:role/glue-role "
             "--database-name analytics-db "
-            "--targets '{\"S3Targets\":[{\"Path\":\"s3://data-bucket/raw/\"}]}'"
+            '--targets \'{"S3Targets":[{"Path":"s3://data-bucket/raw/"}]}\''
         ),
     ],
     81: [
         (
             "aws cloudformation create-stack --stack-name vpc-stack "
-            "--template-body '{\"AWSTemplateFormatVersion\":\"2010-09-09\",\"Resources\":{}}'"
+            '--template-body \'{"AWSTemplateFormatVersion":"2010-09-09","Resources":{}}\''
         ),
         "aws cloudformation describe-stacks --stack-name vpc-stack",
     ],
@@ -248,22 +254,22 @@ INTERMEDIATE_COMMANDS: dict[int, list[str]] = {
         ),
         (
             "aws dynamodb put-item --table-name products "
-            "--item '{\"product_id\":{\"S\":\"P001\"},\"category\":{\"S\":\"electronics\"},"
-            "\"name\":{\"S\":\"Wireless Mouse\"}}'"
+            '--item \'{"product_id":{"S":"P001"},"category":{"S":"electronics"},'
+            '"name":{"S":"Wireless Mouse"}}\''
         ),
     ],
     86: [
         (
             "aws iam create-role --role-name firehose-delivery-role "
             "--assume-role-policy-document "
-            "'{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\","
-            "\"Principal\":{\"Service\":\"firehose.amazonaws.com\"},\"Action\":\"sts:AssumeRole\"}]}'"
+            '\'{"Version":"2012-10-17","Statement":[{"Effect":"Allow",'
+            '"Principal":{"Service":"firehose.amazonaws.com"},"Action":"sts:AssumeRole"}]}\''
         ),
         (
             "aws iam create-policy --policy-name s3-write-policy "
             "--policy-document "
-            "'{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\","
-            "\"Action\":\"s3:PutObject\",\"Resource\":\"*\"}]}'"
+            '\'{"Version":"2012-10-17","Statement":[{"Effect":"Allow",'
+            '"Action":"s3:PutObject","Resource":"*"}]}\''
         ),
         (
             "aws iam attach-role-policy --role-name firehose-delivery-role "
@@ -273,9 +279,7 @@ INTERMEDIATE_COMMANDS: dict[int, list[str]] = {
 }
 
 
-def _resolve_dynamic_commands(
-    task_id: int, outputs: list[str]
-) -> list[str]:
+def _resolve_dynamic_commands(task_id: int, outputs: list[str]) -> list[str]:
     """Generate additional commands for tasks that need dynamic IDs from prior outputs.
 
     Returns extra commands to append after the static ones have run.
@@ -301,7 +305,7 @@ def _resolve_dynamic_commands(
         data = json.loads(outputs[0])
         api_id = data["ApiId"]
         return [
-            f'aws apigatewayv2 create-route --api-id {api_id} '
+            f"aws apigatewayv2 create-route --api-id {api_id} "
             f'--route-key "GET /products-api"'
         ]
     if task_id == 84:
@@ -372,7 +376,11 @@ def _build_task(entry: dict) -> Task:
 
 def test_all_intermediate_tasks_have_commands(intermediate_tasks: list[dict]) -> None:
     """Every intermediate task in the YAML must have a corresponding test command sequence."""
-    missing = [t["task_id"] for t in intermediate_tasks if t["task_id"] not in INTERMEDIATE_COMMANDS]
+    missing = [
+        t["task_id"]
+        for t in intermediate_tasks
+        if t["task_id"] not in INTERMEDIATE_COMMANDS
+    ]
     assert not missing, f"No test commands mapped for task_ids: {missing}"
 
 

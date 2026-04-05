@@ -50,9 +50,7 @@ class TestExtractJsonPath:
     def test_nested_numeric(self) -> None:
         data = {"Table": {"ProvisionedThroughput": {"ReadCapacityUnits": 50}}}
         assert (
-            _extract_json_path(
-                data, "$.Table.ProvisionedThroughput.ReadCapacityUnits"
-            )
+            _extract_json_path(data, "$.Table.ProvisionedThroughput.ReadCapacityUnits")
             == 50
         )
 
@@ -89,9 +87,7 @@ class TestExtractJsonPath:
 
     def test_attributes_path(self) -> None:
         data = {"Attributes": {"VisibilityTimeout": "120"}}
-        assert (
-            _extract_json_path(data, "$.Attributes.VisibilityTimeout") == "120"
-        )
+        assert _extract_json_path(data, "$.Attributes.VisibilityTimeout") == "120"
 
 
 # ---------------------------------------------------------------------------
@@ -101,18 +97,14 @@ class TestExtractJsonPath:
 
 class TestCheckState:
     def test_output_contains_pass(self) -> None:
-        backend = _mock_backend(
-            {"list-attached": (True, "AmazonSQSFullAccess", "")}
-        )
+        backend = _mock_backend({"list-attached": (True, "AmazonSQSFullAccess", "")})
         v = ResourceVerifier(backend)
         assert v.check_state(
             {"command": "aws iam list-attached-role-policies", "output_contains": "SQS"}
         )
 
     def test_output_contains_fail(self) -> None:
-        backend = _mock_backend(
-            {"list-attached": (True, "AmazonS3ReadOnly", "")}
-        )
+        backend = _mock_backend({"list-attached": (True, "AmazonS3ReadOnly", "")})
         v = ResourceVerifier(backend)
         assert not v.check_state(
             {"command": "aws iam list-attached-role-policies", "output_contains": "SQS"}
@@ -359,9 +351,7 @@ class TestResourceExistsApiGateway:
 
 class TestResourceExistsECS:
     def test_cluster_exists_active(self) -> None:
-        stdout = json.dumps(
-            {"clusters": [{"clusterName": "prod", "status": "ACTIVE"}]}
-        )
+        stdout = json.dumps({"clusters": [{"clusterName": "prod", "status": "ACTIVE"}]})
         backend = _mock_backend({"describe-clusters": (True, stdout, "")})
         v = ResourceVerifier(backend)
         assert v.resource_exists("ecs", "prod")
@@ -401,17 +391,13 @@ class TestResourceExistsElastiCache:
 
 class TestResourceExistsRoute53:
     def test_zone_exists(self) -> None:
-        stdout = json.dumps(
-            {"HostedZones": [{"Name": "example.com."}]}
-        )
+        stdout = json.dumps({"HostedZones": [{"Name": "example.com."}]})
         backend = _mock_backend({"list-hosted-zones": (True, stdout, "")})
         v = ResourceVerifier(backend)
         assert v.resource_exists("route53", "example.com")
 
     def test_zone_trailing_dot_normalized(self) -> None:
-        stdout = json.dumps(
-            {"HostedZones": [{"Name": "example.com."}]}
-        )
+        stdout = json.dumps({"HostedZones": [{"Name": "example.com."}]})
         backend = _mock_backend({"list-hosted-zones": (True, stdout, "")})
         v = ResourceVerifier(backend)
         assert v.resource_exists("route53", "example.com.")
@@ -419,17 +405,13 @@ class TestResourceExistsRoute53:
 
 class TestResourceExistsELBv2:
     def test_lb_exists(self) -> None:
-        stdout = json.dumps(
-            {"LoadBalancers": [{"LoadBalancerName": "web-alb"}]}
-        )
+        stdout = json.dumps({"LoadBalancers": [{"LoadBalancerName": "web-alb"}]})
         backend = _mock_backend({"describe-load-balancers": (True, stdout, "")})
         v = ResourceVerifier(backend)
         assert v.resource_exists("elbv2", "web-alb")
 
     def test_lb_missing(self) -> None:
-        backend = _mock_backend(
-            {"describe-load-balancers": (False, "", "not found")}
-        )
+        backend = _mock_backend({"describe-load-balancers": (False, "", "not found")})
         v = ResourceVerifier(backend)
         assert not v.resource_exists("elbv2", "web-alb")
 
@@ -537,9 +519,7 @@ class TestResourceExistsEBS:
 
 class TestResourceExistsFirehose:
     def test_stream_exists(self) -> None:
-        backend = _mock_backend(
-            {"describe-delivery-stream": (True, "{}", "")}
-        )
+        backend = _mock_backend({"describe-delivery-stream": (True, "{}", "")})
         v = ResourceVerifier(backend)
         assert v.resource_exists("firehose", "event-stream")
 

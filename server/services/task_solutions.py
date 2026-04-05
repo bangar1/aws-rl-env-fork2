@@ -20,10 +20,18 @@ _SIMPLE_POLICY = """'{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Act
 
 
 def _assume(svc: str) -> str:
-    doc = json.dumps({
-        "Version": "2012-10-17",
-        "Statement": [{"Effect": "Allow", "Principal": {"Service": svc}, "Action": "sts:AssumeRole"}]
-    })
+    doc = json.dumps(
+        {
+            "Version": "2012-10-17",
+            "Statement": [
+                {
+                    "Effect": "Allow",
+                    "Principal": {"Service": svc},
+                    "Action": "sts:AssumeRole",
+                }
+            ],
+        }
+    )
     return f"'{doc}'"
 
 
@@ -39,6 +47,7 @@ def _load_static() -> dict[int, list[str]]:
         return _static_cache
 
     import importlib.util
+
     solutions: dict[int, list[str]] = {}
     tests_dir = Path(__file__).resolve().parent.parent.parent / "tests_tasks"
 
@@ -71,6 +80,7 @@ def _load_static() -> dict[int, list[str]]:
 # ---------------------------------------------------------------------------
 # Advanced tasks — full command sequences with dynamic ID resolution
 # ---------------------------------------------------------------------------
+
 
 def _advanced_commands(task_id: int, backend: AwsBackend, step: int) -> list[str]:
     """Return the full ordered command list for an advanced task.
@@ -108,7 +118,9 @@ def _advanced_commands(task_id: int, backend: AwsBackend, step: int) -> list[str
             cmds.append(f"aws apigateway get-resources --rest-api-id {api_id}")
 
             if step >= 5:
-                ok2, out2, _ = backend.execute_command(f"aws apigateway get-resources --rest-api-id {api_id}")
+                ok2, out2, _ = backend.execute_command(
+                    f"aws apigateway get-resources --rest-api-id {api_id}"
+                )
                 root_id = "UNKNOWN"
                 try:
                     for item in json.loads(out2).get("items", []):
@@ -117,10 +129,14 @@ def _advanced_commands(task_id: int, backend: AwsBackend, step: int) -> list[str
                             break
                 except Exception:
                     pass
-                cmds.append(f"aws apigateway create-resource --rest-api-id {api_id} --parent-id {root_id} --path-part products")
+                cmds.append(
+                    f"aws apigateway create-resource --rest-api-id {api_id} --parent-id {root_id} --path-part products"
+                )
 
             if step >= 6:
-                ok3, out3, _ = backend.execute_command(f"aws apigateway get-resources --rest-api-id {api_id}")
+                ok3, out3, _ = backend.execute_command(
+                    f"aws apigateway get-resources --rest-api-id {api_id}"
+                )
                 res_id = "UNKNOWN"
                 try:
                     for item in json.loads(out3).get("items", []):
@@ -129,10 +145,14 @@ def _advanced_commands(task_id: int, backend: AwsBackend, step: int) -> list[str
                             break
                 except Exception:
                     pass
-                cmds.append(f"aws apigateway put-method --rest-api-id {api_id} --resource-id {res_id} --http-method GET --authorization-type NONE")
+                cmds.append(
+                    f"aws apigateway put-method --rest-api-id {api_id} --resource-id {res_id} --http-method GET --authorization-type NONE"
+                )
 
             if step >= 7:
-                cmds.append(f"aws apigateway put-integration --rest-api-id {api_id} --resource-id {res_id} --http-method GET --type AWS_PROXY --integration-http-method POST --uri arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-1:000000000000:function:product-api/invocations")
+                cmds.append(
+                    f"aws apigateway put-integration --rest-api-id {api_id} --resource-id {res_id} --http-method GET --type AWS_PROXY --integration-http-method POST --uri arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-1:000000000000:function:product-api/invocations"
+                )
         return cmds
 
     if task_id == 17:
@@ -166,19 +186,27 @@ def _advanced_commands(task_id: int, backend: AwsBackend, step: int) -> list[str
         ]
         if step >= 6:
             tg_arn = lb_arn = "UNKNOWN"
-            ok, out, _ = backend.execute_command("aws elbv2 describe-target-groups --names web-tg")
+            ok, out, _ = backend.execute_command(
+                "aws elbv2 describe-target-groups --names web-tg"
+            )
             try:
                 tg_arn = json.loads(out)["TargetGroups"][0]["TargetGroupArn"]
             except Exception:
                 pass
-            ok, out, _ = backend.execute_command("aws elbv2 describe-load-balancers --names web-alb")
+            ok, out, _ = backend.execute_command(
+                "aws elbv2 describe-load-balancers --names web-alb"
+            )
             try:
                 lb_arn = json.loads(out)["LoadBalancers"][0]["LoadBalancerArn"]
             except Exception:
                 pass
-            cmds.append(f"aws elbv2 create-listener --load-balancer-arn {lb_arn} --protocol HTTP --port 80 --default-actions Type=forward,TargetGroupArn={tg_arn}")
+            cmds.append(
+                f"aws elbv2 create-listener --load-balancer-arn {lb_arn} --protocol HTTP --port 80 --default-actions Type=forward,TargetGroupArn={tg_arn}"
+            )
             if step >= 7:
-                cmds.append(f"aws ecs create-service --cluster web-cluster --service-name web-service --task-definition web-app-task --desired-count 1 --launch-type FARGATE --network-configuration awsvpcConfiguration={{subnets=[subnet-00000001],securityGroups=[sg-00000001]}} --load-balancers targetGroupArn={tg_arn},containerName=web,containerPort=80")
+                cmds.append(
+                    f"aws ecs create-service --cluster web-cluster --service-name web-service --task-definition web-app-task --desired-count 1 --launch-type FARGATE --network-configuration awsvpcConfiguration={{subnets=[subnet-00000001],securityGroups=[sg-00000001]}} --load-balancers targetGroupArn={tg_arn},containerName=web,containerPort=80"
+                )
         return cmds
 
     if task_id == 89:
@@ -209,48 +237,96 @@ def _advanced_commands(task_id: int, backend: AwsBackend, step: int) -> list[str
         ]
         if step >= 3:
             tg_arn = lb_arn = "UNKNOWN"
-            ok, out, _ = backend.execute_command("aws elbv2 describe-target-groups --names frontend-tg")
-            try: tg_arn = json.loads(out)["TargetGroups"][0]["TargetGroupArn"]
-            except Exception: pass
-            ok, out, _ = backend.execute_command("aws elbv2 describe-load-balancers --names frontend-alb")
-            try: lb_arn = json.loads(out)["LoadBalancers"][0]["LoadBalancerArn"]
-            except Exception: pass
-            cmds.append(f"aws elbv2 create-listener --load-balancer-arn {lb_arn} --protocol HTTP --port 80 --default-actions Type=forward,TargetGroupArn={tg_arn}")
+            ok, out, _ = backend.execute_command(
+                "aws elbv2 describe-target-groups --names frontend-tg"
+            )
+            try:
+                tg_arn = json.loads(out)["TargetGroups"][0]["TargetGroupArn"]
+            except Exception:
+                pass
+            ok, out, _ = backend.execute_command(
+                "aws elbv2 describe-load-balancers --names frontend-alb"
+            )
+            try:
+                lb_arn = json.loads(out)["LoadBalancers"][0]["LoadBalancerArn"]
+            except Exception:
+                pass
+            cmds.append(
+                f"aws elbv2 create-listener --load-balancer-arn {lb_arn} --protocol HTTP --port 80 --default-actions Type=forward,TargetGroupArn={tg_arn}"
+            )
         if step >= 4:
-            cmds.append("aws route53 create-hosted-zone --name example.internal --caller-reference ref-91")
+            cmds.append(
+                "aws route53 create-hosted-zone --name example.internal --caller-reference ref-91"
+            )
         if step >= 5:
             hz_id = "UNKNOWN"
             ok, out, _ = backend.execute_command("aws route53 list-hosted-zones")
             try:
                 for hz in json.loads(out).get("HostedZones", []):
                     if "example.internal" in hz.get("Name", ""):
-                        hz_id = hz["Id"].split("/")[-1]; break
-            except Exception: pass
-            batch = json.dumps({"Changes": [{"Action": "CREATE", "ResourceRecordSet": {"Name": "example.internal", "Type": "A", "TTL": 300, "ResourceRecords": [{"Value": "1.2.3.4"}]}}]})
-            cmds.append(f"aws route53 change-resource-record-sets --hosted-zone-id {hz_id} --change-batch '{batch}'")
+                        hz_id = hz["Id"].split("/")[-1]
+                        break
+            except Exception:
+                pass
+            batch = json.dumps(
+                {
+                    "Changes": [
+                        {
+                            "Action": "CREATE",
+                            "ResourceRecordSet": {
+                                "Name": "example.internal",
+                                "Type": "A",
+                                "TTL": 300,
+                                "ResourceRecords": [{"Value": "1.2.3.4"}],
+                            },
+                        }
+                    ]
+                }
+            )
+            cmds.append(
+                f"aws route53 change-resource-record-sets --hosted-zone-id {hz_id} --change-batch '{batch}'"
+            )
         return cmds
 
     if task_id == 92:
         cmds = ["aws cognito-idp create-user-pool --pool-name app-users"]
         if step >= 1:
             pool_id = "UNKNOWN"
-            ok, out, _ = backend.execute_command("aws cognito-idp list-user-pools --max-results 10")
+            ok, out, _ = backend.execute_command(
+                "aws cognito-idp list-user-pools --max-results 10"
+            )
             try:
                 for p in json.loads(out).get("UserPools", []):
-                    if "app-users" in p.get("Name", ""): pool_id = p["Id"]; break
-            except Exception: pass
-            cmds.append(f"aws cognito-idp create-user-pool-client --user-pool-id {pool_id} --client-name app-client")
-            cmds.append(f"aws iam create-role --role-name auth-handler-role --assume-role-policy-document {a('lambda.amazonaws.com')}")
-            cmds.append(f"aws lambda create-function --function-name auth-handler --runtime python3.12 --handler index.handler --role {_ROLE}/auth-handler-role {_CODE}")
-            cmds.append("aws apigatewayv2 create-api --name auth-api --protocol-type HTTP")
+                    if "app-users" in p.get("Name", ""):
+                        pool_id = p["Id"]
+                        break
+            except Exception:
+                pass
+            cmds.append(
+                f"aws cognito-idp create-user-pool-client --user-pool-id {pool_id} --client-name app-client"
+            )
+            cmds.append(
+                f"aws iam create-role --role-name auth-handler-role --assume-role-policy-document {a('lambda.amazonaws.com')}"
+            )
+            cmds.append(
+                f"aws lambda create-function --function-name auth-handler --runtime python3.12 --handler index.handler --role {_ROLE}/auth-handler-role {_CODE}"
+            )
+            cmds.append(
+                "aws apigatewayv2 create-api --name auth-api --protocol-type HTTP"
+            )
         if step >= 5:
             api_id = "UNKNOWN"
             ok, out, _ = backend.execute_command("aws apigatewayv2 get-apis")
             try:
                 for item in json.loads(out).get("Items", []):
-                    if item.get("Name") == "auth-api": api_id = item["ApiId"]; break
-            except Exception: pass
-            cmds.append(f"aws apigatewayv2 create-authorizer --api-id {api_id} --authorizer-type JWT --name cognito-auth --identity-source $request.header.Authorization --jwt-configuration Issuer=https://cognito-idp.us-east-1.amazonaws.com/{pool_id},Audience={pool_id}")
+                    if item.get("Name") == "auth-api":
+                        api_id = item["ApiId"]
+                        break
+            except Exception:
+                pass
+            cmds.append(
+                f"aws apigatewayv2 create-authorizer --api-id {api_id} --authorizer-type JWT --name cognito-auth --identity-source $request.header.Authorization --jwt-configuration Issuer=https://cognito-idp.us-east-1.amazonaws.com/{pool_id},Audience={pool_id}"
+            )
         return cmds
 
     if task_id == 93:
@@ -298,36 +374,65 @@ def _advanced_commands(task_id: int, backend: AwsBackend, step: int) -> list[str
         ]
 
     if task_id == 98:
-        cmds = ['aws ec2 create-security-group --group-name cache-sg --description "Redis access"']
+        cmds = [
+            'aws ec2 create-security-group --group-name cache-sg --description "Redis access"'
+        ]
         if step >= 1:
             sg_id = "UNKNOWN"
-            ok, out, _ = backend.execute_command("aws ec2 describe-security-groups --group-names cache-sg")
-            try: sg_id = json.loads(out)["SecurityGroups"][0]["GroupId"]
-            except Exception: pass
-            cmds.append(f"aws ec2 authorize-security-group-ingress --group-id {sg_id} --protocol tcp --port 6379 --cidr 10.0.0.0/16")
-            cmds.append('aws elasticache create-cache-subnet-group --cache-subnet-group-name cache-subnets --cache-subnet-group-description "subnets" --subnet-ids subnet-00000001')
-            cmds.append(f"aws elasticache create-cache-cluster --cache-cluster-id session-store --engine redis --cache-node-type cache.t3.micro --num-cache-nodes 1 --security-group-ids {sg_id}")
-            cmds.append(f"aws iam create-policy --policy-name cache-access --policy-document {_SIMPLE_POLICY}")
+            ok, out, _ = backend.execute_command(
+                "aws ec2 describe-security-groups --group-names cache-sg"
+            )
+            try:
+                sg_id = json.loads(out)["SecurityGroups"][0]["GroupId"]
+            except Exception:
+                pass
+            cmds.append(
+                f"aws ec2 authorize-security-group-ingress --group-id {sg_id} --protocol tcp --port 6379 --cidr 10.0.0.0/16"
+            )
+            cmds.append(
+                'aws elasticache create-cache-subnet-group --cache-subnet-group-name cache-subnets --cache-subnet-group-description "subnets" --subnet-ids subnet-00000001'
+            )
+            cmds.append(
+                f"aws elasticache create-cache-cluster --cache-cluster-id session-store --engine redis --cache-node-type cache.t3.micro --num-cache-nodes 1 --security-group-ids {sg_id}"
+            )
+            cmds.append(
+                f"aws iam create-policy --policy-name cache-access --policy-document {_SIMPLE_POLICY}"
+            )
         return cmds
 
     if task_id == 99:
-        cmds = ['aws ec2 create-security-group --group-name efs-sg --description "NFS access"']
+        cmds = [
+            'aws ec2 create-security-group --group-name efs-sg --description "NFS access"'
+        ]
         if step >= 1:
             sg_id = "UNKNOWN"
-            ok, out, _ = backend.execute_command("aws ec2 describe-security-groups --group-names efs-sg")
-            try: sg_id = json.loads(out)["SecurityGroups"][0]["GroupId"]
-            except Exception: pass
-            cmds.append(f"aws ec2 authorize-security-group-ingress --group-id {sg_id} --protocol tcp --port 2049 --cidr 10.0.0.0/16")
+            ok, out, _ = backend.execute_command(
+                "aws ec2 describe-security-groups --group-names efs-sg"
+            )
+            try:
+                sg_id = json.loads(out)["SecurityGroups"][0]["GroupId"]
+            except Exception:
+                pass
+            cmds.append(
+                f"aws ec2 authorize-security-group-ingress --group-id {sg_id} --protocol tcp --port 2049 --cidr 10.0.0.0/16"
+            )
             cmds.append("aws efs create-file-system --creation-token shared-fs")
         if step >= 3:
             fs_id = "UNKNOWN"
             ok, out, _ = backend.execute_command("aws efs describe-file-systems")
             try:
                 for fs in json.loads(out).get("FileSystems", []):
-                    if fs.get("CreationToken") == "shared-fs": fs_id = fs["FileSystemId"]; break
-            except Exception: pass
-            cmds.append(f"aws efs create-mount-target --file-system-id {fs_id} --subnet-id subnet-00000001 --security-groups {sg_id}")
-            cmds.append(f"aws iam create-policy --policy-name efs-access --policy-document {_SIMPLE_POLICY}")
+                    if fs.get("CreationToken") == "shared-fs":
+                        fs_id = fs["FileSystemId"]
+                        break
+            except Exception:
+                pass
+            cmds.append(
+                f"aws efs create-mount-target --file-system-id {fs_id} --subnet-id subnet-00000001 --security-groups {sg_id}"
+            )
+            cmds.append(
+                f"aws iam create-policy --policy-name efs-access --policy-document {_SIMPLE_POLICY}"
+            )
         return cmds
 
     if task_id == 100:
@@ -348,10 +453,16 @@ def _advanced_commands(task_id: int, backend: AwsBackend, step: int) -> list[str
         ]
         if step >= 4:
             stream_arn = "UNKNOWN"
-            ok, out, _ = backend.execute_command("aws dynamodb describe-table --table-name user-activity")
-            try: stream_arn = json.loads(out)["Table"]["LatestStreamArn"]
-            except Exception: pass
-            cmds.append(f"aws lambda create-event-source-mapping --function-name activity-processor --event-source-arn {stream_arn} --starting-position LATEST")
+            ok, out, _ = backend.execute_command(
+                "aws dynamodb describe-table --table-name user-activity"
+            )
+            try:
+                stream_arn = json.loads(out)["Table"]["LatestStreamArn"]
+            except Exception:
+                pass
+            cmds.append(
+                f"aws lambda create-event-source-mapping --function-name activity-processor --event-source-arn {stream_arn} --starting-position LATEST"
+            )
         return cmds
 
     if task_id == 102:
@@ -377,14 +488,38 @@ def _advanced_commands(task_id: int, backend: AwsBackend, step: int) -> list[str
             ok, out, _ = backend.execute_command("aws apigatewayv2 get-apis")
             try:
                 for item in json.loads(out).get("Items", []):
-                    if item.get("Name") == "tasks-api": api_id = item["ApiId"]; break
-            except Exception: pass
-            cmds.append(f"aws apigatewayv2 create-integration --api-id {api_id} --integration-type AWS_PROXY --integration-uri arn:aws:lambda:us-east-1:000000000000:function:tasks-api-handler --payload-format-version 2.0")
-            cmds.append(f'aws apigatewayv2 create-route --api-id {api_id} --route-key "GET /tasks"')
+                    if item.get("Name") == "tasks-api":
+                        api_id = item["ApiId"]
+                        break
+            except Exception:
+                pass
+            cmds.append(
+                f"aws apigatewayv2 create-integration --api-id {api_id} --integration-type AWS_PROXY --integration-uri arn:aws:lambda:us-east-1:000000000000:function:tasks-api-handler --payload-format-version 2.0"
+            )
+            cmds.append(
+                f'aws apigatewayv2 create-route --api-id {api_id} --route-key "GET /tasks"'
+            )
         return cmds
 
     if task_id == 104:
-        _spolicy = json.dumps({"Version": "2012-10-17", "Statement": [{"Effect": "Deny", "Principal": "*", "Action": "s3:PutObject", "Resource": "arn:aws:s3:::secure-input/*", "Condition": {"StringNotEquals": {"s3:x-amz-server-side-encryption": "AES256"}}}]})
+        _spolicy = json.dumps(
+            {
+                "Version": "2012-10-17",
+                "Statement": [
+                    {
+                        "Effect": "Deny",
+                        "Principal": "*",
+                        "Action": "s3:PutObject",
+                        "Resource": "arn:aws:s3:::secure-input/*",
+                        "Condition": {
+                            "StringNotEquals": {
+                                "s3:x-amz-server-side-encryption": "AES256"
+                            }
+                        },
+                    }
+                ],
+            }
+        )
         return [
             "aws s3api create-bucket --bucket secure-input",
             "aws s3api create-bucket --bucket secure-output",
@@ -405,24 +540,43 @@ def _advanced_commands(task_id: int, backend: AwsBackend, step: int) -> list[str
             ok, out, _ = backend.execute_command("aws apigateway get-rest-apis")
             try:
                 for item in json.loads(out).get("items", []):
-                    if item.get("name") == "external-api": api_id = item["id"]; break
-            except Exception: pass
-            ok2, out2, _ = backend.execute_command(f"aws apigateway get-resources --rest-api-id {api_id}")
+                    if item.get("name") == "external-api":
+                        api_id = item["id"]
+                        break
+            except Exception:
+                pass
+            ok2, out2, _ = backend.execute_command(
+                f"aws apigateway get-resources --rest-api-id {api_id}"
+            )
             root_id = "UNKNOWN"
             try:
                 for item in json.loads(out2).get("items", []):
-                    if item.get("path") == "/": root_id = item["id"]; break
-            except Exception: pass
-            cmds.append(f"aws apigateway create-resource --rest-api-id {api_id} --parent-id {root_id} --path-part call")
+                    if item.get("path") == "/":
+                        root_id = item["id"]
+                        break
+            except Exception:
+                pass
+            cmds.append(
+                f"aws apigateway create-resource --rest-api-id {api_id} --parent-id {root_id} --path-part call"
+            )
         if step >= 5:
             res_id = "UNKNOWN"
-            ok3, out3, _ = backend.execute_command(f"aws apigateway get-resources --rest-api-id {api_id}")
+            ok3, out3, _ = backend.execute_command(
+                f"aws apigateway get-resources --rest-api-id {api_id}"
+            )
             try:
                 for item in json.loads(out3).get("items", []):
-                    if item.get("pathPart") == "call": res_id = item["id"]; break
-            except Exception: pass
-            cmds.append(f"aws apigateway put-method --rest-api-id {api_id} --resource-id {res_id} --http-method GET --authorization-type NONE")
-            cmds.append(f"aws apigateway put-integration --rest-api-id {api_id} --resource-id {res_id} --http-method GET --type AWS_PROXY --integration-http-method POST --uri arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-1:000000000000:function:external-caller/invocations")
+                    if item.get("pathPart") == "call":
+                        res_id = item["id"]
+                        break
+            except Exception:
+                pass
+            cmds.append(
+                f"aws apigateway put-method --rest-api-id {api_id} --resource-id {res_id} --http-method GET --authorization-type NONE"
+            )
+            cmds.append(
+                f"aws apigateway put-integration --rest-api-id {api_id} --resource-id {res_id} --http-method GET --type AWS_PROXY --integration-http-method POST --uri arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-1:000000000000:function:external-caller/invocations"
+            )
         return cmds
 
     if task_id == 106:
@@ -459,7 +613,10 @@ def _advanced_commands(task_id: int, backend: AwsBackend, step: int) -> list[str
 # Expert tasks with dynamic IDs
 # ---------------------------------------------------------------------------
 
-def _expert_dynamic_command(task_id: int, backend: AwsBackend, step: int, static_cmds: list[str]) -> list[str]:
+
+def _expert_dynamic_command(
+    task_id: int, backend: AwsBackend, step: int, static_cmds: list[str]
+) -> list[str]:
     """Append dynamically resolved commands for expert tasks that need runtime IDs."""
     cmds = list(static_cmds)
 
@@ -474,20 +631,42 @@ def _expert_dynamic_command(task_id: int, backend: AwsBackend, step: int, static
                     break
         except Exception:
             pass
-        change_batch = json.dumps({"Changes": [{"Action": "UPSERT", "ResourceRecordSet": {"Name": "api.example.com", "Type": "A", "TTL": 300, "ResourceRecords": [{"Value": "10.0.1.50"}]}}]})
-        cmds.append(f"aws route53 change-resource-record-sets --hosted-zone-id {zone_id} --change-batch '{change_batch}'")
+        change_batch = json.dumps(
+            {
+                "Changes": [
+                    {
+                        "Action": "UPSERT",
+                        "ResourceRecordSet": {
+                            "Name": "api.example.com",
+                            "Type": "A",
+                            "TTL": 300,
+                            "ResourceRecords": [{"Value": "10.0.1.50"}],
+                        },
+                    }
+                ]
+            }
+        )
+        cmds.append(
+            f"aws route53 change-resource-record-sets --hosted-zone-id {zone_id} --change-batch '{change_batch}'"
+        )
 
     elif task_id == 115:
-        ok, out, _ = backend.execute_command("aws elbv2 describe-target-groups --names web-targets")
+        ok, out, _ = backend.execute_command(
+            "aws elbv2 describe-target-groups --names web-targets"
+        )
         tg_arn = "UNKNOWN"
         try:
             tg_arn = json.loads(out)["TargetGroups"][0]["TargetGroupArn"]
         except Exception:
             pass
-        cmds.append(f"aws elbv2 modify-target-group --target-group-arn {tg_arn} --health-check-path /health --health-check-port 80 --health-check-interval-seconds 15 --healthy-threshold-count 2")
+        cmds.append(
+            f"aws elbv2 modify-target-group --target-group-arn {tg_arn} --health-check-path /health --health-check-port 80 --health-check-interval-seconds 15 --healthy-threshold-count 2"
+        )
 
     elif task_id == 126:
-        ok, out, _ = backend.execute_command("aws cognito-idp list-user-pools --max-results 10")
+        ok, out, _ = backend.execute_command(
+            "aws cognito-idp list-user-pools --max-results 10"
+        )
         pool_id = "UNKNOWN"
         try:
             for pool in json.loads(out).get("UserPools", []):
@@ -496,8 +675,21 @@ def _expert_dynamic_command(task_id: int, backend: AwsBackend, step: int, static
                     break
         except Exception:
             pass
-        policies = json.dumps({"PasswordPolicy": {"MinimumLength": 12, "RequireUppercase": True, "RequireLowercase": True, "RequireNumbers": True, "RequireSymbols": True, "TemporaryPasswordValidityDays": 1}})
-        cmds.append(f"aws cognito-idp update-user-pool --user-pool-id {pool_id} --policies '{policies}'")
+        policies = json.dumps(
+            {
+                "PasswordPolicy": {
+                    "MinimumLength": 12,
+                    "RequireUppercase": True,
+                    "RequireLowercase": True,
+                    "RequireNumbers": True,
+                    "RequireSymbols": True,
+                    "TemporaryPasswordValidityDays": 1,
+                }
+            }
+        )
+        cmds.append(
+            f"aws cognito-idp update-user-pool --user-pool-id {pool_id} --policies '{policies}'"
+        )
 
     return cmds
 
@@ -506,12 +698,17 @@ def _expert_dynamic_command(task_id: int, backend: AwsBackend, step: int, static
 # Intermediate tasks with dynamic follow-ups
 # ---------------------------------------------------------------------------
 
-def _intermediate_dynamic(task_id: int, backend: AwsBackend, step: int, static_cmds: list[str]) -> list[str]:
+
+def _intermediate_dynamic(
+    task_id: int, backend: AwsBackend, step: int, static_cmds: list[str]
+) -> list[str]:
     """Resolve dynamic follow-up commands for intermediate tasks."""
     cmds = list(static_cmds)
 
     if task_id == 76 and step >= 1:
-        ok, out, _ = backend.execute_command("aws cognito-idp list-user-pools --max-results 10")
+        ok, out, _ = backend.execute_command(
+            "aws cognito-idp list-user-pools --max-results 10"
+        )
         pool_id = "UNKNOWN"
         try:
             for pool in json.loads(out).get("UserPools", []):
@@ -520,7 +717,9 @@ def _intermediate_dynamic(task_id: int, backend: AwsBackend, step: int, static_c
                     break
         except Exception:
             pass
-        cmds.append(f"aws cognito-idp create-user-pool-client --user-pool-id {pool_id} --client-name web-app-client")
+        cmds.append(
+            f"aws cognito-idp create-user-pool-client --user-pool-id {pool_id} --client-name web-app-client"
+        )
 
     elif task_id == 78 and step >= 1:
         ok, out, _ = backend.execute_command("aws ec2 describe-volumes")
@@ -531,7 +730,9 @@ def _intermediate_dynamic(task_id: int, backend: AwsBackend, step: int, static_c
                 break
         except Exception:
             pass
-        cmds.append(f"aws ec2 create-tags --resources {vol_id} --tags Key=Name,Value=data-volume")
+        cmds.append(
+            f"aws ec2 create-tags --resources {vol_id} --tags Key=Name,Value=data-volume"
+        )
 
     elif task_id == 82 and step >= 1:
         ok, out, _ = backend.execute_command("aws apigatewayv2 get-apis")
@@ -543,16 +744,22 @@ def _intermediate_dynamic(task_id: int, backend: AwsBackend, step: int, static_c
                     break
         except Exception:
             pass
-        cmds.append(f'aws apigatewayv2 create-route --api-id {api_id} --route-key "GET /products-api"')
+        cmds.append(
+            f'aws apigatewayv2 create-route --api-id {api_id} --route-key "GET /products-api"'
+        )
 
     elif task_id == 84 and step >= 1:
-        ok, out, _ = backend.execute_command("aws sqs get-queue-url --queue-name task-queue")
+        ok, out, _ = backend.execute_command(
+            "aws sqs get-queue-url --queue-name task-queue"
+        )
         queue_url = "UNKNOWN"
         try:
             queue_url = json.loads(out)["QueueUrl"]
         except Exception:
             pass
-        cmds.append(f"""aws sqs send-message --queue-url {queue_url} --message-body '{{"task":"process","id":"task-queue-001"}}'""")
+        cmds.append(
+            f"""aws sqs send-message --queue-url {queue_url} --message-body '{{"task":"process","id":"task-queue-001"}}'"""
+        )
 
     return cmds
 
@@ -561,7 +768,33 @@ def _intermediate_dynamic(task_id: int, backend: AwsBackend, step: int, static_c
 # Public API
 # ---------------------------------------------------------------------------
 
-_ADVANCED_IDS = {15, 16, 17, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108}
+_ADVANCED_IDS = {
+    15,
+    16,
+    17,
+    87,
+    88,
+    89,
+    90,
+    91,
+    92,
+    93,
+    94,
+    95,
+    96,
+    97,
+    98,
+    99,
+    100,
+    101,
+    102,
+    103,
+    104,
+    105,
+    106,
+    107,
+    108,
+}
 _INTERMEDIATE_DYNAMIC_IDS = {76, 78, 82, 84}
 _EXPERT_DYNAMIC_IDS = {114, 115, 126}
 
@@ -605,5 +838,9 @@ def get_next_solution(
 
     # Default: static commands
     if step < len(base_cmds):
-        return {"command": base_cmds[step], "step": step + 1, "total_steps": len(base_cmds)}
+        return {
+            "command": base_cmds[step],
+            "step": step + 1,
+            "total_steps": len(base_cmds),
+        }
     return {"command": None, "step": step, "total_steps": len(base_cmds)}

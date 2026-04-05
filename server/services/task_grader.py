@@ -236,7 +236,7 @@ class TaskGrader:
         if result.task_achieved:
             base = 1.05 if chaos_occurred else 1.0
             # Hint decay: 0.85^hints_used
-            return base * (0.85 ** hints_used)
+            return base * (0.85**hints_used)
 
         # Base: partial progress scaled to 0.0–0.8 range
         progress_reward = result.partial_progress * 0.8

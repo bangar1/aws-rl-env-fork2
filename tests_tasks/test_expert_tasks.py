@@ -63,9 +63,9 @@ EXPERT_COMMANDS: dict[int, list[str]] = {
         (
             "aws s3api put-bucket-lifecycle-configuration --bucket app-config-store "
             "--lifecycle-configuration "
-            "'{\"Rules\":[{\"ID\":\"cleanup-old-versions\",\"Status\":\"Enabled\","
-            "\"NoncurrentVersionExpiration\":{\"NoncurrentDays\":30},"
-            "\"Filter\":{\"Prefix\":\"\"}}]}'"
+            '\'{"Rules":[{"ID":"cleanup-old-versions","Status":"Enabled",'
+            '"NoncurrentVersionExpiration":{"NoncurrentDays":30},'
+            '"Filter":{"Prefix":""}}]}\''
         ),
     ],
     # -- Task 20: SRE — DynamoDB throughput + SNS subscription -----------------
@@ -88,10 +88,10 @@ EXPERT_COMMANDS: dict[int, list[str]] = {
         (
             "aws s3api put-bucket-policy --bucket public-assets "
             "--policy "
-            "'{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\","
-            "\"Principal\":{\"AWS\":\"arn:aws:iam::000000000000:role/app-role\"},"
-            "\"Action\":\"s3:GetObject\","
-            "\"Resource\":\"arn:aws:s3:::public-assets/*\"}]}'"
+            '\'{"Version":"2012-10-17","Statement":[{"Effect":"Allow",'
+            '"Principal":{"AWS":"arn:aws:iam::000000000000:role/app-role"},'
+            '"Action":"s3:GetObject",'
+            '"Resource":"arn:aws:s3:::public-assets/*"}]}\''
         ),
     ],
     # -- Task 22: Security — Replace overly broad IAM inline policy ------------
@@ -101,9 +101,9 @@ EXPERT_COMMANDS: dict[int, list[str]] = {
             "aws iam put-role-policy --role-name app-role "
             "--policy-name app-access "
             "--policy-document "
-            "'{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\","
-            "\"Action\":[\"dynamodb:GetItem\",\"dynamodb:PutItem\"],"
-            "\"Resource\":\"arn:aws:dynamodb:us-east-1:000000000000:table/users\"}]}'"
+            '\'{"Version":"2012-10-17","Statement":[{"Effect":"Allow",'
+            '"Action":["dynamodb:GetItem","dynamodb:PutItem"],'
+            '"Resource":"arn:aws:dynamodb:us-east-1:000000000000:table/users"}]}\''
         ),
     ],
     # -- Task 23: Security — Move plaintext password to Secrets Manager --------
@@ -197,17 +197,17 @@ EXPERT_COMMANDS: dict[int, list[str]] = {
         (
             "aws s3api put-bucket-encryption --bucket data-lake-raw "
             "--server-side-encryption-configuration "
-            "'{\"Rules\":[{\"ApplyServerSideEncryptionByDefault\":"
-            "{\"SSEAlgorithm\":\"AES256\"}}]}'"
+            '\'{"Rules":[{"ApplyServerSideEncryptionByDefault":'
+            '{"SSEAlgorithm":"AES256"}}]}\''
         ),
         (
             "aws s3api put-bucket-policy --bucket data-lake-raw "
             "--policy "
-            "'{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Deny\","
-            "\"Principal\":\"*\",\"Action\":\"s3:PutObject\","
-            "\"Resource\":\"arn:aws:s3:::data-lake-raw/*\","
-            "\"Condition\":{\"StringNotEquals\":"
-            "{\"s3:x-amz-server-side-encryption\":\"AES256\"}}}]}'"
+            '\'{"Version":"2012-10-17","Statement":[{"Effect":"Deny",'
+            '"Principal":"*","Action":"s3:PutObject",'
+            '"Resource":"arn:aws:s3:::data-lake-raw/*",'
+            '"Condition":{"StringNotEquals":'
+            '{"s3:x-amz-server-side-encryption":"AES256"}}}]}\''
         ),
     ],
     # -- Task 118: Security — DynamoDB PITR + TTL ------------------------------
@@ -233,7 +233,7 @@ EXPERT_COMMANDS: dict[int, list[str]] = {
             "aws secretsmanager create-secret "
             "--name app/database-credentials "
             "--secret-string "
-            "'{\"username\":\"admin\",\"password\":\"SuperSecret123\"}'"
+            '\'{"username":"admin","password":"SuperSecret123"}\''
         ),
     ],
     # -- Task 120: Security — IAM user managed + inline policy fix ------------
@@ -250,9 +250,9 @@ EXPERT_COMMANDS: dict[int, list[str]] = {
             "aws iam put-user-policy --user-name deploy-bot "
             "--policy-name deploy-only "
             "--policy-document "
-            "'{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\","
-            "\"Action\":[\"s3:PutObject\",\"codedeploy:*\"],"
-            "\"Resource\":\"*\"}]}'"
+            '\'{"Version":"2012-10-17","Statement":[{"Effect":"Allow",'
+            '"Action":["s3:PutObject","codedeploy:*"],'
+            '"Resource":"*"}]}\''
         ),
     ],
     # -- Task 121: SRE — EventBridge rule enable + Lambda target ---------------
@@ -260,7 +260,7 @@ EXPERT_COMMANDS: dict[int, list[str]] = {
         "aws lambda get-function --function-name etl-runner",
         (
             "aws events put-rule --name nightly-etl-trigger "
-            "--schedule-expression \"cron(0 2 * * ? *)\" "
+            '--schedule-expression "cron(0 2 * * ? *)" '
             "--state ENABLED"
         ),
         (
@@ -279,9 +279,9 @@ EXPERT_COMMANDS: dict[int, list[str]] = {
             "aws firehose create-delivery-stream "
             "--delivery-stream-name clickstream-delivery "
             "--s3-destination-configuration "
-            "'{\"RoleARN\":\"arn:aws:iam::000000000000:role/firehose-role\","
-            "\"BucketARN\":\"arn:aws:s3:::clickstream-archive\","
-            "\"Prefix\":\"clickstream/year=!{timestamp:yyyy}/month=!{timestamp:MM}/\"}'"
+            '\'{"RoleARN":"arn:aws:iam::000000000000:role/firehose-role",'
+            '"BucketARN":"arn:aws:s3:::clickstream-archive",'
+            '"Prefix":"clickstream/year=!{timestamp:yyyy}/month=!{timestamp:MM}/"}\''
         ),
     ],
     # -- Task 123: SRE — SNS subscription DLQ + retention (DYNAMIC) ------------
@@ -315,10 +315,10 @@ EXPERT_COMMANDS: dict[int, list[str]] = {
         (
             "aws glue update-job --job-name daily-transform "
             "--job-update "
-            "'{\"Role\":\"arn:aws:iam::000000000000:role/glue-role\","
-            "\"Command\":{\"Name\":\"glueetl\","
-            "\"ScriptLocation\":\"s3://glue-scripts-bucket/scripts/daily-transform.py\","
-            "\"PythonVersion\":\"3\"}}'"
+            '\'{"Role":"arn:aws:iam::000000000000:role/glue-role",'
+            '"Command":{"Name":"glueetl",'
+            '"ScriptLocation":"s3://glue-scripts-bucket/scripts/daily-transform.py",'
+            '"PythonVersion":"3"}}\''
         ),
     ],
     # -- Task 126: Security — Cognito password policy fix (pool-id dynamic) ----
@@ -332,11 +332,11 @@ EXPERT_COMMANDS: dict[int, list[str]] = {
         (
             "aws cloudformation create-stack --stack-name legacy-infra-v2 "
             "--template-body "
-            "'{\"AWSTemplateFormatVersion\":\"2010-09-09\",\"Resources\":{\"Table\":"
-            "{\"Type\":\"AWS::DynamoDB::Table\",\"Properties\":{\"TableName\":\"legacy-config\","
-            "\"AttributeDefinitions\":[{\"AttributeName\":\"id\",\"AttributeType\":\"S\"}],"
-            "\"KeySchema\":[{\"AttributeName\":\"id\",\"KeyType\":\"HASH\"}],"
-            "\"BillingMode\":\"PAY_PER_REQUEST\"}}}}'"
+            '\'{"AWSTemplateFormatVersion":"2010-09-09","Resources":{"Table":'
+            '{"Type":"AWS::DynamoDB::Table","Properties":{"TableName":"legacy-config",'
+            '"AttributeDefinitions":[{"AttributeName":"id","AttributeType":"S"}],'
+            '"KeySchema":[{"AttributeName":"id","KeyType":"HASH"}],'
+            '"BillingMode":"PAY_PER_REQUEST"}}}}\''
         ),
     ],
 }
@@ -448,10 +448,12 @@ def _resolve_dynamic_commands(
 
     if task_id == 113:
         # RedrivePolicy needs JSON format to avoid shorthand parsing issues
-        redrive = json.dumps({
-            "deadLetterTargetArn": "arn:aws:sqs:us-east-1:000000000000:order-processing-dlq",
-            "maxReceiveCount": "5",
-        })
+        redrive = json.dumps(
+            {
+                "deadLetterTargetArn": "arn:aws:sqs:us-east-1:000000000000:order-processing-dlq",
+                "maxReceiveCount": "5",
+            }
+        )
         attrs = json.dumps({"RedrivePolicy": redrive})
         return [
             f"aws sqs set-queue-attributes "
@@ -462,17 +464,21 @@ def _resolve_dynamic_commands(
     if task_id == 114:
         # Route53 zone-id from setup
         zone_id = state.get("route53_zone_id", "zone-001")
-        change_batch = json.dumps({
-            "Changes": [{
-                "Action": "UPSERT",
-                "ResourceRecordSet": {
-                    "Name": "api.example.com",
-                    "Type": "A",
-                    "TTL": 300,
-                    "ResourceRecords": [{"Value": "10.0.1.50"}],
-                },
-            }]
-        })
+        change_batch = json.dumps(
+            {
+                "Changes": [
+                    {
+                        "Action": "UPSERT",
+                        "ResourceRecordSet": {
+                            "Name": "api.example.com",
+                            "Type": "A",
+                            "TTL": 300,
+                            "ResourceRecords": [{"Value": "10.0.1.50"}],
+                        },
+                    }
+                ]
+            }
+        )
         return [
             f"aws route53 change-resource-record-sets "
             f"--hosted-zone-id {zone_id} "
@@ -506,9 +512,11 @@ def _resolve_dynamic_commands(
             sub_arn = data["Subscriptions"][0]["SubscriptionArn"]
         except (json.JSONDecodeError, KeyError, IndexError):
             sub_arn = "unknown"
-        redrive = json.dumps({
-            "deadLetterTargetArn": "arn:aws:sqs:us-east-1:000000000000:order-notifications-dlq"
-        })
+        redrive = json.dumps(
+            {
+                "deadLetterTargetArn": "arn:aws:sqs:us-east-1:000000000000:order-notifications-dlq"
+            }
+        )
         return [
             f"aws sns set-subscription-attributes --subscription-arn {sub_arn} "
             f"--attribute-name RedrivePolicy "
@@ -536,16 +544,18 @@ def _resolve_dynamic_commands(
     if task_id == 126:
         # Cognito user-pool-id from setup
         pool_id = state.get("cognito_pool_id", "us-east-1_customer-auth")
-        policies = json.dumps({
-            "PasswordPolicy": {
-                "MinimumLength": 12,
-                "RequireUppercase": True,
-                "RequireLowercase": True,
-                "RequireNumbers": True,
-                "RequireSymbols": True,
-                "TemporaryPasswordValidityDays": 1,
+        policies = json.dumps(
+            {
+                "PasswordPolicy": {
+                    "MinimumLength": 12,
+                    "RequireUppercase": True,
+                    "RequireLowercase": True,
+                    "RequireNumbers": True,
+                    "RequireSymbols": True,
+                    "TemporaryPasswordValidityDays": 1,
+                }
             }
-        })
+        )
         return [
             f"aws cognito-idp update-user-pool "
             f"--user-pool-id {pool_id} "
@@ -639,9 +649,7 @@ def _build_task(entry: dict, state: dict[str, str] | None = None) -> Task:
 def test_all_expert_tasks_have_commands(expert_tasks: list[dict]) -> None:
     """Every expert task in the YAML must have a corresponding test command sequence."""
     missing = [
-        t["task_id"]
-        for t in expert_tasks
-        if t["task_id"] not in EXPERT_COMMANDS
+        t["task_id"] for t in expert_tasks if t["task_id"] not in EXPERT_COMMANDS
     ]
     assert not missing, f"No test commands mapped for task_ids: {missing}"
 

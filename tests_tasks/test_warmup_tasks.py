@@ -16,7 +16,13 @@ from server.services.aws_backend import AwsBackend
 from server.services.task_grader import TaskGrader
 from server.services.episode_tracker import EpisodeTracker
 
-TASKS_FILE = Path(__file__).resolve().parent.parent / "server" / "services" / "tasks" / "warmup.yaml"
+TASKS_FILE = (
+    Path(__file__).resolve().parent.parent
+    / "server"
+    / "services"
+    / "tasks"
+    / "warmup.yaml"
+)
 
 # Mapping of task_id -> correct AWS CLI command
 WARMUP_COMMANDS: dict[int, str] = {
@@ -80,7 +86,9 @@ def _build_task(entry: dict) -> Task:
 
 def test_all_warmup_tasks_have_commands(warmup_tasks: list[dict]) -> None:
     """Every warmup task in the YAML must have a corresponding test command."""
-    missing = [t["task_id"] for t in warmup_tasks if t["task_id"] not in WARMUP_COMMANDS]
+    missing = [
+        t["task_id"] for t in warmup_tasks if t["task_id"] not in WARMUP_COMMANDS
+    ]
     assert not missing, f"No test command mapped for task_ids: {missing}"
 
 

@@ -37,14 +37,16 @@ _DUMMY_TASK = Task(
 
 def _make_env():
     """Create an AwsRlEnvironment with all dependencies mocked."""
-    with patch("server.aws_rl_env_environment.AwsBackend") as MockBackend, \
-         patch("server.aws_rl_env_environment.Curriculum") as MockCurriculum, \
-         patch("server.aws_rl_env_environment.TaskGrader") as MockGrader, \
-         patch("server.aws_rl_env_environment.EnvironmentDesigner") as MockDesigner, \
-         patch("server.aws_rl_env_environment.ChaosEngine") as MockChaos, \
-         patch("server.aws_rl_env_environment.HintProvider") as MockHint:
-
+    with (
+        patch("server.aws_rl_env_environment.AwsBackend") as MockBackend,
+        patch("server.aws_rl_env_environment.Curriculum") as MockCurriculum,
+        patch("server.aws_rl_env_environment.TaskGrader") as MockGrader,
+        patch("server.aws_rl_env_environment.EnvironmentDesigner") as MockDesigner,
+        patch("server.aws_rl_env_environment.ChaosEngine") as MockChaos,
+        patch("server.aws_rl_env_environment.HintProvider") as MockHint,
+    ):
         from server.aws_rl_env_environment import AwsRlEnvironment
+
         env = AwsRlEnvironment()
 
         # Grab mock instances
@@ -70,6 +72,7 @@ def _make_env():
 # ===================================================================
 # reset()
 # ===================================================================
+
 
 class TestReset:
     def test_returns_observation(self) -> None:
@@ -140,6 +143,7 @@ class TestReset:
 # step() — non-AWS command rejection
 # ===================================================================
 
+
 class TestStepRejection:
     def test_non_aws_command_rejected(self) -> None:
         env, *_ = _make_env()
@@ -178,6 +182,7 @@ class TestStepRejection:
 # ===================================================================
 # step() — hint system
 # ===================================================================
+
 
 class TestStepHints:
     def test_hint_request_returns_hint_text(self) -> None:
@@ -227,6 +232,7 @@ class TestStepHints:
 # step() — normal AWS command execution
 # ===================================================================
 
+
 class TestStepExecution:
     def test_executes_command_on_backend(self) -> None:
         env, backend, *_ = _make_env()
@@ -272,6 +278,7 @@ class TestStepExecution:
 # ===================================================================
 # step() — grading
 # ===================================================================
+
 
 class TestStepGrading:
     def test_grades_after_execution(self) -> None:
@@ -344,6 +351,7 @@ class TestStepGrading:
 # step() — chaos injection
 # ===================================================================
 
+
 class TestStepChaos:
     def test_chaos_injected_after_grading(self) -> None:
         env, _, curriculum, grader, _, chaos, _ = _make_env()
@@ -378,6 +386,7 @@ class TestStepChaos:
 # step() without reset
 # ===================================================================
 
+
 class TestStepWithoutReset:
     def test_raises_without_reset(self) -> None:
         env, *_ = _make_env()
@@ -389,6 +398,7 @@ class TestStepWithoutReset:
 # ===================================================================
 # state property
 # ===================================================================
+
 
 class TestState:
     def test_state_has_episode_id(self) -> None:

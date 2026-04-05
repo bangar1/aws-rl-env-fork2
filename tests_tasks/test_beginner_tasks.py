@@ -20,7 +20,13 @@ from server.services.aws_backend import AwsBackend
 from server.services.task_grader import TaskGrader
 from server.services.episode_tracker import EpisodeTracker
 
-TASKS_FILE = Path(__file__).resolve().parent.parent / "server" / "services" / "tasks" / "beginner.yaml"
+TASKS_FILE = (
+    Path(__file__).resolve().parent.parent
+    / "server"
+    / "services"
+    / "tasks"
+    / "beginner.yaml"
+)
 
 # Mapping of task_id -> correct AWS CLI command to create the resource
 BEGINNER_COMMANDS: dict[int, str] = {
@@ -40,15 +46,14 @@ BEGINNER_COMMANDS: dict[int, str] = {
     ),
     46: (
         "aws iam create-role --role-name lambda-exec-role "
-        "--assume-role-policy-document '{\"Version\":\"2012-10-17\","
-        "\"Statement\":[{\"Effect\":\"Allow\",\"Principal\":{\"Service\":\"lambda.amazonaws.com\"},"
-        "\"Action\":\"sts:AssumeRole\"}]}'"
+        '--assume-role-policy-document \'{"Version":"2012-10-17",'
+        '"Statement":[{"Effect":"Allow","Principal":{"Service":"lambda.amazonaws.com"},'
+        '"Action":"sts:AssumeRole"}]}\''
     ),
     47: (
         "aws secretsmanager create-secret --name db-credentials "
-        "--secret-string '{\"username\":\"admin\",\"password\":\"secret123\"}'"
+        '--secret-string \'{"username":"admin","password":"secret123"}\''
     ),
-
     48: "aws ecs create-cluster --cluster-name web-cluster",
     49: (
         "aws rds create-db-instance --db-instance-identifier app-database "
@@ -85,8 +90,8 @@ BEGINNER_COMMANDS: dict[int, str] = {
     62: "aws firehose create-delivery-stream --delivery-stream-name log-stream",
     63: (
         "aws iam create-policy --policy-name s3-read-policy "
-        "--policy-document '{\"Version\":\"2012-10-17\","
-        "\"Statement\":[{\"Effect\":\"Allow\",\"Action\":\"s3:GetObject\",\"Resource\":\"*\"}]}'"
+        '--policy-document \'{"Version":"2012-10-17",'
+        '"Statement":[{"Effect":"Allow","Action":"s3:GetObject","Resource":"*"}]}\''
     ),
     64: "aws iam create-user --user-name deploy-bot",
     65: (
@@ -130,7 +135,9 @@ def _build_task(entry: dict) -> Task:
 
 def test_all_beginner_tasks_have_commands(beginner_tasks: list[dict]) -> None:
     """Every beginner task in the YAML must have a corresponding test command."""
-    missing = [t["task_id"] for t in beginner_tasks if t["task_id"] not in BEGINNER_COMMANDS]
+    missing = [
+        t["task_id"] for t in beginner_tasks if t["task_id"] not in BEGINNER_COMMANDS
+    ]
     assert not missing, f"No test command mapped for task_ids: {missing}"
 
 
@@ -148,9 +155,7 @@ def test_beginner_task_command_executes(
     cmd = BEGINNER_COMMANDS[task_id]
     success, stdout, stderr = backend.execute_command(cmd)
     assert success, (
-        f"Command failed for task {task_id}.\n"
-        f"  Command: {cmd}\n"
-        f"  Stderr: {stderr}"
+        f"Command failed for task {task_id}.\n  Command: {cmd}\n  Stderr: {stderr}"
     )
 
 
@@ -178,9 +183,7 @@ def test_beginner_task_grading(
     # Execute the create command
     success, stdout, stderr = backend.execute_command(cmd)
     assert success, (
-        f"Command failed for task {task_id}.\n"
-        f"  Command: {cmd}\n"
-        f"  Stderr: {stderr}"
+        f"Command failed for task {task_id}.\n  Command: {cmd}\n  Stderr: {stderr}"
     )
 
     # Grade the step

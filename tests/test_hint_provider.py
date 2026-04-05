@@ -7,8 +7,12 @@ Run:
 import pytest
 
 from models import (
-    Task, TaskID, TaskDifficulty, SuccessCriteria,
-    StepCriteria, ResourceExistsCheck,
+    Task,
+    TaskID,
+    TaskDifficulty,
+    SuccessCriteria,
+    StepCriteria,
+    ResourceExistsCheck,
 )
 from server.services.hint_provider import HintProvider, MAX_HINT_LEVEL, _infer_service
 
@@ -31,6 +35,7 @@ def _task(criteria: SuccessCriteria) -> Task:
 # Level 1: Service hints
 # ===================================================================
 
+
 class TestHintServices:
     def test_explicit_services(self, provider: HintProvider) -> None:
         task = _task(SuccessCriteria(services=["s3", "iam"]))
@@ -39,16 +44,22 @@ class TestHintServices:
         assert "iam" in hint
 
     def test_inferred_from_steps(self, provider: HintProvider) -> None:
-        task = _task(SuccessCriteria(steps=[
-            StepCriteria(operation="create-bucket", resource="b"),
-            StepCriteria(operation="create-function", resource="fn"),
-        ]))
+        task = _task(
+            SuccessCriteria(
+                steps=[
+                    StepCriteria(operation="create-bucket", resource="b"),
+                    StepCriteria(operation="create-function", resource="fn"),
+                ]
+            )
+        )
         hint = provider.get_hint(task, 1)
         assert "s3api" in hint
         assert "lambda" in hint
 
     def test_inferred_from_operation(self, provider: HintProvider) -> None:
-        task = _task(SuccessCriteria(command_contains="dynamodb", operation="create-table"))
+        task = _task(
+            SuccessCriteria(command_contains="dynamodb", operation="create-table")
+        )
         hint = provider.get_hint(task, 1)
         assert "dynamodb" in hint
 
@@ -58,10 +69,14 @@ class TestHintServices:
         assert "Review" in hint
 
     def test_no_duplicate_services(self, provider: HintProvider) -> None:
-        task = _task(SuccessCriteria(steps=[
-            StepCriteria(operation="create-bucket"),
-            StepCriteria(operation="put-object"),  # both map to s3api
-        ]))
+        task = _task(
+            SuccessCriteria(
+                steps=[
+                    StepCriteria(operation="create-bucket"),
+                    StepCriteria(operation="put-object"),  # both map to s3api
+                ]
+            )
+        )
         hint = provider.get_hint(task, 1)
         assert hint.count("s3api") == 1
 
@@ -70,12 +85,17 @@ class TestHintServices:
 # Level 2: Operation hints
 # ===================================================================
 
+
 class TestHintOperations:
     def test_from_steps(self, provider: HintProvider) -> None:
-        task = _task(SuccessCriteria(steps=[
-            StepCriteria(operation="create-table", resource="t"),
-            StepCriteria(operation="put-item", resource="t"),
-        ]))
+        task = _task(
+            SuccessCriteria(
+                steps=[
+                    StepCriteria(operation="create-table", resource="t"),
+                    StepCriteria(operation="put-item", resource="t"),
+                ]
+            )
+        )
         hint = provider.get_hint(task, 2)
         assert "create-table" in hint
         assert "put-item" in hint
@@ -96,38 +116,53 @@ class TestHintOperations:
 # Level 3: Command structure hints
 # ===================================================================
 
+
 class TestHintCommands:
     def test_from_steps_with_resource(self, provider: HintProvider) -> None:
-        task = _task(SuccessCriteria(steps=[
-            StepCriteria(operation="create-bucket", resource="my-bucket"),
-        ]))
+        task = _task(
+            SuccessCriteria(
+                steps=[
+                    StepCriteria(operation="create-bucket", resource="my-bucket"),
+                ]
+            )
+        )
         hint = provider.get_hint(task, 3)
         assert "create-bucket" in hint
         assert "my-bucket" in hint
         assert "aws" in hint
 
     def test_from_steps_without_resource(self, provider: HintProvider) -> None:
-        task = _task(SuccessCriteria(steps=[
-            StepCriteria(operation="create-role"),
-        ]))
+        task = _task(
+            SuccessCriteria(
+                steps=[
+                    StepCriteria(operation="create-role"),
+                ]
+            )
+        )
         hint = provider.get_hint(task, 3)
         assert "create-role" in hint
         assert "..." in hint
 
     def test_from_operation_with_resource_exists(self, provider: HintProvider) -> None:
-        task = _task(SuccessCriteria(
-            operation="create-bucket",
-            resource_exists=ResourceExistsCheck(service="s3", name="data-bucket"),
-        ))
+        task = _task(
+            SuccessCriteria(
+                operation="create-bucket",
+                resource_exists=ResourceExistsCheck(service="s3", name="data-bucket"),
+            )
+        )
         hint = provider.get_hint(task, 3)
         assert "create-bucket" in hint
         assert "data-bucket" in hint
 
     def test_multi_step_uses_arrow_separator(self, provider: HintProvider) -> None:
-        task = _task(SuccessCriteria(steps=[
-            StepCriteria(operation="create-bucket", resource="b"),
-            StepCriteria(operation="put-object", resource="b"),
-        ]))
+        task = _task(
+            SuccessCriteria(
+                steps=[
+                    StepCriteria(operation="create-bucket", resource="b"),
+                    StepCriteria(operation="put-object", resource="b"),
+                ]
+            )
+        )
         hint = provider.get_hint(task, 3)
         assert "→" in hint
 
@@ -140,6 +175,7 @@ class TestHintCommands:
 # ===================================================================
 # Level clamping
 # ===================================================================
+
 
 class TestLevelClamping:
     def test_level_zero_clamped_to_one(self, provider: HintProvider) -> None:
@@ -166,22 +202,26 @@ class TestLevelClamping:
 # _infer_service helper
 # ===================================================================
 
+
 class TestInferService:
-    @pytest.mark.parametrize("operation,expected", [
-        ("create-bucket", "s3api"),
-        ("put-object", "s3api"),
-        ("create-table", "dynamodb"),
-        ("create-function", "lambda"),
-        ("create-queue", "sqs"),
-        ("create-topic", "sns"),
-        ("create-role", "iam"),
-        ("create-policy", "iam"),
-        ("create-user", "iam"),
-        ("create-rest-api", "apigateway"),
-        ("create-secret", "secretsmanager"),
-        ("describe-instances", "ec2"),
-        ("create-security-group", "iam"),  # "group" keyword matches iam before ec2
-    ])
+    @pytest.mark.parametrize(
+        "operation,expected",
+        [
+            ("create-bucket", "s3api"),
+            ("put-object", "s3api"),
+            ("create-table", "dynamodb"),
+            ("create-function", "lambda"),
+            ("create-queue", "sqs"),
+            ("create-topic", "sns"),
+            ("create-role", "iam"),
+            ("create-policy", "iam"),
+            ("create-user", "iam"),
+            ("create-rest-api", "apigateway"),
+            ("create-secret", "secretsmanager"),
+            ("describe-instances", "ec2"),
+            ("create-security-group", "iam"),  # "group" keyword matches iam before ec2
+        ],
+    )
     def test_known_operations(self, operation: str, expected: str) -> None:
         assert _infer_service(operation) == expected
 
