@@ -207,6 +207,7 @@ class AwsRlEnvironment(Environment[AwsRlAction, AwsRlObservation, AwsRlState]):
             error=stderr,
             task=self._current_task,
             task_achieved=task_achieved,
+            partial_progress=self._tracker.previous_progress,
             done=task_achieved,
             reward=reward,
             hints_used=self._tracker.hints_used,

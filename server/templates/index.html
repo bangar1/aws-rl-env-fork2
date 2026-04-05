@@ -25,8 +25,7 @@
   <section class="hero">
     <div class="hero-bg"></div>
     <div class="hero-content">
-      <h1 id="hero-title" class="type-animate">AWS Cloud CLI and SRE
-        Reinforcement Learning Environment</h1>
+      <h1 id="hero-title" class="type-animate">AWS Cloud CLI and SRE Reinforcement Learning Environment</h1>
       <h2 id="hero-subtitle" class="type-animate">Train AI agents on real AWS cloud operations. The agent sends AWS CLI
         commands as actions, receives structured observations, and progresses through a set of curriculum tasks
         across 5 difficulty tiers — from basic listing to SRE incident response.</h2>
@@ -498,75 +497,81 @@
         <span class="section-title">Play</span>
       </div>
       <div class="right-col">
-        <div class="playground-grid animate-up">
+        <div class="animate-up">
 
-          <!-- Sidebar -->
-          <div class="playground-sidebar">
-            <div class="minimal-card">
+          <!-- Row 1: Controls + Task -->
+          <div class="pg-row-2col" style="margin-bottom:1rem;">
+            <div class="minimal-card" style="display:flex;flex-direction:column;gap:0.75rem;">
               <span class="card-label">Controls</span>
               <button class="btn-primary btn-full" id="resetBtn" onclick="resetEnv()">New Episode</button>
             </div>
-            <div class="minimal-card">
+            <div class="task-box empty" id="taskBox">
+              <p style="font-size:1rem;font-weight:500;margin-bottom:.25rem;">Click New Episode to start</p>
+              <p style="font-size:.9rem;color:var(--text-muted);margin-bottom:0;">The curriculum assigns a task matching
+                your skill level</p>
+            </div>
+          </div>
+
+          <!-- Row 2: Command + Status/Solution -->
+          <div class="pg-row-2col" style="margin-bottom:1rem;">
+            <div class="minimal-card" style="display:flex;flex-direction:column;gap:0.75rem;">
               <span class="card-label">Command</span>
-              <input class="cmd-input" id="cmdInput" type="text"
-                placeholder="aws s3 ls"
+              <input class="cmd-input" id="cmdInput" type="text" placeholder="aws s3 ls"
                 onkeydown="if(event.key==='Enter')runCmd()" disabled>
-              <button class="btn-secondary btn-full" id="runBtn" onclick="runCmd()" style="margin-top:0.75rem;"
-                disabled>Run
-                Command</button>
-              <button class="btn-solution btn-full" id="solutionBtn" onclick="toggleSolution()" style="margin-top:0.5rem;" disabled>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
+              <button class="btn-secondary btn-full" id="runBtn" onclick="runCmd()" disabled>Run Command</button>
+              <button class="btn-solution btn-full" id="solutionBtn" onclick="toggleSolution()" disabled>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path
+                    d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                </svg>
                 Show Solution
               </button>
             </div>
-            <div class="minimal-card">
-              <span class="card-label">State</span>
-              <div class="state-info">
-                <div class="state-row">
-                  <span class="state-label">Tier</span>
-                  <span class="state-value" id="stateTier">&mdash;</span>
-                </div>
-                <div class="state-row">
-                  <span class="state-label">Episode</span>
-                  <span class="state-value" id="stateEpisode">&mdash;</span>
-                </div>
-                <div class="state-row">
-                  <span class="state-label">Progress</span>
-                  <div class="progress-bar-container">
-                    <div class="progress-bar-fill" id="stateProgress" style="width:0%"></div>
-                  </div>
-                </div>
-                <div class="state-row">
-                  <span class="state-label">Reward</span>
-                  <span class="state-value" id="stateReward">0.00</span>
+            <div style="display:flex;flex-direction:column;gap:0.75rem;">
+              <div class="status-bar" id="statusBar">Ready.</div>
+              <div class="solution-panel" id="solutionPanel" style="display:none;">
+                <span class="card-label" style="margin-bottom:0.75rem;">Solution Steps</span>
+                <div class="solution-commands-scroll">
+                  <div class="solution-commands" id="solutionCommands"></div>
                 </div>
               </div>
             </div>
           </div>
 
-          <!-- Main -->
-          <div>
-            <div class="task-box empty" id="taskBox" style="margin-bottom:1rem;">
-              <p style="font-size:1rem;font-weight:500;margin-bottom:.25rem;">Click New Episode to start</p>
-              <p style="font-size:.9rem;color:var(--text-muted);margin-bottom:0;">The curriculum assigns a task matching
-                your skill level</p>
+          <!-- Row 3: State + Output -->
+          <div class="pg-row-2col" style="margin-bottom:1rem;">
+            <div class="minimal-card">
+              <span class="card-label">State</span>
+              <div class="state-info">
+                <div class="state-row"><span class="state-label">Tier</span><span class="state-value"
+                    id="stateTier">&mdash;</span></div>
+                <div class="state-row"><span class="state-label">Episode</span><span
+                    class="state-value state-episode-id" id="stateEpisode">&mdash;</span></div>
+                <div class="state-row"><span class="state-label">Progress</span>
+                  <div class="progress-bar-container">
+                    <div class="progress-bar-fill" id="stateProgress" style="width:0%"></div>
+                  </div>
+                </div>
+                <div class="state-row"><span class="state-label">Reward</span><span class="state-value"
+                    id="stateReward">0.00</span></div>
+                <div class="state-row"><span class="state-label">Steps</span><span class="state-value"
+                    id="stateSteps">0</span></div>
+                <div class="state-row"><span class="state-label">Hints</span><span class="state-value"
+                    id="stateHints">0</span></div>
+                <div class="state-row"><span class="state-label">Chaos</span><span class="state-value"
+                    id="stateChaos">&mdash;</span></div>
+              </div>
             </div>
-
-            <div class="status-bar" id="statusBar" style="margin-bottom:1rem;">Ready.</div>
-
-            <!-- Solution Panel -->
-            <div class="solution-panel" id="solutionPanel" style="margin-bottom:1rem;display:none;">
-              <span class="card-label" style="margin-bottom:0.75rem;">Solution Steps</span>
-              <div class="solution-commands" id="solutionCommands"></div>
-            </div>
-
-            <div class="card" style="margin-bottom:1rem;">
+            <div class="card" style="margin-bottom:0;">
               <span class="card-label">Output</span>
               <div class="output-box" id="outputBox">No output yet.</div>
             </div>
+          </div>
 
-            <div class="card">
-              <span class="card-label">Command Log</span>
+          <!-- Row 4: Command Log (full width) -->
+          <div class="card" style="margin-bottom:1rem;">
+            <span class="card-label">Command Log</span>
+            <div class="log-scroll">
               <table class="log-table">
                 <thead>
                   <tr>
@@ -582,6 +587,15 @@
                   </tr>
                 </tbody>
               </table>
+            </div>
+          </div>
+
+          <!-- Row 5: AWS Environment (full width) -->
+          <div class="card">
+            <span class="card-label">AWS Environment</span>
+            <div id="infraGrid">
+              <p style="color:var(--text-muted);font-size:0.9rem;margin:0;">Start an episode to see live infrastructure
+                state.</p>
             </div>
           </div>
 
@@ -612,6 +626,39 @@
           <div class="diag-container" id="modal-diagram"></div>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- Command Log Detail Modal -->
+  <div id="log-modal">
+    <div class="modal-container">
+      <button class="close-modal" onclick="closeLogModal()">&times;</button>
+      <h2 id="log-modal-title">Command Detail</h2>
+      <div class="log-modal-body">
+        <span class="modal-label">Command</span>
+        <div class="code-block" id="log-modal-cmd" style="margin-bottom:1.5rem;"></div>
+        <div class="pg-row-2col" style="gap:1.5rem;">
+          <div>
+            <span class="modal-label">Status</span>
+            <p id="log-modal-status"></p>
+            <span class="modal-label">Reward</span>
+            <p id="log-modal-reward"></p>
+          </div>
+          <div>
+            <span class="modal-label">Output</span>
+            <div class="output-box" id="log-modal-output" style="max-height:300px;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Infra Service Detail Modal -->
+  <div id="infra-modal">
+    <div class="modal-container">
+      <button class="close-modal" onclick="closeInfraModal()">&times;</button>
+      <h2 id="infra-modal-title"></h2>
+      <div id="infra-modal-body"></div>
     </div>
   </div>
 
@@ -739,7 +786,7 @@
 
         // Update button text with step info
         btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg> Next Step (' + data.step + '/' + data.total_steps + ')';
-      } catch(e) {
+      } catch (e) {
         setStatus('Failed to load solution: ' + escHtml(e.message), 'error');
       }
     }

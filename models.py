@@ -293,6 +293,10 @@ class AwsRlObservation(Observation):
     task_achieved: bool = Field(
         default=False, description="Whether the task has been achieved"
     )
+    partial_progress: float = Field(
+        default=0.0, ge=0.0, le=1.0,
+        description="Current task progress (0.0 to 1.0)",
+    )
     hints_used: int = Field(
         default=0, ge=0, description="Number of hints requested this episode"
     )

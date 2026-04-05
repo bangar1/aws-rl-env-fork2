@@ -78,44 +78,60 @@ document.addEventListener('mousemove', e => {
 function typewrite(el, delay) {
   const text = el.textContent;
   el.innerHTML = '';
-  el.classList.add('typing-cursor-inline');
 
   const chars = [];
   for (const ch of text) {
     const span = document.createElement('span');
     span.classList.add('char');
-    span.textContent = ch === ' ' ? '\u00A0' : ch;
+    span.textContent = ch;
     el.appendChild(span);
     chars.push(span);
   }
 
-  chars.forEach((span, i) => {
-    setTimeout(() => {
-      span.classList.add('visible');
-      // Last char: switch to blinking cursor
-      if (i === chars.length - 1) {
-        el.classList.add('blinking');
-      }
-    }, delay + i * 30);
+  // Insert a real cursor element that moves with the text
+  const cursor = document.createElement('span');
+  cursor.classList.add('typing-cursor');
+  cursor.textContent = '|';
+
+  return new Promise(resolve => {
+    chars.forEach((span, i) => {
+      setTimeout(() => {
+        span.classList.add('visible');
+        // Move cursor right after the latest visible char
+        span.after(cursor);
+        if (i === chars.length - 1) {
+          resolve();
+        }
+      }, delay + i * 30);
+    });
+    if (chars.length === 0) resolve();
   });
 }
 
-// Typewrite hero elements
-document.querySelectorAll('.hero .type-animate').forEach((el, i) => {
-  typewrite(el, 300 + i * 600);
-});
+// Typewrite hero elements sequentially: subtitle starts after title finishes
+(async function () {
+  const heroTitle = document.getElementById('hero-title');
+  const heroSub = document.getElementById('hero-subtitle');
 
-// Fade in hero CTA after typewriter completes
-const heroTitle = document.getElementById('hero-title');
-const heroSub = document.getElementById('hero-subtitle');
-if (heroTitle && heroSub) {
-  const titleLen = heroTitle.textContent.replace(/\u00A0/g, ' ').length;
-  const subLen = heroSub.textContent.replace(/\u00A0/g, ' ').length;
-  const totalDelay = 300 + titleLen * 30 + 600 + subLen * 30 + 200;
+  // Hide subtitle until its turn
+  if (heroSub) heroSub.style.visibility = 'hidden';
+
+  if (heroTitle) {
+    await typewrite(heroTitle, 300);
+    heroTitle.querySelector('.typing-cursor')?.remove();
+  }
+
+  if (heroSub) {
+    heroSub.style.visibility = 'visible';
+    await typewrite(heroSub, 200);
+    heroSub.querySelector('.typing-cursor')?.remove();
+  }
+
+  // Fade in hero CTA after both animations complete
   setTimeout(() => {
     document.querySelectorAll('.hero-fade-up').forEach(el => el.classList.add('visible'));
-  }, totalDelay);
-}
+  }, 200);
+})();
 
 /* ===== Intersection Observer — fade-up on scroll ===== */
 const observer = new IntersectionObserver(entries => {
@@ -139,6 +155,183 @@ const COLOR_BG = {
   advanced: '#fce8e6', expert: '#f3e8fd'
 };
 let stepCount = 0;
+
+// Services that have official AWS SVG files in /static/img/aws/
+const SVC_IMG_FILES = ['s3', 'sqs', 'sns', 'lambda', 'dynamodb', 'iam', 'ec2', 'rds', 'cloudformation', 'cloudwatch', 'route53', 'apigateway', 'apigateway_v1', 'elasticache', 'elbv2', 'events', 'ssm', 'cognito-idp', 'glue', 'firehose', 'athena', 'emr', 'efs', 'ebs', 'kinesis', 'logs', 'monitoring', 'ses', 'ses_v2', 'acm', 'wafv2', 'states', 'secretsmanager', 'ecs', 'elasticmapreduce', 'elasticloadbalancing', 'elasticfilesystem'];
+
+const DEFAULT_ICON = '<circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/>';
+
+function _svcIconHtml(svc) {
+  if (SVC_IMG_FILES.includes(svc)) {
+    return '<img src="/static/img/aws/' + svc + '.svg" alt="' + svc + '" style="width:36px;height:36px;border-radius:6px;">';
+  }
+  return '<svg viewBox="0 0 24 24">' + DEFAULT_ICON + '</svg>';
+}
+
+// Cache infra data for modal drill-down
+let _lastInfraServices = {};
+
+async function refreshState() {
+  try {
+    const res = await fetch('/web/state');
+    const state = await res.json();
+
+    // Update sidebar stats
+    document.getElementById('stateSteps').textContent = state.tracker ? state.tracker.step_count : '0';
+    document.getElementById('stateHints').textContent = state.tracker ? state.tracker.hints_used : '0';
+    const chaosEl = document.getElementById('stateChaos');
+    if (state.chaos_occurred) {
+      chaosEl.textContent = 'Active';
+      chaosEl.className = 'state-value chaos-active';
+    } else {
+      chaosEl.textContent = 'None';
+      chaosEl.className = 'state-value chaos-inactive';
+    }
+
+    // Render infra tiles
+    const grid = document.getElementById('infraGrid');
+    const services = state.infra_state && state.infra_state.services ? state.infra_state.services : {};
+    _lastInfraServices = services;
+    const svcKeys = Object.keys(services);
+    if (svcKeys.length === 0) {
+      grid.innerHTML = '<p style="color:var(--text-muted);font-size:0.9rem;margin:0;">No data.</p>';
+      return;
+    }
+
+    let html = '';
+    for (const svc of svcKeys) {
+      const data = services[svc];
+      let totalCount = 0;
+      for (const [, resData] of Object.entries(data)) {
+        if (resData && typeof resData === 'object') {
+          if (typeof resData.count === 'number') {
+            totalCount += resData.count;
+          } else if (Array.isArray(resData)) {
+            totalCount += resData.length;
+          } else {
+            // Nested object keyed by ID (e.g. apigateway_v1 rest_apis)
+            const keys = Object.keys(resData);
+            if (keys.length > 0) totalCount += keys.length;
+          }
+        }
+      }
+      const hasRes = totalCount > 0;
+      html += '<div class="infra-tile' + (hasRes ? ' has-resources' : '') + '" onclick="openInfraModal(\'' + svc + '\')">' +
+        (hasRes ? '<span class="infra-tile-badge">' + totalCount + '</span>' : '') +
+        '<div class="infra-tile-icon">' + _svcIconHtml(svc) + '</div>' +
+        '<span class="infra-tile-name">' + escHtml(svc) + '</span>' +
+        '</div>';
+    }
+    grid.className = 'infra-tiles';
+    grid.innerHTML = html;
+  } catch (e) {
+    // Silent fail
+  }
+}
+
+// Infra modal
+function _renderResItems(obj) {
+  // Renders items for the modal body — handles arrays, {count,names}, and nested objects
+  if (!obj || typeof obj !== 'object') return '<div class="infra-res-item">' + escHtml(String(obj)) + '</div>';
+  if (Array.isArray(obj)) {
+    return obj.map(function (item) { return '<div class="infra-res-item">' + escHtml(String(item)) + '</div>'; }).join('');
+  }
+  // Has {count, names/ids} pattern
+  if (typeof obj.count === 'number') {
+    var items = obj.names || obj.ids || [];
+    return items.map(function (item) { return '<div class="infra-res-item">' + escHtml(String(item)) + '</div>'; }).join('') ||
+      '<div class="infra-res-item" style="color:var(--text-muted);">Empty (' + obj.count + ')</div>';
+  }
+  // Nested keyed object — render each key as a sub-item
+  var keys = Object.keys(obj);
+  if (keys.length === 0) return '';
+  var out = '';
+  for (var k of keys) {
+    var val = obj[k];
+    if (val && typeof val === 'object' && !Array.isArray(val)) {
+      // Show key with a summary
+      var name = val.name || val.Name || val.id || val.Id || k;
+      var detail = val.description || val.engine || val.runtime || val.protocol || '';
+      out += '<div class="infra-res-item"><strong>' + escHtml(String(name)) + '</strong>' +
+        (detail ? ' <span style="color:var(--text-muted);">\u2014 ' + escHtml(String(detail)) + '</span>' : '') +
+        '</div>';
+    } else {
+      out += '<div class="infra-res-item">' + escHtml(k + ': ' + JSON.stringify(val)) + '</div>';
+    }
+  }
+  return out;
+}
+
+function _countResources(resData) {
+  if (!resData || typeof resData !== 'object') return 0;
+  if (typeof resData.count === 'number') return resData.count;
+  if (Array.isArray(resData)) return resData.length;
+  return Object.keys(resData).length;
+}
+
+function openInfraModal(svc) {
+  const data = _lastInfraServices[svc];
+  if (!data) return;
+  document.getElementById('infra-modal-title').textContent = svc.toUpperCase();
+  const body = document.getElementById('infra-modal-body');
+  let html = '';
+  for (const [resType, resData] of Object.entries(data)) {
+    if (!resData || typeof resData !== 'object') continue;
+    var count = _countResources(resData);
+    const groupId = 'infra-g-' + svc + '-' + resType.replace(/[^a-z0-9]/gi, '');
+    html += '<div class="infra-res-group">' +
+      '<div class="infra-res-header" onclick="var el=document.getElementById(\'' + groupId + '\');if(el)el.classList.toggle(\'open\')">' +
+      '<span class="infra-res-title">' + escHtml(resType.replace(/_/g, ' ')) + '</span>' +
+      '<span class="infra-res-count">' + count + '</span>' +
+      '</div>';
+    var itemsHtml = _renderResItems(resData);
+    if (itemsHtml) {
+      html += '<div class="infra-res-body" id="' + groupId + '">' + itemsHtml + '</div>';
+    }
+    html += '</div>';
+  }
+  body.innerHTML = html || '<p style="color:var(--text-muted);">No resources in this service.</p>';
+  document.getElementById('infra-modal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeInfraModal() {
+  document.getElementById('infra-modal').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+// Command log modal
+let _logEntries = [];
+
+function openLogModal(index) {
+  const entry = _logEntries[index];
+  if (!entry) return;
+  document.getElementById('log-modal-title').textContent = 'Step #' + entry.step;
+  document.getElementById('log-modal-cmd').textContent = entry.command;
+  document.getElementById('log-modal-status').innerHTML = entry.success
+    ? '<span style="color:#34a853;font-weight:500;">Success</span>'
+    : '<span style="color:#ea4335;font-weight:500;">Failed</span>';
+  document.getElementById('log-modal-reward').textContent = (entry.reward >= 0 ? '+' : '') + entry.reward.toFixed(2);
+  document.getElementById('log-modal-output').textContent = entry.output || 'No output';
+  document.getElementById('log-modal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeLogModal() {
+  document.getElementById('log-modal').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+// Close modals on Escape / backdrop click
+document.addEventListener('keydown', function (e) {
+  if (e.key === 'Escape') { closeInfraModal(); closeLogModal(); }
+});
+['infra-modal', 'log-modal'].forEach(function (id) {
+  var el = document.getElementById(id);
+  if (el) el.addEventListener('click', function (e) {
+    if (e.target.id === id) { closeInfraModal(); closeLogModal(); }
+  });
+});
 
 function setStatus(msg, type) {
   const bar = document.getElementById('statusBar');
@@ -192,6 +385,7 @@ async function resetEnv() {
     document.getElementById('outputBox').textContent = obs.command_output || '';
     document.getElementById('logBody').innerHTML =
       '<tr><td colspan="4" class="log-empty">No commands executed yet</td></tr>';
+    _logEntries = [];
     // Enable command controls
     document.getElementById('cmdInput').disabled = false;
     document.getElementById('runBtn').disabled = false;
@@ -209,6 +403,7 @@ async function resetEnv() {
     document.getElementById('stateProgress').style.width = '0%';
     document.getElementById('stateReward').textContent = '0.00';
     setStatus('New episode started. Difficulty: <strong>' + (task ? escHtml(task.difficulty) : 'unknown') + '</strong>', 'info');
+    refreshState();
   } catch (e) {
     setStatus('Reset failed: ' + escHtml(e.message), 'error');
   } finally {
@@ -246,10 +441,13 @@ async function runCmd() {
     document.getElementById('outputBox').textContent = output;
 
     const tbody = document.getElementById('logBody');
-    if (stepCount === 1) tbody.innerHTML = '';
-    const tr = document.createElement('tr');
+    if (stepCount === 1) { tbody.innerHTML = ''; _logEntries = []; }
     const reward = (obs.reward != null ? obs.reward : (data.reward || 0));
-    const displayCmd = cmd.length > 50 ? cmd.slice(0, 47) + '...' : cmd;
+    const logIdx = _logEntries.length;
+    _logEntries.push({ step: stepCount, command: cmd, success: obs.command_success, reward: reward, output: output });
+    const tr = document.createElement('tr');
+    tr.onclick = function () { openLogModal(logIdx); };
+    const displayCmd = cmd.length > 60 ? cmd.slice(0, 57) + '...' : cmd;
     tr.innerHTML =
       '<td>' + stepCount + '</td>' +
       '<td class="cmd">' + escHtml(displayCmd) + '</td>' +
@@ -279,6 +477,7 @@ async function runCmd() {
       setStatus('Step <strong>' + obs.step_count + '</strong> &mdash; ' + (obs.command_success ? 'Command succeeded.' : 'Command failed.'), obs.command_success ? 'info' : 'error');
     }
 
+    refreshState();
     input.value = '';
     input.focus();
   } catch (e) {

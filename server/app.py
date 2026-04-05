@@ -100,6 +100,12 @@ async def web_solution():
     return result
 
 
+@app.get("/web/state", include_in_schema=False)
+async def web_state():
+    """Return the full AwsRlState for the web UI."""
+    return _env.state.model_dump()
+
+
 @app.post("/web/step", include_in_schema=False)
 async def web_step(request: WebStepRequest = Body(...)):
     action = AwsRlAction(**request.action)
