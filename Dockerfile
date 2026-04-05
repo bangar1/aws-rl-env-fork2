@@ -80,7 +80,7 @@ RUN mkdir -p /root/.aws && \
 ENV AWS_ENDPOINT_URL=http://localhost:4566
 
 # Enable the web interface for OpenEnv (if applicable)
-# ENV ENABLE_WEB_INTERFACE=true
+ENV ENABLE_WEB_INTERFACE=true
 
 # Set PATH to use the virtual environment
 ENV PATH="/app/.venv/bin:$PATH"
@@ -90,7 +90,7 @@ ENV PYTHONPATH="/app/env:$PYTHONPATH"
 
 
 # DEV_MODE=1 enables live reload via --reload flag
-ENV DEV_MODE=1
+ENV DEV_MODE=0
 
 ENV API_BASE_URL=https://router.huggingface.co/v1
 ENV MODEL_NAME=Qwen/Qwen2.5-72B-Instruct
