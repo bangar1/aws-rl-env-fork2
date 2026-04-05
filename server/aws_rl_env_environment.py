@@ -26,6 +26,7 @@ from models import (
     EpisodeID,
     StepCount,
     Task,
+    TaskInfo,
     TrackerState,
 )
 from server.services.aws_backend import AwsBackend
@@ -90,7 +91,7 @@ class AwsRlEnvironment(Environment[AwsRlAction, AwsRlObservation, AwsRlState]):
             step_count=StepCount(self._state.step_count),
             command_success=True,
             command_output="Environment reset. Infra state wiped.",
-            task=self._current_task,
+            task=TaskInfo.from_task(self._current_task) if self._current_task else None,
             done=False,
             reward=0.0,
         )
@@ -107,7 +108,9 @@ class AwsRlEnvironment(Environment[AwsRlAction, AwsRlObservation, AwsRlState]):
                 command_success=False,
                 command_output="",
                 error="Only AWS CLI commands (starting with 'aws') are allowed.",
-                task=self._current_task,
+                task=TaskInfo.from_task(self._current_task)
+                if self._current_task
+                else None,
                 task_achieved=False,
                 done=False,
                 reward=0.0,
@@ -123,7 +126,9 @@ class AwsRlEnvironment(Environment[AwsRlAction, AwsRlObservation, AwsRlState]):
                 step_count=StepCount(self._state.step_count),
                 command_success=True,
                 command_output=hint_text,
-                task=self._current_task,
+                task=TaskInfo.from_task(self._current_task)
+                if self._current_task
+                else None,
                 task_achieved=False,
                 done=False,
                 reward=0.0,
@@ -147,7 +152,9 @@ class AwsRlEnvironment(Environment[AwsRlAction, AwsRlObservation, AwsRlState]):
                     command_success=svc_success,
                     command_output=help_text if svc_success else "",
                     error="" if svc_success else help_text,
-                    task=self._current_task,
+                    task=TaskInfo.from_task(self._current_task)
+                    if self._current_task
+                    else None,
                     task_achieved=False,
                     done=False,
                     reward=0.0,
@@ -205,7 +212,7 @@ class AwsRlEnvironment(Environment[AwsRlAction, AwsRlObservation, AwsRlState]):
             command_success=success,
             command_output=stdout,
             error=stderr,
-            task=self._current_task,
+            task=TaskInfo.from_task(self._current_task) if self._current_task else None,
             task_achieved=task_achieved,
             partial_progress=self._tracker.previous_progress,
             done=task_achieved,

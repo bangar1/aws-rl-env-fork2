@@ -3,7 +3,7 @@ Data models for the Aws Rl Env Environment.
 """
 
 from enum import Enum
-from typing import NewType, Union
+from typing import NewType
 
 from openenv.core.env_server.types import Action, Observation, State
 from pydantic import BaseModel, Field
@@ -211,6 +211,30 @@ class Task(BaseModel):
     )
 
 
+class TaskInfo(BaseModel):
+    """Agent-visible subset of Task — masks success_criteria, setup_commands, and possible_drifts."""
+
+    task_id: TaskID = Field(..., ge=0, description="Unique task identifier")
+    difficulty: TaskDifficulty = Field(
+        default=TaskDifficulty.WARMUP, description="Task difficulty level"
+    )
+    description: str = Field(..., description="Human-readable task description")
+    desired_state_spec: str | None = Field(
+        default=None,
+        description="Natural-language specification of the desired end state (shown to agent for drift tasks)",
+    )
+
+    @classmethod
+    def from_task(cls, task: Task) -> "TaskInfo":
+        """Create a masked TaskInfo from a full Task."""
+        return cls(
+            task_id=task.task_id,
+            difficulty=task.difficulty,
+            description=task.description,
+            desired_state_spec=task.desired_state_spec,
+        )
+
+
 # ---------------------------------------------------------------------------
 # Environment State
 # ---------------------------------------------------------------------------
@@ -283,18 +307,16 @@ class AwsRlObservation(Observation):
         default="", description="Stdout from the executed AWS CLI command"
     )
     error: str = Field(default="", description="Stderr if the command failed")
-    resources: dict[AwsService, Union[dict, list, str]] = Field(
-        default_factory=dict,
-        description="Current resource state from MiniStack, keyed by service name",
-    )
-    task: Task | None = Field(
-        default=None, description="The task the agent is trying to accomplish"
+    task: TaskInfo | None = Field(
+        default=None, description="The task the agent is trying to accomplish (masked)"
     )
     task_achieved: bool = Field(
         default=False, description="Whether the task has been achieved"
     )
     partial_progress: float = Field(
-        default=0.0, ge=0.0, le=1.0,
+        default=0.0,
+        ge=0.0,
+        le=1.0,
         description="Current task progress (0.0 to 1.0)",
     )
     hints_used: int = Field(

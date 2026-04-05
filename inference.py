@@ -54,6 +54,10 @@ load_dotenv()  # Load variables from .env file if present
 
 API_BASE_URL = os.getenv("API_BASE_URL", "https://router.huggingface.co/v1")
 MODEL_NAME = os.getenv("MODEL_NAME", "Qwen/Qwen2.5-72B-Instruct")
+if not API_BASE_URL:
+    API_BASE_URL = "https://router.huggingface.co/v1"
+if not MODEL_NAME:
+    MODEL_NAME = "Qwen/Qwen2.5-72B-Instruct"
 HF_TOKEN = os.getenv("HF_TOKEN")
 API_KEY = os.getenv("API_KEY")  # Optional if using HF_TOKEN
 
@@ -77,6 +81,8 @@ SYSTEM_PROMPT = textwrap.dedent(
     - Only send AWS CLI commands (e.g. 'aws s3 ls', 'aws dynamodb create-table ...')
     - One command per turn — no pipes, no shell syntax, no chaining
     - Reply with ONLY the command, nothing else — no explanations, no quotes
+    - If unsure, use 'aws help' to get unstuck, but try to be specific to the service if possible (e.g. 'aws s3 help')
+    - When ever you need a hint, use 'aws help --task-hint' to get a task-specific hint (you can use this multiple times for more hints, but hints reduce your reward)
     """
 ).strip()
 

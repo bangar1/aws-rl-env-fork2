@@ -89,6 +89,8 @@ SYSTEM_PROMPT = textwrap.dedent(
     - Only send AWS CLI commands (e.g. 'aws s3 ls', 'aws dynamodb create-table ...')
     - One command per turn — no pipes, no shell syntax, no chaining
     - Reply with ONLY the command, nothing else — no explanations, no quotes
+    - If unsure, use 'aws help' to get unstuck, but try to be specific to the service if possible (e.g. 'aws s3 help')
+    - When ever you need a hint, use 'aws help --task-hint' to get a task-specific hint (you can use this multiple times for more hints, but hints reduce your reward)
     """
 ).strip()
 

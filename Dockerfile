@@ -92,5 +92,8 @@ ENV PYTHONPATH="/app/env:$PYTHONPATH"
 # DEV_MODE=1 enables live reload via --reload flag
 ENV DEV_MODE=1
 
+ENV API_BASE_URL=https://router.huggingface.co/v1
+ENV MODEL_NAME=Qwen/Qwen2.5-72B-Instruct
+
 # Entrypoint: start aws_infra in background, then run the FastAPI server
 CMD ["sh", "-c", "aws_infra -d & sleep 2 && uvicorn server.app:app --host 0.0.0.0 --port 8000 $([ \"$DEV_MODE\" = '1' ] && echo '--reload --reload-dir /app/env')"]
