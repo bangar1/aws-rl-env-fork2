@@ -18,6 +18,7 @@
       <li><a href="#features" class="nav-link">Features</a></li>
       <li><a href="#api" class="nav-link">API</a></li>
       <li><a href="#playground" class="nav-link">Playground</a></li>
+      <li><a href="#links" class="nav-link">Links</a></li>
     </ul>
   </nav>
 
@@ -26,9 +27,14 @@
     <div class="hero-bg"></div>
     <div class="hero-content">
       <h1 id="hero-title" class="type-animate">AWS Cloud CLI and SRE Reinforcement Learning Environment</h1>
-      <h2 id="hero-subtitle" class="type-animate">Train AI agents on real AWS cloud operations. The agent sends AWS CLI
-        commands as actions, receives structured observations, and progresses through a set of curriculum tasks
-        across 5 difficulty tiers — from basic listing to SRE incident response.</h2>
+      <h2 id="hero-subtitle" class="type-animate">Train AI agents on real AWS cloud operations. The agents interact with
+        a real-world AWS Shell simulator. The agents send AWS CLI
+        commands as actions, receive structured observations, and progress through a set of curriculum tasks
+        across 5 difficulty tiers — from basic listing to SRE incident response. The response of the executed command is
+        perfectely same as of the production once. The grading system evaluates the rewards and penalties based on the
+        AWS Infrastructure's state instead of static metrics. The output is then used to guide the agent's learning
+        process. It applies a lot of advanced grading, teaching and anti reward hacking techniques which is discussed in
+        detail in the Features section.</h2>
       <div class="hero-cta-container hero-fade-up">
         <a href="#playground" class="btn-primary">
           Try the Playground
@@ -64,7 +70,10 @@
         <div class="card animate-up">
           <h3>Learn AWS by doing.</h3>
           <p>An OpenEnv-compliant RL environment where agents execute real AWS CLI commands against a simulated cloud
-            infra in real time. A progressive curriculum tracks mastery and adapts difficulty in real-time.</p>
+            infra in real time. The simulator is inspired by MiniStack AWS simulator. A lot of futher refinements were
+            performed on top of MiniStack simulator to achieve a more realistic and comprehensive learning experience.
+            A progressive curriculum tracks mastery and adapts difficulty in real-time.
+          </p>
           <div class="skills-container">
             <span class="skill-tag">S3</span>
             <span class="skill-tag">ALB</span>
@@ -123,7 +132,8 @@
               <p class="timeline-subtitle">Create single resources with verification</p>
               <ul class="timeline-points">
                 <li>Create an S3 bucket, DynamoDB table, SQS queue, or Lambda function</li>
-                <li>Graded by <strong>resource_creation</strong> &mdash; verifies the exact resource exists in MiniStack
+                <li>Graded by <strong>resource_creation</strong> &mdash; verifies the exact resource exists in AWS
+                  Infrastructure Simulator
                 </li>
                 <li>Introduces resource name validation &mdash; "my-bucket-2" won't satisfy a check for "my-bucket"</li>
                 <li>First tier where idempotency bonus (+0.02) can be earned</li>
@@ -342,6 +352,48 @@
           </div>
         </div>
 
+        <!-- Security Posture Audit -->
+        <div class="card animate-up">
+          <h3>Security Posture Audit</h3>
+          <p>Tests reasoning about configuration state &mdash; working but insecure infrastructure the agent must
+            analyze and harden.</p>
+          <div class="feature-chips">
+            <div class="feature-chip" data-feature-id="s3-lockdown">
+              <span class="feature-chip-icon">&#x1F512;</span>
+              <div>
+                <strong>Public S3 Bucket Lockdown</strong>
+                <span>Detect &amp; fix overly permissive bucket policies</span>
+              </div>
+              <svg class="feature-chip-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2">
+                <path d="M9 18l6-6-6-6" />
+              </svg>
+            </div>
+            <div class="feature-chip" data-feature-id="iam-least-privilege">
+              <span class="feature-chip-icon">&#x1F6E1;</span>
+              <div>
+                <strong>IAM Least Privilege</strong>
+                <span>Replace wildcard policies with scoped permissions</span>
+              </div>
+              <svg class="feature-chip-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2">
+                <path d="M9 18l6-6-6-6" />
+              </svg>
+            </div>
+            <div class="feature-chip" data-feature-id="secrets-rotation">
+              <span class="feature-chip-icon">&#x1F510;</span>
+              <div>
+                <strong>Secrets in Lambda Environment</strong>
+                <span>Move plaintext credentials to Secrets Manager</span>
+              </div>
+              <svg class="feature-chip-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2">
+                <path d="M9 18l6-6-6-6" />
+              </svg>
+            </div>
+          </div>
+        </div>
+
         <!-- Anti-Reward-Hacking -->
         <div class="card animate-up">
           <h3>Anti-Reward-Hacking</h3>
@@ -374,6 +426,28 @@
               <div>
                 <strong>Deduplication</strong>
                 <span>No reward for repeated commands</span>
+              </div>
+              <svg class="feature-chip-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2">
+                <path d="M9 18l6-6-6-6" />
+              </svg>
+            </div>
+            <div class="feature-chip" data-feature-id="grader-invisibility">
+              <span class="feature-chip-icon">&#x1F441;</span>
+              <div>
+                <strong>Grader Invisibility</strong>
+                <span>Verification commands hidden from agent</span>
+              </div>
+              <svg class="feature-chip-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2">
+                <path d="M9 18l6-6-6-6" />
+              </svg>
+            </div>
+            <div class="feature-chip" data-feature-id="no-verification-reward">
+              <span class="feature-chip-icon">&#x1F50D;</span>
+              <div>
+                <strong>No Verification Reward</strong>
+                <span>Read-only commands earn zero progress</span>
               </div>
               <svg class="feature-chip-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none"
                 stroke="currentColor" stroke-width="2">
@@ -603,6 +677,45 @@
       </div>
     </div>
 
+    <!-- Links -->
+    <div class="section-wrapper" id="links">
+      <div class="left-col">
+        <div class="icon-container">
+          <svg viewBox="0 0 24 24">
+            <path
+              d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+          </svg>
+        </div>
+        <span class="section-title">Links</span>
+      </div>
+      <div class="right-col">
+        <div class="card cta-card animate-up" style="text-align:center; padding: 3rem 2rem;">
+          <h3 style="font-size:1.8rem; margin-bottom:0.75rem;">Build the Future of AI</h3>
+          <p style="max-width:520px; margin: 0 auto 2rem; font-size:1.05rem;">
+            This project is made during an Hackathon by Team Vector, (<a
+              href="https://www.linkedin.com/in/bangar-raju-4139617a/" target="_blank" rel="noopener">Bangar Raju</a>
+            and <a href="https://linkedin.com/in/udaykiranpadhy" target="_blank" rel="noopener">Uday Kiran Padhy</a>).
+            Star it, fork it, break it, fix it &mdash;
+            every episode makes AI agents better at cloud operations.
+          </p>
+          <div style="display:flex; gap:1rem; justify-content:center; flex-wrap:wrap;">
+            <a href="https://github.com/udaykiranpadhy/aws-rl-env" target="_blank" rel="noopener"
+              class="btn-primary" style="display:inline-flex; align-items:center; gap:0.5rem;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                <path
+                  d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" />
+              </svg>
+              GitHub Repo
+            </a>
+            <a href="https://huggingface.co/spaces/Sizzing/aws_rl_env" target="_blank" rel="noopener"
+              class="btn-secondary" style="display:inline-flex; align-items:center; gap:0.5rem;">
+              &#129303; Hugging Face Space
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </div>
 
   <!-- Feature Detail Modal -->
@@ -663,7 +776,41 @@
   </div>
 
   <footer>
-    <p>AWS CLI Reinforcement Learning Environment &mdash; An OpenEnv environment</p>
+    <div class="footer-content">
+      <div class="footer-brand">
+        <h3>AWS RL Environment</h3>
+        <p>Train AI agents on real AWS cloud operations with curriculum-based reinforcement learning.</p>
+      </div>
+      <div class="footer-links-group">
+        <h4>Navigation</h4>
+        <ul>
+          <li><a href="#about">About</a></li>
+          <li><a href="#tiers">Tasks</a></li>
+          <li><a href="#features">Features</a></li>
+          <li><a href="#api">API Docs</a></li>
+          <li><a href="#playground">Playground</a></li>
+        </ul>
+      </div>
+      <div class="footer-links-group">
+        <h4>Resources</h4>
+        <ul>
+          <li><a href="https://github.com/udaykiranpadhy/aws-rl-env" target="_blank" rel="noopener">GitHub</a></li>
+          <li><a href="/docs" target="_blank">API Reference</a></li>
+          <li><a href="/redoc" target="_blank">ReDoc</a></li>
+        </ul>
+      </div>
+      <div class="footer-links-group">
+        <h4>Connect</h4>
+        <ul>
+          <li><a href="https://portfolio.udaykp.dev" target="_blank" rel="noopener">Portfolio</a></li>
+          <li><a href="https://linkedin.com/in/udaykiranpadhy" target="_blank" rel="noopener">LinkedIn</a></li>
+          <li><a href="mailto:kiranu941@gmail.com">Email</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>&copy; 2026 Uday Kiran Padhy. Built from scratch with Python, FastAPI &amp; JS.</p>
+    </div>
   </footer>
 
   <script src="/static/js/app.js"></script>
@@ -795,12 +942,12 @@
     const featureDetails = {
       'progressive-difficulty': {
         title: 'Progressive Difficulty',
-        what: 'The environment organizes 27 tasks across 5 tiers: Warmup, Beginner, Intermediate, Advanced, and Expert. Tasks progress from simple listing operations to complex SRE incident response and drift detection scenarios.',
+        what: 'The environment organizes more than 120 tasks across 5 tiers: Warmup, Beginner, Intermediate, Advanced, and Expert. Tasks progress from simple listing operations to complex SRE incident response and drift detection scenarios.',
         why: 'Prevents the agent from being overwhelmed by complex tasks early on. Scaffolded difficulty ensures the agent builds foundational skills before tackling multi-service architectures.',
         how: 'The CurriculumManager maintains per-agent tier state. Promotion requires meeting a minimum episode count and success rate threshold. A fast-track mechanism allows agents scoring 90%+ on 3 consecutive episodes to skip the minimum wait.',
         metrics: [
           { v: '5', l: 'Difficulty Tiers' },
-          { v: '27', l: 'Total Tasks' },
+          { v: '120+', l: 'Total Tasks' },
           { v: '90%', l: 'Fast-track Threshold' }
         ],
         diagram: `<svg viewBox="0 0 320 180" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -1040,7 +1187,7 @@
         title: 'Progressive Hint System',
         what: 'A 3-level hint system where each level reveals progressively more detail: Level 1 names the AWS services, Level 2 describes the operations, Level 3 gives near-complete command structure. Each hint reduces the final reward by \u00d70.85.',
         why: 'Creates an information-reward tradeoff. The agent learns to wean off hints over time \u2014 initially relying on them for unfamiliar tasks, then solving independently for maximum reward.',
-        how: 'The agent requests hints via the special command "aws help --task-hint". HintProvider generates level-appropriate guidance from the task definition. EpisodeTracker records hint usage. At grading time, reward is multiplied by 0.85^hints_used (3 hints = ~61% of max reward).',
+        how: 'Agent issues special command "aws help --task-hint" as its action. 3 hint levels, each more specific:- Hint 1: Which AWS services to use (e.g., "Youll need IAM and Lambda"), Hint 2: Which operations (e.g., "Start with create-role, then put-role-policy"), Hint 3: Near-complete command structure (e.g., "Use: aws iam create-role --role-name ..."). Reward decay: "final_reward *= 0.85 ^ hints_used". Curriculum naturally penalizes hint-dependent agents: lower rewards → slower graduation. Hints auto-generated from `SuccessCriteria` fields (services, steps, operations)',
         metrics: [
           { v: '3', l: 'Hint Levels' },
           { v: '\u00d70.85', l: 'Decay Per Hint' },
@@ -1073,7 +1220,7 @@
         title: 'Chaos Injection Engine',
         what: 'Silently mutates AWS resource state mid-episode to test agent resilience. Perturbations are scoped to services the current task uses. If the agent completes despite chaos, it earns a \u00d71.05 bonus.',
         why: 'Tests whether the agent can handle unexpected state changes \u2014 a critical SRE skill. Prevents brittle memorization of exact command sequences. Probability scales with tier difficulty.',
-        how: 'ChaosEngine selects perturbation templates specific to the services in use (S3 policy changes, DynamoDB throughput modifications, Lambda config alterations, etc.). Resource names are extracted from successful commands via regex. Chaos probability: 10% (Intermediate), 20% (Advanced), 30% (Expert). Controlled via ENABLE_CHAOS env var.',
+        how: 'ChaosEngine selects perturbation templates specific to the services in use (S3 policy changes, DynamoDB throughput modifications, Lambda config alterations, etc.). Resource names are extracted from successful commands via regex. Chaos probability: 10% (Intermediate), 20% (Advanced), 30% (Expert).',
         metrics: [
           { v: '\u00d71.05', l: 'Chaos Survival Bonus' },
           { v: '10-30%', l: 'Probability by Tier' },
@@ -1207,6 +1354,54 @@
         </svg>`
       },
 
+      'grader-invisibility': {
+        title: 'Grader Commands Invisible to Agent',
+        what: 'The verification commands run by ResourceVerifier are NOT returned in the observation\u2019s command_output. They happen server-side during grading. The agent cannot observe or mimic them.',
+        why: 'If the agent could see which verification commands the grader runs, it could learn to craft fake outputs that match expected patterns. Keeping grader logic invisible forces the agent to actually perform the task.',
+        how: 'ResourceVerifier executes AWS CLI commands against MiniStack in a separate execution context. Results are consumed internally by the grading pipeline. The observation returned to the agent only contains output from the agent\u2019s own commands.',
+        metrics: [
+          { v: '0', l: 'Grader Cmds Exposed' },
+          { v: 'Server', l: 'Execution Context' },
+          { v: '20+', l: 'Hidden Verifications' }
+        ],
+        diagram: `<svg viewBox="0 0 320 140" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <text x="160" y="15" text-anchor="middle" font-size="10" fill="#202124" font-weight="500">Grader Invisibility</text>
+          <rect x="20" y="35" width="80" height="40" rx="8" fill="#e8f0fe" stroke="#1a73e8" stroke-width="1.5"/>
+          <text x="60" y="52" text-anchor="middle" font-size="8" fill="#1a73e8">Agent</text>
+          <text x="60" y="64" text-anchor="middle" font-size="7" fill="#5f6368">sees own output</text>
+          <rect x="130" y="30" width="3" height="90" rx="1" fill="#c5221f"/>
+          <text x="131" y="130" text-anchor="middle" font-size="7" fill="#c5221f">visibility wall</text>
+          <rect x="165" y="35" width="130" height="40" rx="8" fill="#fef7e0" stroke="#b05a00" stroke-width="1.5"/>
+          <text x="230" y="52" text-anchor="middle" font-size="8" fill="#b05a00">ResourceVerifier</text>
+          <text x="230" y="64" text-anchor="middle" font-size="7" fill="#5f6368">hidden AWS CLI checks</text>
+          <rect x="165" y="85" width="130" height="30" rx="6" fill="#e6f4ea" stroke="#137333" stroke-width="1"/>
+          <text x="230" y="104" text-anchor="middle" font-size="8" fill="#137333">MiniStack ground truth</text>
+        </svg>`
+      },
+
+      'no-verification-reward': {
+        title: 'No Reward for Verification-Only Commands',
+        what: 'If the agent runs a command that matches a state_check command exactly (e.g., aws s3api get-bucket-versioning --bucket app-config-store), it gets no progress credit. Progress is only earned through steps operations (mutating commands), not read-only queries.',
+        why: 'Prevents the agent from gaming progress by running the same verification commands the grader uses. The agent can run read commands to understand state, but only mutation commands earn progress.',
+        how: 'During grading, the TaskGrader checks if the agent\u2019s command matches any state_check command. Matching commands are flagged as verification-only and excluded from credit. Only commands matching steps operations (create, put, update, delete) earn partial_progress.',
+        metrics: [
+          { v: '0', l: 'Credit for Reads' },
+          { v: 'Mutate', l: 'Rewarded Actions' },
+          { v: 'Exact', l: 'Match Detection' }
+        ],
+        diagram: `<svg viewBox="0 0 320 140" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <text x="160" y="15" text-anchor="middle" font-size="10" fill="#202124" font-weight="500">Verification vs Mutation</text>
+          <rect x="20" y="35" width="130" height="35" rx="8" fill="#fce8e6" stroke="#c5221f" stroke-width="1.5"/>
+          <text x="85" y="50" text-anchor="middle" font-size="8" fill="#c5221f">get-bucket-versioning</text>
+          <text x="85" y="62" text-anchor="middle" font-size="7" fill="#5f6368">read-only \u2192 0 credit</text>
+          <rect x="170" y="35" width="130" height="35" rx="8" fill="#e6f4ea" stroke="#137333" stroke-width="1.5"/>
+          <text x="235" y="50" text-anchor="middle" font-size="8" fill="#137333">put-bucket-versioning</text>
+          <text x="235" y="62" text-anchor="middle" font-size="7" fill="#5f6368">mutation \u2192 +credit</text>
+          <rect x="60" y="90" width="200" height="30" rx="6" fill="#fef7e0" stroke="#b05a00" stroke-width="1"/>
+          <text x="160" y="109" text-anchor="middle" font-size="8" fill="#b05a00">state_check matches \u2192 no progress earned</text>
+        </svg>`
+      },
+
       'monotonic-progress': {
         title: 'Monotonic Progress',
         what: 'partial_progress can only increase within an episode. It is clamped to [0.0, 0.99] \u2014 reaching 1.0 requires actual task completion. The agent cannot lose progress, but also cannot re-earn it.',
@@ -1280,6 +1475,90 @@
           <rect x="170" y="95" width="110" height="35" rx="6" fill="#e6f4ea" stroke="#137333" stroke-width="1"/>
           <text x="225" y="110" text-anchor="middle" font-size="8" fill="#137333">json_path + expected</text>
           <text x="225" y="122" text-anchor="middle" font-size="7" fill="#5f6368">JSON extraction</text>
+        </svg>`
+      },
+
+      's3-lockdown': {
+        title: 'Public S3 Bucket Lockdown',
+        what: 'A pre-provisioned S3 bucket "public-assets" has an overly permissive bucket policy granting access to any principal (Principal: *). The agent must read the policy, identify the vulnerability, and replace it with a restrictive policy allowing only a specific IAM role.',
+        why: 'Tests security reasoning \u2014 the infrastructure is functional but insecure. Unlike SRE tasks where things are broken, here the agent must understand what "correct" security posture looks like and make the right judgment call.',
+        how: 'Setup creates the bucket with a wide-open policy. State checks verify the new policy denies Principal: * and only allows the app-role principal to perform s3:GetObject.',
+        metrics: [
+          { v: 'S3', l: 'Target Service' },
+          { v: 'Policy', l: 'Attack Surface' },
+          { v: 'Expert', l: 'Difficulty Tier' }
+        ],
+        diagram: `<svg viewBox="0 0 320 140" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <text x="160" y="15" text-anchor="middle" font-size="10" fill="#202124" font-weight="500">S3 Policy Lockdown Flow</text>
+          <rect x="20" y="35" width="80" height="40" rx="8" fill="#fce8e6" stroke="#c5221f" stroke-width="1.5"/>
+          <text x="60" y="52" text-anchor="middle" font-size="8" fill="#c5221f">Principal: *</text>
+          <text x="60" y="64" text-anchor="middle" font-size="7" fill="#5f6368">open policy</text>
+          <path d="M100 55 L130 55" stroke="#dadce0" stroke-width="1.5"/>
+          <rect x="130" y="35" width="60" height="40" rx="8" fill="#e8f0fe" stroke="#1a73e8" stroke-width="1.5"/>
+          <text x="160" y="52" text-anchor="middle" font-size="8" fill="#1a73e8">Agent</text>
+          <text x="160" y="64" text-anchor="middle" font-size="7" fill="#5f6368">analyzes</text>
+          <path d="M190 55 L220 55" stroke="#dadce0" stroke-width="1.5"/>
+          <rect x="220" y="35" width="80" height="40" rx="8" fill="#e6f4ea" stroke="#137333" stroke-width="1.5"/>
+          <text x="260" y="52" text-anchor="middle" font-size="8" fill="#137333">app-role only</text>
+          <text x="260" y="64" text-anchor="middle" font-size="7" fill="#5f6368">scoped policy</text>
+          <rect x="80" y="95" width="160" height="30" rx="6" fill="#fef7e0" stroke="#b05a00" stroke-width="1"/>
+          <text x="160" y="114" text-anchor="middle" font-size="8" fill="#b05a00">State check: no Principal:* in policy</text>
+        </svg>`
+      },
+
+      'iam-least-privilege': {
+        title: 'IAM Least Privilege',
+        what: 'An IAM role "app-role" has an inline policy with Action: * and Resource: * \u2014 full admin access. The agent must replace it with a least-privilege policy allowing only dynamodb:GetItem and dynamodb:PutItem on the users table.',
+        why: 'IAM misconfiguration is the #1 cloud security risk. This task tests whether the agent understands permission scoping and can reason about what access an application actually needs vs. what it currently has.',
+        how: 'Setup creates the role with a wildcard policy. The agent must craft a replacement policy document with specific actions and resource ARN. State checks verify the policy document matches the expected least-privilege permissions.',
+        metrics: [
+          { v: 'IAM', l: 'Target Service' },
+          { v: '2', l: 'Allowed Actions' },
+          { v: 'Expert', l: 'Difficulty Tier' }
+        ],
+        diagram: `<svg viewBox="0 0 320 140" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <text x="160" y="15" text-anchor="middle" font-size="10" fill="#202124" font-weight="500">IAM Policy Scoping</text>
+          <rect x="20" y="35" width="120" height="40" rx="8" fill="#fce8e6" stroke="#c5221f" stroke-width="1.5"/>
+          <text x="80" y="52" text-anchor="middle" font-size="8" fill="#c5221f">Action: *, Resource: *</text>
+          <text x="80" y="64" text-anchor="middle" font-size="7" fill="#5f6368">overprivileged</text>
+          <path d="M140 55 L170 55" stroke="#dadce0" stroke-width="1.5"/>
+          <text x="155" y="48" text-anchor="middle" font-size="7" fill="#1a73e8">\u2192</text>
+          <rect x="170" y="30" width="130" height="50" rx="8" fill="#e6f4ea" stroke="#137333" stroke-width="1.5"/>
+          <text x="235" y="48" text-anchor="middle" font-size="8" fill="#137333">dynamodb:GetItem</text>
+          <text x="235" y="60" text-anchor="middle" font-size="8" fill="#137333">dynamodb:PutItem</text>
+          <text x="235" y="74" text-anchor="middle" font-size="7" fill="#5f6368">on users table only</text>
+          <rect x="60" y="100" width="200" height="25" rx="6" fill="#fef7e0" stroke="#b05a00" stroke-width="1"/>
+          <text x="160" y="116" text-anchor="middle" font-size="8" fill="#b05a00">State check: policy matches expected JSON</text>
+        </svg>`
+      },
+
+      'secrets-rotation': {
+        title: 'Secrets in Lambda Environment',
+        what: 'A Lambda function "data-processor" has a database password stored as a plaintext environment variable (DB_PASSWORD=hunter2). The agent must create a secret in Secrets Manager, update the Lambda to reference the secret ARN, and remove the plaintext variable.',
+        why: 'Plaintext secrets in environment variables is a critical security anti-pattern. This task combines multiple services (Lambda + Secrets Manager) and tests the agent\'s ability to perform a safe credential rotation without breaking the function.',
+        how: 'Setup creates the Lambda with the plaintext env var. The agent must: (1) create a secret in Secrets Manager, (2) add SECRET_ARN env var to Lambda, (3) remove DB_PASSWORD. State checks verify all three conditions.',
+        metrics: [
+          { v: '2', l: 'Services Involved' },
+          { v: '3', l: 'Required Steps' },
+          { v: 'Expert', l: 'Difficulty Tier' }
+        ],
+        diagram: `<svg viewBox="0 0 320 150" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <text x="160" y="15" text-anchor="middle" font-size="10" fill="#202124" font-weight="500">Secret Rotation Flow</text>
+          <rect x="20" y="35" width="90" height="35" rx="8" fill="#fce8e6" stroke="#c5221f" stroke-width="1.5"/>
+          <text x="65" y="52" text-anchor="middle" font-size="8" fill="#c5221f">DB_PASSWORD</text>
+          <text x="65" y="63" text-anchor="middle" font-size="7" fill="#5f6368">plaintext env</text>
+          <path d="M110 52 L135 52" stroke="#dadce0" stroke-width="1.5"/>
+          <rect x="135" y="30" width="60" height="45" rx="8" fill="#e8f0fe" stroke="#1a73e8" stroke-width="1.5"/>
+          <text x="165" y="50" text-anchor="middle" font-size="8" fill="#1a73e8">Agent</text>
+          <text x="165" y="65" text-anchor="middle" font-size="7" fill="#5f6368">rotates</text>
+          <path d="M195 42 L225 35" stroke="#dadce0" stroke-width="1.5"/>
+          <path d="M195 62 L225 70" stroke="#dadce0" stroke-width="1.5"/>
+          <rect x="225" y="20" width="80" height="30" rx="6" fill="#e6f4ea" stroke="#137333" stroke-width="1"/>
+          <text x="265" y="39" text-anchor="middle" font-size="7" fill="#137333">Secrets Manager</text>
+          <rect x="225" y="60" width="80" height="30" rx="6" fill="#e6f4ea" stroke="#137333" stroke-width="1"/>
+          <text x="265" y="79" text-anchor="middle" font-size="7" fill="#137333">SECRET_ARN env</text>
+          <rect x="60" y="110" width="200" height="25" rx="6" fill="#fef7e0" stroke="#b05a00" stroke-width="1"/>
+          <text x="160" y="126" text-anchor="middle" font-size="8" fill="#b05a00">State: no DB_PASSWORD, secret exists, ARN set</text>
         </svg>`
       }
     };

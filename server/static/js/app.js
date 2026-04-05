@@ -75,7 +75,8 @@ document.addEventListener('mousemove', e => {
 }, { passive: true });
 
 /* ===== Typewriter — character-by-character reveal ===== */
-function typewrite(el, delay) {
+function typewrite(el, delay, speed) {
+  speed = speed || 30;
   const text = el.textContent;
   el.innerHTML = '';
 
@@ -102,7 +103,7 @@ function typewrite(el, delay) {
         if (i === chars.length - 1) {
           resolve();
         }
-      }, delay + i * 30);
+      }, delay + i * speed);
     });
     if (chars.length === 0) resolve();
   });
@@ -123,7 +124,7 @@ function typewrite(el, delay) {
 
   if (heroSub) {
     heroSub.style.visibility = 'visible';
-    await typewrite(heroSub, 200);
+    await typewrite(heroSub, 200, 12);
     heroSub.querySelector('.typing-cursor')?.remove();
   }
 

@@ -22,6 +22,10 @@
   font-family: 'Google Sans', 'Roboto', system-ui, -apple-system, sans-serif;
 }
 
+html {
+  font-size: 18px;
+}
+
 body {
   background-color: var(--bg-color);
   color: var(--text-main);
@@ -60,7 +64,8 @@ nav {
   background: rgba(255, 255, 255, 0.55);
   backdrop-filter: blur(16px) saturate(180%);
   -webkit-backdrop-filter: blur(16px) saturate(180%);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -70,14 +75,16 @@ nav {
 
 nav.scrolled {
   top: 16px;
-  width: calc(100% - 32px);
-  max-width: 900px;
+  width: max-content;
+  max-width: calc(100% - 32px);
   height: 56px;
   border-radius: 28px;
-  border: 1px solid rgba(255, 255, 255, 0.4);
-  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1), 0 1px 4px rgba(0, 0, 0, 0.06);
   background: rgba(255, 255, 255, 0.5);
-  padding: 0 1rem;
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  padding: 0 1.5rem;
 }
 
 .nav-links {
@@ -333,7 +340,7 @@ nav.scrolled {
   font-size: 1rem;
   letter-spacing: 0.5px;
   color: var(--text-main);
-  font-weight: 500;
+  font-weight: 600;
   text-transform: uppercase;
 }
 
@@ -389,8 +396,18 @@ nav.scrolled {
 
 .card h3 {
   font-size: 1.4rem;
-  font-weight: 500;
+  font-weight: 600;
   margin-bottom: 0.5rem;
+}
+
+.card p,
+.card li {
+  font-weight: 450;
+}
+
+.cta-card {
+  border: 1.5px solid var(--border-color);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
 }
 
 .minimal-card {
@@ -453,6 +470,7 @@ nav.scrolled {
   border: 1px solid transparent;
   padding: 0.375rem 1rem;
   border-radius: 16px;
+  font-weight: 450;
   font-size: 1rem;
   color: var(--text-main);
   font-weight: 400;
@@ -1230,17 +1248,19 @@ nav.scrolled {
 .role-title {
   font-size: 1.3rem;
   color: var(--text-main);
-  font-weight: 500;
+  font-weight: 600;
 }
 
 .date-badge {
   color: var(--text-muted);
   font-size: 0.95rem;
+  font-weight: 450;
 }
 
 .timeline-subtitle {
   color: var(--text-muted);
   font-size: 1rem;
+  font-weight: 450;
   margin-bottom: 0.75rem;
 }
 
@@ -1255,6 +1275,7 @@ nav.scrolled {
   padding: 0.35rem 0 0.35rem 1.25rem;
   color: var(--text-muted);
   font-size: 0.95rem;
+  font-weight: 450;
   line-height: 1.5;
 }
 
@@ -1270,23 +1291,93 @@ nav.scrolled {
 
 .timeline-points li strong {
   color: var(--text-main);
-  font-weight: 500;
+  font-weight: 600;
 }
 
 /* Footer */
 footer {
-  text-align: center;
-  padding: 3rem 0 2rem 0;
+  padding: 4rem 2rem 2rem;
   border-top: 1px solid var(--border-color);
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
-footer p {
-  font-size: 1rem;
+.footer-content {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  gap: 2.5rem;
+  margin-bottom: 3rem;
+}
+
+.footer-brand h3 {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--text-main);
+  margin-bottom: 0.75rem;
+}
+
+.footer-brand p {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  font-weight: 400;
+  line-height: 1.6;
+  max-width: 300px;
+}
+
+.footer-links-group h4 {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-main);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 1rem;
+}
+
+.footer-links-group ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.footer-links-group li {
+  margin-bottom: 0.6rem;
+}
+
+.footer-links-group a {
+  font-size: 0.9rem;
+  font-weight: 450;
+  color: var(--text-muted);
+  transition: color 0.2s ease;
+}
+
+.footer-links-group a:hover {
+  color: var(--text-main);
+}
+
+.footer-bottom {
+  border-top: 1px solid var(--border-color);
+  padding-top: 1.5rem;
+  text-align: center;
+}
+
+.footer-bottom p {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  font-weight: 400;
   margin-bottom: 0;
 }
 
 /* ===== Responsive ===== */
 @media (max-width: 768px) {
+  .footer-content {
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+  }
+
+  .footer-brand {
+    grid-column: 1 / -1;
+  }
+
   .hero h1 {
     font-size: 3rem;
   }
