@@ -1,74 +1,29 @@
 """
-Inference Script Example
-===================================
-MANDATORY
-- Before submitting, ensure the following variables are defined in your environment configuration:
-    API_BASE_URL   The API endpoint for the LLM.
-    MODEL_NAME     The model identifier to use for inference.
-    HF_TOKEN       Your Hugging Face / API key.
-    LOCAL_IMAGE_NAME The name of the local image to use for the environment if you are using from_docker_image()
-                     method
-
-- Defaults are set only for API_BASE_URL and MODEL_NAME
-    (and should reflect your active inference setup):
-    API_BASE_URL = os.getenv("API_BASE_URL", "<your-active-endpoint>")
-    MODEL_NAME = os.getenv("MODEL_NAME", "<your-active-model>")
-
-- The inference script must be named `inference.py` and placed in the root directory of the project
-- Participants must use OpenAI Client for all LLM calls using above variables
-
-STDOUT FORMAT
-- The script must emit exactly three line types to stdout, in this order:
-
-    [START] task=<task_name> env=<benchmark> model=<model_name>
-    [STEP]  step=<n> action=<action_str> reward=<0.00> done=<true|false> error=<msg|null>
-    [END]   success=<true|false> steps=<n> rewards=<r1,r2,...,rn>
-
-  Rules:
-    - One [START] line at episode begin.
-    - One [STEP] line per step, immediately after env.step() returns.
-    - One [END] line after env.close(), always emitted (even on exception).
-    - reward and rewards are formatted to 2 decimal places.
-    - done and success are lowercase booleans: true or false.
-    - error is the raw last_action_error string, or null if none.
-    - All fields on a single line with no newlines within a line.
-
-  Example:
-    [START] task=create-s3-bucket env=aws_rl_env model=Qwen2.5-72B-Instruct
-    [STEP] step=1 action=aws s3api create-bucket --bucket my-test-bucket reward=1.00 done=false error=null
-    [END] success=true steps=1 rewards=1.00
+Inference Script — Code Debug Environment
+==========================================
+Structured stdout format: [START], [STEP], [END].
 """
 
-import asyncio
 import os
 import textwrap
-from typing import List, Optional
+from typing import List
 
-from dotenv import load_dotenv
 from openai import OpenAI
 
 from client import AwsRlEnv
-from models import AwsRlAction
+from models import AwsRlAction, AwsRlObservation
+from dotenv import load_dotenv
 
 load_dotenv()  # Load variables from .env file if present
 
-API_BASE_URL = os.getenv("API_BASE_URL", "https://router.huggingface.co/v1")
-MODEL_NAME = os.getenv("MODEL_NAME", "Qwen/Qwen2.5-72B-Instruct")
-if not API_BASE_URL:
-    API_BASE_URL = "https://router.huggingface.co/v1"
-if not MODEL_NAME:
-    MODEL_NAME = "Qwen/Qwen2.5-72B-Instruct"
-HF_TOKEN = os.getenv("HF_TOKEN")
-API_KEY = os.getenv("API_KEY")  # Optional if using HF_TOKEN
+API_BASE_URL = os.getenv("API_BASE_URL") or "https://router.huggingface.co/v1"
+MODEL_NAME = os.getenv("MODEL_NAME") or "meta-llama/Llama-3.1-8B-Instruct"
+API_KEY = os.getenv("HF_TOKEN") or os.getenv("API_KEY")
 
-# Optional — if you use from_docker_image():
-LOCAL_IMAGE_NAME = os.getenv("LOCAL_IMAGE_NAME")
-BENCHMARK = os.getenv("BENCHMARK", "aws_rl_env")
-MAX_STEPS = int(os.getenv("MAX_STEPS", "15"))
-TEMPERATURE = 0.7
-MAX_TOKENS = 512
-SUCCESS_SCORE_THRESHOLD = 1.0  # task_achieved yields reward=1.0
+BENCHMARK = "aws-rl-env"
+MAX_STEPS = 15
 
+client_llm = OpenAI(base_url=API_BASE_URL, api_key=API_KEY)
 SYSTEM_PROMPT = textwrap.dedent(
     """
     You are an AWS cloud engineer interacting with a real AWS environment via CLI.
@@ -85,29 +40,6 @@ SYSTEM_PROMPT = textwrap.dedent(
     - When ever you need a hint, use 'aws help --task-hint' to get a task-specific hint (you can use this multiple times for more hints, but hints reduce your reward)
     """
 ).strip()
-
-
-def log_start(task: str, env: str, model: str) -> None:
-    print(f"[START] task={task} env={env} model={model}", flush=True)
-
-
-def log_step(
-    step: int, action: str, reward: float, done: bool, error: Optional[str]
-) -> None:
-    error_val = error if error else "null"
-    done_val = str(done).lower()
-    print(
-        f"[STEP] step={step} action={action} reward={reward:.2f} done={done_val} error={error_val}",
-        flush=True,
-    )
-
-
-def log_end(success: bool, steps: int, score: float, rewards: List[float]) -> None:
-    rewards_str = ",".join(f"{r:.2f}" for r in rewards)
-    print(
-        f"[END] success={str(success).lower()} steps={steps} score={score:.3f} rewards={rewards_str}",
-        flush=True,
-    )
 
 
 def build_user_prompt(
@@ -135,7 +67,6 @@ def build_user_prompt(
         """
     ).strip()
 
-
 def get_model_command(
     client: OpenAI,
     task_description: str,
@@ -155,9 +86,7 @@ def get_model_command(
                 {"role": "system", "content": SYSTEM_PROMPT},
                 {"role": "user", "content": user_prompt},
             ],
-            temperature=TEMPERATURE,
-            max_tokens=MAX_TOKENS,
-            stream=False,
+            max_tokens=800
         )
         text = (completion.choices[0].message.content or "").strip()
         # Strip markdown code fences if the model wraps the command
@@ -172,102 +101,74 @@ def get_model_command(
         return "aws help"
 
 
-async def main() -> None:
-    key = HF_TOKEN if HF_TOKEN else API_KEY
-    client = OpenAI(base_url=API_BASE_URL, api_key=key)
+def run_task(env_url: str) -> None:
 
-    try:
-        env = await AwsRlEnv.from_docker_image(LOCAL_IMAGE_NAME)
-    except Exception as e:
-        pass
+    
 
-    # After
-    try:
-        env = AwsRlEnv(base_url="https://sizzing-aws-rl-env.hf.space")
-    except Exception as e:
-        return
-
-    history: List[str] = []
-    rewards: List[float] = []
-    steps_taken = 0
-    score = 0.0
-    success = False
-    task_name = "unknown"
-    task_description = ""
-
-    try:
-        result = await env.reset()  # OpenENV.reset()
-        obs = result.observation
-
-        # Extract task info from the first observation
-        if obs.task is not None:
-            task_name = f"task-{obs.task.task_id}"
-            task_description = obs.task.description
-        else:
-            task_description = "No task assigned."
-
-        log_start(task=task_name, env=BENCHMARK, model=MODEL_NAME)
-
-        last_output = obs.command_output
-        last_error = ""
-        last_reward = 0.0
-
-        for step in range(1, MAX_STEPS + 1):
-            if result.done:
-                break
-
-            command = get_model_command(
-                client,
-                task_description,
-                step,
-                last_output,
-                last_error,
-                last_reward,
-                history,
-            )
-
-            result = await env.step(AwsRlAction(command=command))
-            obs = result.observation
-
-            reward = result.reward or 0.0
-            done = result.done
-            error = obs.error if obs.error else None
-
-            rewards.append(reward)
-            steps_taken = step
+    with AwsRlEnv(base_url=env_url).sync() as env:
+        for _ in range(11):
+            result = env.reset()
+            obs: AwsRlObservation = result.observation
             last_output = obs.command_output
-            last_error = obs.error
-            last_reward = reward
+            last_error = ""
+            last_reward = 0.0
+            history: List[str] = []
+            rewards: List[float] = []
+            print(f"[START] task={obs.task.task_id} env={BENCHMARK} model={MODEL_NAME}")
 
-            log_step(step=step, action=command, reward=reward, done=done, error=error)
+            for step in range(1, MAX_STEPS + 1):
+                command = get_model_command(
+                    client_llm,
+                    obs.task.description,
+                    obs.step_count,
+                    last_output,
+                    last_error,
+                    last_reward,
+                    history,
+                )
 
-            status = "OK" if obs.command_success else "FAIL"
-            history.append(f"Step {step} [{status}]: {command} -> reward={reward:.2f}")
+                result = env.step(
+                    AwsRlAction(command=command)
+                )
+                obs: AwsRlObservation = result.observation
 
-            # Task achieved — episode success
-            if obs.task_achieved:
-                success = True
-                break
+                reward = obs.reward or 0.0
+                done = result.done
+                last_error = obs.error
+                last_output = obs.command_output
+                last_reward = reward
 
-            if done:
-                break
+                
+                # Clamp reward to strictly (0, 1) for validator
+                if reward <= 0.0:
+                    reward = 0.01
+                elif reward >= 1.0:
+                    reward = 0.99
+                
+                rewards.append(reward)
+                steps = step
 
-        score = max(rewards) if rewards else 0.0
-        score = min(max(score, 0.0), 1.0)  # clamp to [0, 1]
-        if not success:
-            success = score >= SUCCESS_SCORE_THRESHOLD
+                done_str = "true" if done else "false"
+                print(f"[STEP] step={step} action={command!r} reward={reward:.2f} done={done_str} error={last_error!r}")
 
-    finally:
-        try:
-            await env.close()
-        except Exception as e:
-            pass
-        log_end(success=success, steps=steps_taken, score=score, rewards=rewards)
+                # Task achieved — episode success
+                if obs.task_achieved:
+                    success = True
+                    break
+
+                if done:
+                    break
+
+            score = max(rewards) if rewards else 0.1
+            score = min(max(score, 0.01), 0.99)  # clamp to (0, 1)
+
+
+            success_str = "true" if obs.task_achieved else "false"
+            rewards_str = ",".join(f"{r:.2f}" for r in rewards)
+            print(f"[END] success={success_str} steps={steps} score={score:.2f} rewards={rewards_str}")
 
 
 if __name__ == "__main__":
-    try:
-        asyncio.run(main())
-    except Exception as e:
-        print(f"[DEBUG] Unhandled exception in main: {e}", flush=True)
-        raise e
+    ENV_URL = os.getenv("ENV_URL", "http://localhost:8000")
+
+    run_task(ENV_URL)
