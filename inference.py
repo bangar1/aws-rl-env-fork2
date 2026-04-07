@@ -257,4 +257,8 @@ async def main() -> None:
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    try:
+        asyncio.run(main())
+    except Exception as e:
+        print(f"[DEBUG] Unhandled exception in main: {e}", flush=True)
+        raise e
