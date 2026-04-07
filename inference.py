@@ -176,7 +176,16 @@ async def main() -> None:
     key = HF_TOKEN if HF_TOKEN else API_KEY
     client = OpenAI(base_url=API_BASE_URL, api_key=key)
 
-    env = await AwsRlEnv.from_docker_image(LOCAL_IMAGE_NAME)
+    try:
+        env = await AwsRlEnv.from_docker_image(LOCAL_IMAGE_NAME)
+    except Exception as e:
+        pass
+
+    # After
+    try:
+        env = AwsRlEnv(base_url="https://sizzing-aws-rl-env.hf.space")
+    except Exception as e:
+        return
 
     history: List[str] = []
     rewards: List[float] = []
@@ -252,7 +261,7 @@ async def main() -> None:
         try:
             await env.close()
         except Exception as e:
-            print(f"[DEBUG] env.close() error (container cleanup): {e}", flush=True)
+            pass
         log_end(success=success, steps=steps_taken, score=score, rewards=rewards)
 
 
