@@ -6,12 +6,19 @@
 
 """Aws Rl Env Environment Client."""
 
-from typing import Dict
+from typing import Any, Dict, Optional
 
 from openenv.core import EnvClient
 from openenv.core.client_types import StepResult
 
-from models import AwsRlAction, AwsRlObservation, EpisodeID, StepCount, AwsRlState
+from models import (
+    AwsRlAction,
+    AwsRlObservation,
+    EpisodeID,
+    StepCount,
+    AwsRlState,
+    TaskID,
+)
 
 
 class AwsRlEnv(EnvClient[AwsRlAction, AwsRlObservation, AwsRlState]):
@@ -38,6 +45,17 @@ class AwsRlEnv(EnvClient[AwsRlAction, AwsRlObservation, AwsRlState]):
         ... finally:
         ...     client.close()
     """
+
+    async def reset(
+        self,
+        task_id: Optional[TaskID] = None,
+        **kwargs: Any,
+    ) -> StepResult[AwsRlObservation]:
+        """Reset the environment. Pass `task_id` to force a specific task
+        (used by training to keep all rollouts in a group on one prompt)."""
+        if task_id is not None:
+            kwargs["task_id"] = task_id
+        return await super().reset(**kwargs)
 
     def _step_payload(self, action: AwsRlAction) -> Dict:
         """Convert AwsRlAction to JSON payload for step message."""

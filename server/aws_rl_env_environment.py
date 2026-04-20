@@ -14,7 +14,7 @@ the current resource state as observations.
 
 import logging
 
-from typing import Any, Optional
+from typing import Any, Callable, Optional
 from uuid import uuid4
 
 from openenv.core.env_server.interfaces import Environment
@@ -26,6 +26,7 @@ from models import (
     EpisodeID,
     StepCount,
     Task,
+    TaskID,
     TaskInfo,
     TrackerState,
 )
@@ -43,10 +44,14 @@ logger = logging.getLogger(__name__)
 class AwsRlEnvironment(Environment[AwsRlAction, AwsRlObservation, AwsRlState]):
     SUPPORTS_CONCURRENT_SESSIONS: bool = True
 
-    def __init__(self) -> None:
+    def __init__(self, aws_infra_url: Optional[str] = None) -> None:
         print("Initializing AWS RL Environment...")
         self._state = AwsRlState(episode_id=str(uuid4()), step_count=0)
-        self._backend = AwsBackend()
+        self._backend = (
+            AwsBackend(aws_infra_url=aws_infra_url)
+            if aws_infra_url is not None
+            else AwsBackend()
+        )
         self._curriculum = Curriculum()
         self._grader = TaskGrader(self._backend)
         self._designer = EnvironmentDesigner(self._backend)
@@ -54,6 +59,7 @@ class AwsRlEnvironment(Environment[AwsRlAction, AwsRlObservation, AwsRlState]):
         self._chaos_engine = ChaosEngine(self._backend)
         self._hint_provider = HintProvider()
         self._current_task: Task | None = None
+        self._pool_release: Optional[Callable[[], None]] = None
 
     def _sync_state(self) -> None:
         """Sync internal state to the AwsRlState object."""
@@ -75,13 +81,17 @@ class AwsRlEnvironment(Environment[AwsRlAction, AwsRlObservation, AwsRlState]):
         self,
         seed: Optional[int] = None,
         episode_id: Optional[str] = None,
+        task_id: Optional[TaskID] = None,
         **kwargs: Any,
     ) -> AwsRlObservation:
         self._backend.reset_environment()
         self._state = AwsRlState(episode_id=episode_id or str(uuid4()), step_count=0)
         self._tracker.reset()
         self._chaos_engine.reset()
-        self._current_task = self._curriculum.next_task()
+        if task_id is not None:
+            self._current_task = self._curriculum.get_task_by_id(task_id)
+        else:
+            self._current_task = self._curriculum.next_task()
 
         self._designer.apply(self._current_task)
         self._sync_state()
@@ -223,3 +233,15 @@ class AwsRlEnvironment(Environment[AwsRlAction, AwsRlObservation, AwsRlState]):
     @property
     def state(self) -> AwsRlState:
         return self._state
+
+    def close(self) -> None:
+        if self._pool_release is None:
+            return
+        try:
+            self._backend.reset_environment()
+        except Exception:
+            logger.exception("Failed to scrub MiniStack state during close")
+        try:
+            self._pool_release()
+        finally:
+            self._pool_release = None

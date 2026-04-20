@@ -178,13 +178,13 @@ async def main() -> None:
 
     try:
         env = await AwsRlEnv.from_docker_image(LOCAL_IMAGE_NAME)
-    except Exception as e:
+    except Exception:
         pass
 
     # After
     try:
         env = AwsRlEnv(base_url="https://sizzing-aws-rl-env.hf.space")
-    except Exception as e:
+    except Exception:
         return
 
     history: List[str] = []
@@ -260,7 +260,7 @@ async def main() -> None:
     finally:
         try:
             await env.close()
-        except Exception as e:
+        except Exception:
             pass
         log_end(success=success, steps=steps_taken, score=score, rewards=rewards)
 

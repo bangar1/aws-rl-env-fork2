@@ -88,6 +88,8 @@ ENV PATH="/app/.venv/bin:$PATH"
 # Set PYTHONPATH so imports work correctly
 ENV PYTHONPATH="/app/env:$PYTHONPATH"
 
+ENV AWS_RL_ENV_POOL_SIZE=1
+ENV AWS_RL_ENV_MINISTACK_BASE_PORT=4566
 
 # DEV_MODE=1 enables live reload via --reload flag
 ENV DEV_MODE=0
@@ -95,5 +97,16 @@ ENV DEV_MODE=0
 ENV API_BASE_URL=https://router.huggingface.co/v1
 ENV MODEL_NAME=Qwen/Qwen2.5-72B-Instruct
 
-# Entrypoint: start aws_infra in background, then run the FastAPI server
-CMD ["sh", "-c", "aws_infra -d & sleep 2 && uvicorn server.app:app --host 0.0.0.0 --port 8000 $([ \"$DEV_MODE\" = '1' ] && echo '--reload --reload-dir /app/env')"]
+# Entrypoint: start N MiniStack instances (AWS_RL_ENV_POOL_SIZE, default 1),
+# then run the FastAPI server. Each MiniStack listens on a distinct port
+# starting at AWS_RL_ENV_MINISTACK_BASE_PORT (default 4566).
+CMD ["sh", "-c", "\
+  POOL_SIZE=\"${AWS_RL_ENV_POOL_SIZE:-1}\"; \
+  BASE_PORT=\"${AWS_RL_ENV_MINISTACK_BASE_PORT:-4566}\"; \
+  i=0; while [ \"$i\" -lt \"$POOL_SIZE\" ]; do \
+    GATEWAY_PORT=$((BASE_PORT + i)) aws_infra -d; \
+    i=$((i + 1)); \
+  done; \
+  sleep 3; \
+  uvicorn server.app:app --host 0.0.0.0 --port 8000 $([ \"$DEV_MODE\" = '1' ] && echo '--reload --reload-dir /app/env') \
+"]

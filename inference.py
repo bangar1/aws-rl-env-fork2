@@ -61,6 +61,7 @@ def build_user_prompt(
         """
     ).strip()
 
+
 def get_model_command(
     client: OpenAI,
     task_description: str,
@@ -80,7 +81,7 @@ def get_model_command(
                 {"role": "system", "content": SYSTEM_PROMPT},
                 {"role": "user", "content": user_prompt},
             ],
-            max_tokens=800
+            max_tokens=800,
         )
         text = (completion.choices[0].message.content or "").strip()
         # Strip markdown code fences if the model wraps the command
@@ -96,8 +97,6 @@ def get_model_command(
 
 
 def run_task(env_url: str) -> None:
-
-    
 
     with AwsRlEnv(base_url=env_url).sync() as env:
         for _ in range(11):
@@ -121,9 +120,7 @@ def run_task(env_url: str) -> None:
                     history,
                 )
 
-                result = env.step(
-                    AwsRlAction(command=command)
-                )
+                result = env.step(AwsRlAction(command=command))
                 obs: AwsRlObservation = result.observation
 
                 reward = obs.reward or 0.0
@@ -132,22 +129,22 @@ def run_task(env_url: str) -> None:
                 last_output = obs.command_output
                 last_reward = reward
 
-                
                 # Clamp reward to strictly (0, 1) for validator
                 if reward <= 0.0:
                     reward = 0.01
                 elif reward >= 1.0:
                     reward = 0.99
-                
+
                 rewards.append(reward)
                 steps = step
 
                 done_str = "true" if done else "false"
-                print(f"[STEP] step={step} action={command!r} reward={reward:.2f} done={done_str} error={last_error!r}")
+                print(
+                    f"[STEP] step={step} action={command!r} reward={reward:.2f} done={done_str} error={last_error!r}"
+                )
 
                 # Task achieved — episode success
                 if obs.task_achieved:
-                    success = True
                     break
 
                 if done:
@@ -156,10 +153,11 @@ def run_task(env_url: str) -> None:
             score = max(rewards) if rewards else 0.1
             score = min(max(score, 0.01), 0.99)  # clamp to (0, 1)
 
-
             success_str = "true" if obs.task_achieved else "false"
             rewards_str = ",".join(f"{r:.2f}" for r in rewards)
-            print(f"[END] success={success_str} steps={steps} score={score:.2f} rewards={rewards_str}")
+            print(
+                f"[END] success={success_str} steps={steps} score={score:.2f} rewards={rewards_str}"
+            )
 
 
 if __name__ == "__main__":

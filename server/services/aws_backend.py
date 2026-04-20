@@ -99,6 +99,9 @@ class AwsBackend:
             "AWS_SECRET_ACCESS_KEY": "test",
             "AWS_DEFAULT_REGION": "us-east-1",
         }
+        print(
+            f"Executing command: {command} with env AWS_ENDPOINT_URL={self._aws_infra_url}"
+        )
 
         try:
             result = subprocess.run(
