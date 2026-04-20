@@ -1,3 +1,16 @@
+# Load .env if present so Make sees every KEY=value in it, both as $(VAR)
+# inside the Makefile and as an environment variable exported to recipes.
+# Precedence (highest → lowest):
+#   1. CLI:           make run POOL_SIZE=16
+#   2. Shell env:     POOL_SIZE=16 make run
+#   3. .env file:     AWS_RL_ENV_POOL_SIZE=16 in ./.env
+#   4. Makefile default (via ?=)
+# Create one by copying the template:  cp .env.example .env
+ifneq (,$(wildcard ./.env))
+    include .env
+    export
+endif
+
 # Project settings
 PROJECT_NAME := openenv-aws_rl_env
 PYTHON := python3
@@ -6,6 +19,14 @@ DOCKER_IMAGE := aws-rl-env
 DOCKER_TAG := latest
 SERVER_HOST := 0.0.0.0
 SERVER_PORT := 8000
+
+# Parallel MiniStack pool (used by `make run`).
+#   POOL_SIZE=1           → single MiniStack on MINISTACK_BASE_PORT (legacy behavior)
+#   POOL_SIZE>1           → N MiniStacks on MINISTACK_BASE_PORT..BASE_PORT+N-1,
+#                           server exposes N concurrent WebSocket sessions
+# Override from CLI: `make run POOL_SIZE=8` or `POOL_SIZE=8 make run`.
+POOL_SIZE ?= $(or $(AWS_RL_ENV_POOL_SIZE),1)
+MINISTACK_BASE_PORT ?= $(or $(AWS_RL_ENV_MINISTACK_BASE_PORT),4566)
 
 .DEFAULT_GOAL := help
 
@@ -35,8 +56,26 @@ lock: ## Update the lockfile
 # ──────────────────────────────────────────────
 
 .PHONY: run
-run: ## Run with MiniStack + FastAPI server (mirrors Docker CMD)
-	aws_infra -d & sleep 2 && $(UV) run uvicorn server.app:app --host $(SERVER_HOST) --port $(SERVER_PORT) --reload
+run: ## Run MiniStack pool + FastAPI server. Env: POOL_SIZE (default 1), MINISTACK_BASE_PORT (default 4566)
+	@echo "==> Starting $(POOL_SIZE) MiniStack(s) on ports $(MINISTACK_BASE_PORT)..$$(($(MINISTACK_BASE_PORT) + $(POOL_SIZE) - 1))"
+	@for i in $$(seq 0 $$(($(POOL_SIZE) - 1))); do \
+		port=$$(($(MINISTACK_BASE_PORT) + $$i)); \
+		echo "    MiniStack :$$port"; \
+		GATEWAY_PORT=$$port aws_infra -d; \
+	done
+	@sleep 2
+	@echo "==> FastAPI server on $(SERVER_HOST):$(SERVER_PORT) (POOL_SIZE=$(POOL_SIZE))"
+	AWS_RL_ENV_POOL_SIZE=$(POOL_SIZE) \
+	AWS_RL_ENV_MINISTACK_BASE_PORT=$(MINISTACK_BASE_PORT) \
+	$(UV) run uvicorn server.app:app --host $(SERVER_HOST) --port $(SERVER_PORT) --reload
+
+.PHONY: run-stop
+run-stop: ## Stop every MiniStack started by `make run` (uses current POOL_SIZE + MINISTACK_BASE_PORT)
+	@for i in $$(seq 0 $$(($(POOL_SIZE) - 1))); do \
+		port=$$(($(MINISTACK_BASE_PORT) + $$i)); \
+		echo "    stopping MiniStack :$$port"; \
+		GATEWAY_PORT=$$port aws_infra --stop || true; \
+	done
 
 # ──────────────────────────────────────────────
 # Code Quality
