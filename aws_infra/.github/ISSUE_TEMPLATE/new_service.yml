@@ -1,0 +1,40 @@
+name: New Service Request
+description: Request emulation for an AWS service not yet supported
+labels: ["new-service"]
+body:
+  - type: input
+    id: service
+    attributes:
+      label: AWS Service name
+      placeholder: "e.g. API Gateway, Cognito, Route53"
+    validations:
+      required: true
+
+  - type: textarea
+    id: operations
+    attributes:
+      label: Operations needed
+      description: Which specific API operations do you need? Be specific — this helps prioritize.
+      placeholder: |
+        - CreateRestApi
+        - CreateResource
+        - PutMethod
+        - CreateDeployment
+    validations:
+      required: true
+
+  - type: textarea
+    id: usecase
+    attributes:
+      label: Use case
+      description: What are you trying to test locally?
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: contribute
+    attributes:
+      label: Would you like to contribute this?
+      options:
+        - label: Yes, I'd like to implement this service and open a PR
+        - label: I can help review/test an implementation

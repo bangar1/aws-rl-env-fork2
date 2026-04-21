@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# awslocal — Wrapper around AWS CLI that points to local MiniStack endpoint.
+# Usage: ./awslocal s3 ls
+#        ./awslocal sqs create-queue --queue-name my-queue
+#        ./awslocal dynamodb list-tables
+
+ENDPOINT_URL="${MINISTACK_ENDPOINT:-http://localhost:4566}"
+AWS_ACCESS_KEY_ID="${AWS_ACCESS_KEY_ID:-test}"
+AWS_SECRET_ACCESS_KEY="${AWS_SECRET_ACCESS_KEY:-test}"
+AWS_DEFAULT_REGION="${AWS_DEFAULT_REGION:-us-east-1}"
+
+export AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_DEFAULT_REGION
+
+exec aws --endpoint-url="$ENDPOINT_URL" "$@"

@@ -73,7 +73,7 @@ RUN apt-get update && \
     apt-get install -y --no-install-recommends awscli && \
     rm -rf /var/lib/apt/lists/*
 
-# Configure AWS CLI to point to aws_infra (MiniStack) and use dummy credentials
+# Configure AWS CLI to point to MiniStack (vendored at aws_infra/) and use dummy credentials
 RUN mkdir -p /root/.aws && \
     printf '[default]\nregion = us-east-1\noutput = json\n' > /root/.aws/config && \
     printf '[default]\naws_access_key_id = test\naws_secret_access_key = test\n' > /root/.aws/credentials
@@ -104,7 +104,7 @@ CMD ["sh", "-c", "\
   POOL_SIZE=\"${AWS_RL_ENV_POOL_SIZE:-1}\"; \
   BASE_PORT=\"${AWS_RL_ENV_MINISTACK_BASE_PORT:-4566}\"; \
   i=0; while [ \"$i\" -lt \"$POOL_SIZE\" ]; do \
-    GATEWAY_PORT=$((BASE_PORT + i)) aws_infra -d; \
+    GATEWAY_PORT=$((BASE_PORT + i)) ministack -d; \
     i=$((i + 1)); \
   done; \
   sleep 3; \

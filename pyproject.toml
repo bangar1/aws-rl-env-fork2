@@ -15,7 +15,7 @@ description = "Aws Rl Env environment for OpenEnv"
 requires-python = "==3.12.*"
 dependencies = [
     "openenv-core[core]>=0.2.2",
-    "aws-infra",
+    "ministack",
     "python-dotenv>=1.0.0",
 ]
 
@@ -55,7 +55,7 @@ pythonpath = ["."]
 exclude = ["aws_infra/"]
 
 [tool.uv.sources]
-aws-infra = { path = "aws_infra", editable = true }
+ministack = { path = "aws_infra", editable = true }
 
 [tool.mypy]
 files = ["*.py", "server/"]

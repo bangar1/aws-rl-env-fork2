@@ -1,0 +1,74 @@
+name: Bug Report
+description: Something isn't working as expected
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug. Please fill out the details below.
+
+  - type: dropdown
+    id: service
+    attributes:
+      label: Affected Service
+      options:
+        - S3
+        - SQS
+        - SNS
+        - DynamoDB
+        - Lambda
+        - IAM / STS
+        - SecretsManager
+        - CloudWatch Logs
+        - SSM
+        - EventBridge
+        - Kinesis
+        - CloudWatch Metrics
+        - SES
+        - Step Functions
+        - ECS
+        - RDS
+        - ElastiCache
+        - Glue
+        - Athena
+        - Router / General
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: Describe the bug clearly.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction steps
+      description: Minimal code or CLI commands to reproduce.
+      render: python
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: MiniStack version
+      placeholder: "e.g. v0.1.0 or latest"
+    validations:
+      required: true
+
+  - type: input
+    id: sdk
+    attributes:
+      label: SDK / tool used
+      placeholder: "e.g. boto3 1.34, AWS CLI 2.15, Terraform 1.7"

@@ -61,7 +61,7 @@ run: ## Run MiniStack pool + FastAPI server. Env: POOL_SIZE (default 1), MINISTA
 	@for i in $$(seq 0 $$(($(POOL_SIZE) - 1))); do \
 		port=$$(($(MINISTACK_BASE_PORT) + $$i)); \
 		echo "    MiniStack :$$port"; \
-		GATEWAY_PORT=$$port aws_infra -d; \
+		GATEWAY_PORT=$$port ministack -d; \
 	done
 	@sleep 2
 	@echo "==> FastAPI server on $(SERVER_HOST):$(SERVER_PORT) (POOL_SIZE=$(POOL_SIZE))"
@@ -74,7 +74,7 @@ run-stop: ## Stop every MiniStack started by `make run` (uses current POOL_SIZE 
 	@for i in $$(seq 0 $$(($(POOL_SIZE) - 1))); do \
 		port=$$(($(MINISTACK_BASE_PORT) + $$i)); \
 		echo "    stopping MiniStack :$$port"; \
-		GATEWAY_PORT=$$port aws_infra --stop || true; \
+		GATEWAY_PORT=$$port ministack --stop || true; \
 	done
 
 # ──────────────────────────────────────────────

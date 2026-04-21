@@ -530,11 +530,11 @@ aws-rl-env/
 │   ├── test_advanced_tasks.py
 │   ├── test_expert_tasks.py
 │   └── test_drift_tasks.py
-├── aws_infra/                     # Vendored MiniStack emulator
-│   └── aws_infra/
+├── aws_infra/                     # MiniStack emulator (git subtree from ministackorg/ministack)
+│   └── ministack/
 │       ├── app.py                 # MiniStack ASGI router
 │       ├── core/                  # Routing, persistence, responses
-│       └── services/              # 34 AWS service implementations
+│       └── services/              # AWS service implementations
 ├── Dockerfile                     # Multi-stage build (server + MiniStack)
 ├── Makefile                       # Dev tasks: run, format, lint, docker-*
 ├── openenv.yaml                   # OpenEnv manifest

@@ -197,11 +197,7 @@ class TestServerAppImportIsSafeForLegacyPoolSizes:
         import subprocess
         import sys
 
-        code = (
-            "import server.app as m;"
-            "import sys;"
-            "sys.stdout.write(str(m.POOL_SIZE))"
-        )
+        code = "import server.app as m;import sys;sys.stdout.write(str(m.POOL_SIZE))"
         env = {**os.environ, "AWS_RL_ENV_POOL_SIZE": pool_size_env}
         result = subprocess.run(
             [sys.executable, "-c", code],

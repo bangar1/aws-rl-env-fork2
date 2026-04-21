@@ -55,7 +55,6 @@ def _make_env():
         patch("server.aws_rl_env_environment.AwsBackend") as MockBackend,
         patch("server.aws_rl_env_environment.Curriculum") as MockCurriculum,
         patch("server.aws_rl_env_environment.TaskGrader") as MockGrader,
-        patch("server.aws_rl_env_environment.EnvironmentDesigner") as MockDesigner,
         patch("server.aws_rl_env_environment.ChaosEngine") as MockChaos,
         patch("server.aws_rl_env_environment.HintProvider"),
     ):
