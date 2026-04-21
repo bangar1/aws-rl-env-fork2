@@ -7,8 +7,8 @@ one central Curriculum) and run concurrently via asyncio.gather.
 Usage (Colab cell):
     from scripts.grpo_pool import GrpoPool
 
-    async def rollout(env, task_id):
-        res = await env.reset(task_id=task_id)
+    async def rollout(env, task):
+        res = await env.reset(task=task)
         done = False
         total = 0.0
         while not done:
@@ -21,7 +21,7 @@ Usage (Colab cell):
     async with GrpoPool(base_url="https://tunnel.example.com", size=8) as pool:
         for _ in range(num_grpo_steps):
             task = pool.curriculum.next_task()
-            rewards = await pool.run_group(lambda e: rollout(e, task.task_id))
+            rewards = await pool.run_group(lambda e: rollout(e, task))
             pool.record_group_result(task, rewards)
 """
 
@@ -56,11 +56,27 @@ class GrpoPool:
         self.envs: List[AwsRlEnv] = []
 
     async def connect(self) -> None:
-        """Open N persistent WebSocket sessions. Each binds to its own MiniStack."""
+        """Open N persistent WebSocket sessions. Each binds to its own MiniStack.
+
+        All-or-nothing: if any single session fails to connect, every already
+        opened session is closed before re-raising, so the server's pool does
+        not leak slots and callers never see a half-initialised pool.
+        """
         if self.envs:
             return
-        self.envs = [AwsRlEnv(base_url=self.base_url) for _ in range(self.size)]
-        await asyncio.gather(*(e.connect() for e in self.envs))
+        envs = [AwsRlEnv(base_url=self.base_url) for _ in range(self.size)]
+        try:
+            await asyncio.gather(*(e.connect() for e in envs))
+        except BaseException:
+            # Roll back: close every env (successful or not). return_exceptions
+            # so a close() failure doesn't mask the original connect error.
+            await asyncio.gather(
+                *(e.close() for e in envs),
+                return_exceptions=True,
+            )
+            raise
+        # Only publish the pool after the entire group connected successfully.
+        self.envs = envs
         logger.info(
             "GrpoPool connected: %d sessions against %s", self.size, self.base_url
         )
@@ -72,9 +88,13 @@ class GrpoPool:
         await asyncio.gather(*(e.close() for e in self.envs), return_exceptions=True)
         self.envs = []
 
-    async def reset_group(self, task_id: int) -> None:
-        """Reset all N envs to the same task. Runs concurrently."""
-        await asyncio.gather(*(e.reset(task_id=task_id) for e in self.envs))
+    async def reset_group(self, task: Task) -> None:
+        """Reset all N envs onto the same task. Runs concurrently.
+
+        The full Task is serialised to the server, so envs do not have to
+        look the task up through their own curriculum.
+        """
+        await asyncio.gather(*(e.reset(task=task) for e in self.envs))
 
     async def run_group(
         self,

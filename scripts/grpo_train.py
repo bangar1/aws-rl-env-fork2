@@ -206,7 +206,7 @@ async def run_single_rollout(
     device: torch.device,
 ) -> Trajectory:
     """Drive one env through up to MAX_EPISODE_STEPS, recording every step."""
-    result = await env.reset(task_id=task.task_id)
+    result = await env.reset(task=task)
     history: List[Tuple[str, str]] = []
     steps: List[Step] = []
     total_reward = 0.0

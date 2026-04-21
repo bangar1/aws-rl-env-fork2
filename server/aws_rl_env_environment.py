@@ -26,7 +26,6 @@ from models import (
     EpisodeID,
     StepCount,
     Task,
-    TaskID,
     TaskInfo,
     TrackerState,
 )
@@ -34,6 +33,7 @@ from server.services.aws_backend import AwsBackend
 from server.services.chaos_engine import ChaosEngine
 from server.services.curriculum import Curriculum
 from server.services.environment_designer import EnvironmentDesigner
+from server.services.episode_context import EpisodeContext
 from server.services.episode_tracker import EpisodeTracker
 from server.services.hint_provider import HintProvider, MAX_HINT_LEVEL
 from server.services.task_grader import TaskGrader
@@ -58,8 +58,13 @@ class AwsRlEnvironment(Environment[AwsRlAction, AwsRlObservation, AwsRlState]):
         self._tracker = EpisodeTracker()
         self._chaos_engine = ChaosEngine(self._backend)
         self._hint_provider = HintProvider()
-        self._current_task: Task | None = None
+        self._episode: Optional[EpisodeContext] = None
         self._pool_release: Optional[Callable[[], None]] = None
+
+    @property
+    def _current_task(self) -> Optional[Task]:
+        """Convenience accessor — None until the first reset()."""
+        return self._episode.task if self._episode is not None else None
 
     def _sync_state(self) -> None:
         """Sync internal state to the AwsRlState object."""
@@ -74,26 +79,39 @@ class AwsRlEnvironment(Environment[AwsRlAction, AwsRlObservation, AwsRlState]):
             ],
         )
         self._state.chaos_occurred = self._chaos_engine.chaos_occurred
-        self._state.current_tier = self._curriculum.current_difficulty.value
+        self._state.current_tier = (
+            self._episode.tier.value
+            if self._episode is not None
+            else self._curriculum.current_difficulty.value
+        )
         self._state.infra_state = self._backend.get_infra_state()
 
     def reset(
         self,
         seed: Optional[int] = None,
         episode_id: Optional[str] = None,
-        task_id: Optional[TaskID] = None,
+        task: Optional[Task | dict] = None,
         **kwargs: Any,
     ) -> AwsRlObservation:
         self._backend.reset_environment()
         self._state = AwsRlState(episode_id=episode_id or str(uuid4()), step_count=0)
         self._tracker.reset()
         self._chaos_engine.reset()
-        if task_id is not None:
-            self._current_task = self._curriculum.get_task_by_id(task_id)
-        else:
-            self._current_task = self._curriculum.next_task()
 
-        self._designer.apply(self._current_task)
+        # Trainer mode: caller supplied the Task. Local curriculum stays
+        # untouched — the trainer owns result recording.
+        # Local mode: curriculum picks and records the task.
+        if task is not None:
+            # Client sends Task.model_dump() over the wire; coerce back.
+            task_obj = task if isinstance(task, Task) else Task(**task)
+            self._episode = EpisodeContext.for_external(task=task_obj)
+        else:
+            task_obj = self._curriculum.next_task()
+            self._episode = EpisodeContext.for_local(
+                task=task_obj, curriculum=self._curriculum
+            )
+
+        self._designer.apply(task_obj)
         self._sync_state()
 
         return AwsRlObservation(
@@ -101,7 +119,7 @@ class AwsRlEnvironment(Environment[AwsRlAction, AwsRlObservation, AwsRlState]):
             step_count=StepCount(self._state.step_count),
             command_success=True,
             command_output="Environment reset. Infra state wiped.",
-            task=TaskInfo.from_task(self._current_task) if self._current_task else None,
+            task=TaskInfo.from_task(task_obj),
             done=False,
             reward=0.0,
         )
@@ -178,7 +196,9 @@ class AwsRlEnvironment(Environment[AwsRlAction, AwsRlObservation, AwsRlState]):
         timeout_s: Optional[float] = None,
         **kwargs: Any,
     ) -> AwsRlObservation:
-        assert self._current_task is not None, "Call reset() before step()"
+        assert self._episode is not None, "Call reset() before step()"
+        episode = self._episode
+        task = episode.task
         self._state.step_count += 1
 
         command = action.command.strip()
@@ -193,7 +213,7 @@ class AwsRlEnvironment(Environment[AwsRlAction, AwsRlObservation, AwsRlState]):
 
         # Grade the task (pass cumulative chaos flag and hint count)
         grade_result = self._grader.grade(
-            self._current_task,
+            task,
             self._tracker,
             latest_step,
             chaos_occurred=self._chaos_engine.chaos_occurred,
@@ -202,16 +222,17 @@ class AwsRlEnvironment(Environment[AwsRlAction, AwsRlObservation, AwsRlState]):
         task_achieved = grade_result.task_achieved
         reward = grade_result.reward
 
-        if task_achieved:
-            self._curriculum.record_result(
-                self._current_task, achieved=True, reward=reward
-            )
+        # Terminal result recording: trainer mode has record_result=None and
+        # owns recording centrally; local mode wires back to self._curriculum.
+        if task_achieved and episode.record_result is not None:
+            episode.record_result(task, True, reward)
 
-        # Inject chaos AFTER grading — disrupts state for future steps
+        # Inject chaos AFTER grading — disrupts state for future steps.
+        # Chaos probability is per-task-tier, not per-curriculum-cursor.
         self._chaos_engine.maybe_inject(
-            self._current_task,
+            task,
             self._tracker,
-            self._curriculum.chaos_probability,
+            episode.chaos_probability,
         )
 
         self._sync_state()
@@ -222,7 +243,7 @@ class AwsRlEnvironment(Environment[AwsRlAction, AwsRlObservation, AwsRlState]):
             command_success=success,
             command_output=stdout,
             error=stderr,
-            task=TaskInfo.from_task(self._current_task) if self._current_task else None,
+            task=TaskInfo.from_task(task),
             task_achieved=task_achieved,
             partial_progress=self._tracker.previous_progress,
             done=task_achieved,

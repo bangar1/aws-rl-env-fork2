@@ -62,7 +62,10 @@ os.environ["ENABLE_WEB_INTERFACE"] = "false"
 # starts them up during container boot).
 # ---------------------------------------------------------------------------
 
-POOL_SIZE = int(os.getenv("AWS_RL_ENV_POOL_SIZE", "1"))
+# Clamp to >= 1. POOL_SIZE=0 or negative is interpreted as single-MiniStack
+# legacy mode — the same as POOL_SIZE=1. Without the clamp OpenEnv's
+# create_app() would reject max_concurrent_envs=0 at import time.
+POOL_SIZE = max(int(os.getenv("AWS_RL_ENV_POOL_SIZE", "1")), 1)
 BASE_MINISTACK_PORT = int(os.getenv("AWS_RL_ENV_MINISTACK_BASE_PORT", "4566"))
 
 

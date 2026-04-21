@@ -181,6 +181,54 @@ class TestFactorySingleMode:
         assert env._pool_release is None
 
 
+class TestServerAppImportIsSafeForLegacyPoolSizes:
+    """Regression: `AWS_RL_ENV_POOL_SIZE=0` used to crash at module import
+    because OpenEnv's create_app rejects `max_concurrent_envs=0`. The server
+    now clamps the raw env var to >= 1 so legacy-style zero / negative values
+    silently fall back to single-MiniStack mode.
+    """
+
+    def _import_server_app(self, pool_size_env: str) -> int:
+        """Import server.app in a fresh subprocess with a controlled env var.
+
+        Returns the POOL_SIZE the module settled on after clamping.
+        """
+        import os
+        import subprocess
+        import sys
+
+        code = (
+            "import server.app as m;"
+            "import sys;"
+            "sys.stdout.write(str(m.POOL_SIZE))"
+        )
+        env = {**os.environ, "AWS_RL_ENV_POOL_SIZE": pool_size_env}
+        result = subprocess.run(
+            [sys.executable, "-c", code],
+            env=env,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        assert result.returncode == 0, (
+            f"server.app import crashed with POOL_SIZE={pool_size_env!r}: "
+            f"stderr={result.stderr}"
+        )
+        return int(result.stdout.strip().splitlines()[-1])
+
+    def test_pool_size_zero_clamps_to_one(self) -> None:
+        assert self._import_server_app("0") == 1
+
+    def test_pool_size_negative_clamps_to_one(self) -> None:
+        assert self._import_server_app("-5") == 1
+
+    def test_pool_size_one_is_unchanged(self) -> None:
+        assert self._import_server_app("1") == 1
+
+    def test_pool_size_eight_is_unchanged(self) -> None:
+        assert self._import_server_app("8") == 8
+
+
 class TestFactoryMultiMode:
     def test_pool_size_8_creates_pool_of_8(self) -> None:
         pool, _ = make_env_factory(pool_size=8, base_port=4566)

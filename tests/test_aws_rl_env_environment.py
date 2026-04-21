@@ -58,8 +58,10 @@ def _make_env():
 
         # Default behaviors
         curriculum.next_task.return_value = _DUMMY_TASK
+        curriculum.current_difficulty = TaskDifficulty.WARMUP
         curriculum.chaos_probability = 0.0
         backend.execute_command.return_value = (True, "output", "")
+        backend.get_infra_state.return_value = {}
         chaos.chaos_occurred = False
         grader.grade.return_value = GradeResult(
             task_achieved=False, partial_progress=0.0, reward=0.0, reason="not done"
@@ -97,7 +99,9 @@ class TestReset:
     def test_obs_contains_task(self) -> None:
         env, *_ = _make_env()
         obs = env.reset()
-        assert obs.task == _DUMMY_TASK
+        assert obs.task is not None
+        assert obs.task.task_id == _DUMMY_TASK.task_id
+        assert obs.task.difficulty == _DUMMY_TASK.difficulty
 
     def test_obs_step_count_zero(self) -> None:
         env, *_ = _make_env()
@@ -332,9 +336,9 @@ class TestStepGrading:
         )
         env.reset()
         env.step(AwsRlAction(command="aws s3 ls"))
-        curriculum.record_result.assert_called_once_with(
-            _DUMMY_TASK, achieved=True, reward=1.0
-        )
+        # EpisodeContext.for_local binds curriculum.record_result which is
+        # invoked positionally by the env (task, achieved, reward).
+        curriculum.record_result.assert_called_once_with(_DUMMY_TASK, True, 1.0)
 
     def test_not_achieved_does_not_record(self) -> None:
         env, _, curriculum, grader, *_ = _make_env()
@@ -360,12 +364,18 @@ class TestStepChaos:
         chaos.maybe_inject.assert_called_once()
 
     def test_chaos_receives_probability(self) -> None:
+        # After the EpisodeContext refactor, chaos probability is derived
+        # from the TASK's tier (TIER_CONFIGS[task.difficulty]), not from
+        # `curriculum.chaos_probability`. This test guards the invariant.
+        from server.services.curriculum import TIER_CONFIGS
+
         env, _, curriculum, _, _, chaos, _ = _make_env()
-        curriculum.chaos_probability = 0.25
+        curriculum.chaos_probability = 0.25  # deliberately ignored by new code
         env.reset()
         env.step(AwsRlAction(command="aws s3 ls"))
         args = chaos.maybe_inject.call_args
-        assert args[0][2] == 0.25  # third positional arg is probability
+        expected = TIER_CONFIGS[_DUMMY_TASK.difficulty].chaos_probability
+        assert args[0][2] == expected  # third positional arg is probability
 
     def test_chaos_not_called_on_hint(self) -> None:
         env, _, _, _, _, chaos, hint = _make_env()

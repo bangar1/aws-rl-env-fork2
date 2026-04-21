@@ -17,7 +17,7 @@ from models import (
     EpisodeID,
     StepCount,
     AwsRlState,
-    TaskID,
+    Task,
 )
 
 
@@ -48,13 +48,18 @@ class AwsRlEnv(EnvClient[AwsRlAction, AwsRlObservation, AwsRlState]):
 
     async def reset(
         self,
-        task_id: Optional[TaskID] = None,
+        task: Optional[Task] = None,
         **kwargs: Any,
     ) -> StepResult[AwsRlObservation]:
-        """Reset the environment. Pass `task_id` to force a specific task
-        (used by training to keep all rollouts in a group on one prompt)."""
-        if task_id is not None:
-            kwargs["task_id"] = task_id
+        """Reset the environment.
+
+        Pass a `Task` object to force that exact task (trainer mode) — the
+        full task is serialised to the server so the env never has to look
+        it up through its own curriculum. Without `task`, the server's local
+        curriculum picks the next task.
+        """
+        if task is not None:
+            kwargs["task"] = task.model_dump()
         return await super().reset(**kwargs)
 
     def _step_payload(self, action: AwsRlAction) -> Dict:

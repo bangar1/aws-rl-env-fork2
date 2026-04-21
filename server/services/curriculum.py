@@ -299,20 +299,6 @@ class Curriculum:
 
         return task
 
-    def get_task_by_id(self, task_id: TaskID) -> Task:
-        """Look up a task by id, searching across all tiers if needed.
-
-        Used by GRPO training to force all rollouts in a group onto the same
-        task, bypassing the per-env priority queue.
-        """
-        if task_id in self._task_map:
-            return self._task_map[task_id]
-        for difficulty in self._levels:
-            for task in load_tier(difficulty, self._tasks_dir):
-                if task.task_id == task_id:
-                    return task
-        raise KeyError(f"task_id={task_id} not found in any tier")
-
     def record_result(self, task: Task, achieved: bool, reward: float = 0.0) -> None:
         """Record episode outcome, update mastery, check promotion."""
         self._episode_count += 1
