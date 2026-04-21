@@ -17,7 +17,6 @@ _DEFAULT_URL = os.getenv("AWS_INFRA_URL", "http://localhost:4566")
 
 
 class SimulatorStrategy(EnvironmentStrategy):
-
     def __init__(self, aws_infra_url: str = _DEFAULT_URL) -> None:
         self._aws_infra_url = aws_infra_url
 
@@ -87,7 +86,9 @@ class SimulatorStrategy(EnvironmentStrategy):
             "AWS_SECRET_ACCESS_KEY": "test",
             "AWS_DEFAULT_REGION": "us-east-1",
         }
-        print(f"Executing command: {command} with env AWS_ENDPOINT_URL={self._aws_infra_url}")
+        print(
+            f"Executing command: {command} with env AWS_ENDPOINT_URL={self._aws_infra_url}"
+        )
         try:
             result = subprocess.run(
                 shlex.split(command),

@@ -127,7 +127,9 @@ def make_env_factory(
 
         def factory() -> AwsRlEnvironment:
             port = pool.acquire()
-            env = AwsRlEnvironment(strategy=SimulatorStrategy(f"http://localhost:{port}"))
+            env = AwsRlEnvironment(
+                strategy=SimulatorStrategy(f"http://localhost:{port}")
+            )
             env._pool_release = lambda p=port: pool.release(p)
             return env
 

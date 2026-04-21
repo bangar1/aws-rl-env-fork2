@@ -84,7 +84,9 @@ def _load_static() -> dict[int, list[str]]:
 # ---------------------------------------------------------------------------
 
 
-def _advanced_commands(task_id: int, backend: EnvironmentStrategy, step: int) -> list[str]:
+def _advanced_commands(
+    task_id: int, backend: EnvironmentStrategy, step: int
+) -> list[str]:
     """Return the full ordered command list for an advanced task.
 
     Some commands depend on outputs from prior steps. We execute discovery

@@ -4,7 +4,6 @@ from abc import ABC, abstractmethod
 
 
 class EnvironmentStrategy(ABC):
-
     @abstractmethod
     def reset_environment(self) -> None: ...
 

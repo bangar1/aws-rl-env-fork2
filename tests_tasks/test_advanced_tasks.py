@@ -608,7 +608,9 @@ def test_all_advanced_tasks_have_commands(advanced_tasks: list[dict]) -> None:
 @pytest.mark.parametrize(
     "task_id", ALL_TASK_IDS, ids=[f"task_{t}" for t in ALL_TASK_IDS]
 )
-def test_advanced_task_commands_execute(task_id: int, backend: SimulatorStrategy) -> None:
+def test_advanced_task_commands_execute(
+    task_id: int, backend: SimulatorStrategy
+) -> None:
     """All commands must execute successfully against MiniStack."""
     results = _execute_task(task_id, backend)
     for i, (cmd, success, stdout, stderr) in enumerate(results):

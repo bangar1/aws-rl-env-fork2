@@ -13,7 +13,6 @@ logger = logging.getLogger(__name__)
 
 
 class AwsStrategy(EnvironmentStrategy):
-
     def __init__(self, region: str = "us-east-1") -> None:
         self._region = region
 
