@@ -11,7 +11,7 @@ import logging
 from pydantic import BaseModel, Field
 
 from models import SuccessCriteria, Task
-from server.services.aws_backend import AwsBackend
+from server.services.environment_strategy import EnvironmentStrategy
 from server.services.episode_tracker import EpisodeTracker, StepRecord
 from server.services.resource_verifier import ResourceVerifier
 
@@ -34,7 +34,7 @@ class TaskGrader:
     are populated on the task's ``SuccessCriteria``.
     """
 
-    def __init__(self, backend: AwsBackend) -> None:
+    def __init__(self, backend: EnvironmentStrategy) -> None:
         self._verifier = ResourceVerifier(backend)
 
     def grade(

@@ -13,7 +13,7 @@ import random
 import re
 
 from models import AwsService, Task
-from server.services.aws_backend import AwsBackend
+from server.services.environment_strategy import EnvironmentStrategy
 from server.services.episode_tracker import EpisodeTracker
 
 logger = logging.getLogger(__name__)
@@ -74,7 +74,7 @@ _PERTURBATION_TEMPLATES: dict[AwsService, list[str]] = {
 class ChaosEngine:
     """Silently mutates AWS state mid-episode to test agent resilience."""
 
-    def __init__(self, backend: AwsBackend) -> None:
+    def __init__(self, backend: EnvironmentStrategy) -> None:
         self._backend = backend
         self._enabled = os.environ.get("ENABLE_CHAOS", "true").lower() == "true"
         self._chaos_occurred = False

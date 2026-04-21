@@ -12,7 +12,7 @@ import json
 from unittest.mock import MagicMock
 
 
-from server.services.aws_backend import AwsBackend
+from server.services.environment_strategy import EnvironmentStrategy
 from server.services.resource_verifier import ResourceVerifier, _extract_json_path
 
 
@@ -21,9 +21,9 @@ from server.services.resource_verifier import ResourceVerifier, _extract_json_pa
 # ---------------------------------------------------------------------------
 
 
-def _mock_backend(responses: dict[str, tuple[bool, str, str]]) -> AwsBackend:
+def _mock_backend(responses: dict[str, tuple[bool, str, str]]) -> EnvironmentStrategy:
     """Create a mock AwsBackend that returns preset responses keyed by substring match."""
-    backend = MagicMock(spec=AwsBackend)
+    backend = MagicMock(spec=EnvironmentStrategy)
 
     def execute(cmd: str) -> tuple[bool, str, str]:
         for pattern, result in responses.items():

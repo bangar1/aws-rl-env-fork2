@@ -12,7 +12,7 @@ import logging
 import random
 
 from models import Task
-from server.services.aws_backend import AwsBackend
+from server.services.environment_strategy import EnvironmentStrategy
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +24,7 @@ _MAX_DRIFTS = 3
 class DriftEngine:
     """Selects and applies random configuration drifts for a task."""
 
-    def __init__(self, backend: AwsBackend) -> None:
+    def __init__(self, backend: EnvironmentStrategy) -> None:
         self._backend = backend
 
     def apply_drift(self, task: Task) -> list[str]:

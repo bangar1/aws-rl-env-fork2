@@ -17,7 +17,7 @@ import yaml
 from pathlib import Path
 
 from models import SuccessCriteria, Task, TaskID, TaskDifficulty, SetupCommand
-from server.services.aws_backend import AwsBackend
+from server.services.simulator_strategy import SimulatorStrategy
 from server.services.task_grader import TaskGrader
 from server.services.episode_tracker import EpisodeTracker
 from server.services.resource_verifier import ResourceVerifier
@@ -38,14 +38,14 @@ def all_drift_tasks() -> list[dict]:
 
 
 @pytest.fixture
-def backend() -> AwsBackend:
-    b = AwsBackend()
+def backend() -> SimulatorStrategy:
+    b = SimulatorStrategy()
     b.reset_environment()
     return b
 
 
 @pytest.fixture
-def grader(backend: AwsBackend) -> TaskGrader:
+def grader(backend: SimulatorStrategy) -> TaskGrader:
     return TaskGrader(backend)
 
 
@@ -88,7 +88,7 @@ with open(TASKS_FILE) as _f:
 def test_drift_setup_commands_execute(
     task_id: int,
     all_drift_tasks: list[dict],
-    backend: AwsBackend,
+    backend: SimulatorStrategy,
 ) -> None:
     """Every setup_command must succeed against MiniStack."""
     backend.reset_environment()
@@ -113,7 +113,7 @@ def test_drift_setup_commands_execute(
 def test_drift_state_checks_pass_after_setup(
     task_id: int,
     all_drift_tasks: list[dict],
-    backend: AwsBackend,
+    backend: SimulatorStrategy,
 ) -> None:
     """After running setup_commands, all state_checks must pass."""
     backend.reset_environment()
@@ -143,7 +143,7 @@ def test_drift_state_checks_pass_after_setup(
 def test_drift_grading_after_setup(
     task_id: int,
     all_drift_tasks: list[dict],
-    backend: AwsBackend,
+    backend: SimulatorStrategy,
     grader: TaskGrader,
 ) -> None:
     """The grader should mark the task as achieved when state is correct."""
@@ -178,7 +178,7 @@ def test_drift_grading_after_setup(
 def test_drift_mutations_break_state(
     task_id: int,
     all_drift_tasks: list[dict],
-    backend: AwsBackend,
+    backend: SimulatorStrategy,
 ) -> None:
     """Applying each drift mutation should cause at least one state_check to fail."""
     entry = next(t for t in all_drift_tasks if t["task_id"] == task_id)

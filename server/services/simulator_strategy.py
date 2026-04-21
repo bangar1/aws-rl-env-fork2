@@ -1,4 +1,6 @@
-"""Backend service for managing AWS interactions via MiniStack."""
+"""MiniStack-backed simulator strategy."""
+
+from __future__ import annotations
 
 import logging
 import os
@@ -7,19 +9,19 @@ import subprocess
 
 import httpx
 
+from server.services.environment_strategy import EnvironmentStrategy
+
 logger = logging.getLogger(__name__)
 
-AWS_INFRA_URL = os.getenv("AWS_INFRA_URL", "http://localhost:4566")
+_DEFAULT_URL = os.getenv("AWS_INFRA_URL", "http://localhost:4566")
 
 
-class AwsBackend:
-    """Backend service for executing AWS CLI commands against MiniStack."""
+class SimulatorStrategy(EnvironmentStrategy):
 
-    def __init__(self, aws_infra_url: str = AWS_INFRA_URL) -> None:
+    def __init__(self, aws_infra_url: str = _DEFAULT_URL) -> None:
         self._aws_infra_url = aws_infra_url
 
     def reset_environment(self) -> None:
-        """Wipe all MiniStack service state via POST /_ministack/reset."""
         try:
             resp = httpx.post(f"{self._aws_infra_url}/_ministack/reset", timeout=10)
             resp.raise_for_status()
@@ -29,7 +31,6 @@ class AwsBackend:
             raise
 
     def get_infra_state(self) -> dict:
-        """Fetch current infrastructure state from MiniStack via GET /_ministack/state."""
         try:
             resp = httpx.get(f"{self._aws_infra_url}/_ministack/state", timeout=10)
             resp.raise_for_status()
@@ -39,11 +40,6 @@ class AwsBackend:
             return {}
 
     def get_service_help(self, service_name: str) -> tuple[bool, str]:
-        """Fetch service info from MiniStack via GET /_ministack/handlers/<service>.
-
-        Returns:
-            Tuple of (success, formatted_help_text)
-        """
         try:
             resp = httpx.get(
                 f"{self._aws_infra_url}/_ministack/handlers/{service_name}",
@@ -84,14 +80,6 @@ class AwsBackend:
             return False, f"Failed to fetch service help: {e}"
 
     def execute_command(self, command: str) -> tuple[bool, str, str]:
-        """Execute an AWS CLI command against MiniStack.
-
-        Args:
-            command: Raw AWS CLI command, e.g. 'aws s3 ls'
-
-        Returns:
-            Tuple of (success, stdout, stderr)
-        """
         env = {
             **os.environ,
             "AWS_ENDPOINT_URL": self._aws_infra_url,
@@ -99,10 +87,7 @@ class AwsBackend:
             "AWS_SECRET_ACCESS_KEY": "test",
             "AWS_DEFAULT_REGION": "us-east-1",
         }
-        print(
-            f"Executing command: {command} with env AWS_ENDPOINT_URL={self._aws_infra_url}"
-        )
-
+        print(f"Executing command: {command} with env AWS_ENDPOINT_URL={self._aws_infra_url}")
         try:
             result = subprocess.run(
                 shlex.split(command),
@@ -111,11 +96,7 @@ class AwsBackend:
                 timeout=30,
                 env=env,
             )
-            return (
-                result.returncode == 0,
-                result.stdout,
-                result.stderr,
-            )
+            return result.returncode == 0, result.stdout, result.stderr
         except subprocess.TimeoutExpired:
             return False, "", "Command timed out after 30s"
         except Exception as e:

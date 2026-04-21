@@ -29,9 +29,10 @@ from models import (
     TaskInfo,
     TrackerState,
 )
-from server.services.aws_backend import AwsBackend
 from server.services.chaos_engine import ChaosEngine
 from server.services.curriculum import Curriculum
+from server.services.environment_strategy import EnvironmentStrategy
+from server.services.simulator_strategy import SimulatorStrategy
 from server.services.environment_designer import EnvironmentDesigner
 from server.services.episode_context import EpisodeContext
 from server.services.episode_tracker import EpisodeTracker
@@ -44,14 +45,10 @@ logger = logging.getLogger(__name__)
 class AwsRlEnvironment(Environment[AwsRlAction, AwsRlObservation, AwsRlState]):
     SUPPORTS_CONCURRENT_SESSIONS: bool = True
 
-    def __init__(self, aws_infra_url: Optional[str] = None) -> None:
+    def __init__(self, strategy: Optional[EnvironmentStrategy] = None) -> None:
         print("Initializing AWS RL Environment...")
         self._state = AwsRlState(episode_id=str(uuid4()), step_count=0)
-        self._backend = (
-            AwsBackend(aws_infra_url=aws_infra_url)
-            if aws_infra_url is not None
-            else AwsBackend()
-        )
+        self._backend = strategy if strategy is not None else SimulatorStrategy()
         self._curriculum = Curriculum()
         self._grader = TaskGrader(self._backend)
         self._designer = EnvironmentDesigner(self._backend)

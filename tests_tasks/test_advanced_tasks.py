@@ -15,7 +15,7 @@ import yaml
 from pathlib import Path
 
 from models import SuccessCriteria, Task, TaskID, TaskDifficulty, SetupCommand
-from server.services.aws_backend import AwsBackend
+from server.services.simulator_strategy import SimulatorStrategy
 from server.services.task_grader import TaskGrader
 from server.services.episode_tracker import EpisodeTracker
 
@@ -32,7 +32,7 @@ _ROLE = "arn:aws:iam::000000000000:role"
 _SIMPLE_POLICY = '\'{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Action":"s3:GetObject","Resource":"*"}]}\''
 
 
-def _run(backend: AwsBackend, cmd: str) -> tuple[str, bool, str, str]:
+def _run(backend: SimulatorStrategy, cmd: str) -> tuple[str, bool, str, str]:
     """Execute a command and return (cmd, success, stdout, stderr)."""
     success, stdout, stderr = backend.execute_command(cmd)
     return (cmd, success, stdout, stderr)
@@ -56,7 +56,7 @@ def _assume(service: str) -> str:
 
 
 def _execute_task(
-    task_id: int, backend: AwsBackend
+    task_id: int, backend: SimulatorStrategy
 ) -> list[tuple[str, bool, str, str]]:
     """Execute the full command sequence for a task, returning all results.
 
@@ -569,14 +569,14 @@ ALL_TASK_IDS = [
 
 
 @pytest.fixture
-def backend() -> AwsBackend:
-    b = AwsBackend()
+def backend() -> SimulatorStrategy:
+    b = SimulatorStrategy()
     b.reset_environment()
     return b
 
 
 @pytest.fixture
-def grader(backend: AwsBackend) -> TaskGrader:
+def grader(backend: SimulatorStrategy) -> TaskGrader:
     return TaskGrader(backend)
 
 
@@ -608,7 +608,7 @@ def test_all_advanced_tasks_have_commands(advanced_tasks: list[dict]) -> None:
 @pytest.mark.parametrize(
     "task_id", ALL_TASK_IDS, ids=[f"task_{t}" for t in ALL_TASK_IDS]
 )
-def test_advanced_task_commands_execute(task_id: int, backend: AwsBackend) -> None:
+def test_advanced_task_commands_execute(task_id: int, backend: SimulatorStrategy) -> None:
     """All commands must execute successfully against MiniStack."""
     results = _execute_task(task_id, backend)
     for i, (cmd, success, stdout, stderr) in enumerate(results):
@@ -625,7 +625,7 @@ def test_advanced_task_commands_execute(task_id: int, backend: AwsBackend) -> No
 def test_advanced_task_grading(
     task_id: int,
     advanced_tasks: list[dict],
-    backend: AwsBackend,
+    backend: SimulatorStrategy,
     grader: TaskGrader,
 ) -> None:
     """Execute full sequence and verify grader marks task as achieved."""
@@ -658,7 +658,7 @@ def test_advanced_task_grading(
 def test_advanced_task_partial_gives_no_completion(
     task_id: int,
     advanced_tasks: list[dict],
-    backend: AwsBackend,
+    backend: SimulatorStrategy,
     grader: TaskGrader,
 ) -> None:
     """Executing only the first command should not achieve a multi-step task."""

@@ -16,7 +16,7 @@ import yaml
 from pathlib import Path
 
 from models import SuccessCriteria, Task, TaskID, TaskDifficulty, SetupCommand
-from server.services.aws_backend import AwsBackend
+from server.services.simulator_strategy import SimulatorStrategy
 from server.services.task_grader import TaskGrader
 from server.services.episode_tracker import EpisodeTracker
 
@@ -104,12 +104,12 @@ BEGINNER_COMMANDS: dict[int, str] = {
 
 
 @pytest.fixture(scope="module")
-def backend() -> AwsBackend:
-    return AwsBackend()
+def backend() -> SimulatorStrategy:
+    return SimulatorStrategy()
 
 
 @pytest.fixture(scope="module")
-def grader(backend: AwsBackend) -> TaskGrader:
+def grader(backend: SimulatorStrategy) -> TaskGrader:
     return TaskGrader(backend)
 
 
@@ -148,7 +148,7 @@ def test_all_beginner_tasks_have_commands(beginner_tasks: list[dict]) -> None:
 )
 def test_beginner_task_command_executes(
     task_id: int,
-    backend: AwsBackend,
+    backend: SimulatorStrategy,
 ) -> None:
     """The create command must execute successfully against MiniStack."""
     backend.reset_environment()
@@ -167,7 +167,7 @@ def test_beginner_task_command_executes(
 def test_beginner_task_grading(
     task_id: int,
     beginner_tasks: list[dict],
-    backend: AwsBackend,
+    backend: SimulatorStrategy,
     grader: TaskGrader,
 ) -> None:
     """Create the resource and verify the grader marks the task as achieved."""
@@ -209,7 +209,7 @@ def test_beginner_task_grading(
 def test_beginner_task_rejects_wrong_command(
     task_id: int,
     beginner_tasks: list[dict],
-    backend: AwsBackend,
+    backend: SimulatorStrategy,
     grader: TaskGrader,
 ) -> None:
     """A wrong command should not achieve a beginner task."""

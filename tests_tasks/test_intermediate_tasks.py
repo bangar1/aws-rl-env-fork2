@@ -18,7 +18,7 @@ import yaml
 from pathlib import Path
 
 from models import SuccessCriteria, Task, TaskID, TaskDifficulty, SetupCommand
-from server.services.aws_backend import AwsBackend
+from server.services.simulator_strategy import SimulatorStrategy
 from server.services.task_grader import TaskGrader
 from server.services.episode_tracker import EpisodeTracker
 
@@ -324,7 +324,7 @@ _DYNAMIC_TASK_IDS = {76, 78, 82, 84}
 
 
 def _execute_all_commands(
-    task_id: int, backend: AwsBackend
+    task_id: int, backend: SimulatorStrategy
 ) -> list[tuple[str, bool, str, str]]:
     """Execute static commands, resolve dynamic follow-ups, return all (cmd, ok, out, err)."""
     static_cmds = INTERMEDIATE_COMMANDS[task_id]
@@ -345,12 +345,12 @@ def _execute_all_commands(
 
 
 @pytest.fixture(scope="module")
-def backend() -> AwsBackend:
-    return AwsBackend()
+def backend() -> SimulatorStrategy:
+    return SimulatorStrategy()
 
 
 @pytest.fixture(scope="module")
-def grader(backend: AwsBackend) -> TaskGrader:
+def grader(backend: SimulatorStrategy) -> TaskGrader:
     return TaskGrader(backend)
 
 
@@ -391,7 +391,7 @@ def test_all_intermediate_tasks_have_commands(intermediate_tasks: list[dict]) ->
 )
 def test_intermediate_task_commands_execute(
     task_id: int,
-    backend: AwsBackend,
+    backend: SimulatorStrategy,
 ) -> None:
     """All commands in the sequence must execute successfully against MiniStack."""
     backend.reset_environment()
@@ -412,7 +412,7 @@ def test_intermediate_task_commands_execute(
 def test_intermediate_task_grading(
     task_id: int,
     intermediate_tasks: list[dict],
-    backend: AwsBackend,
+    backend: SimulatorStrategy,
     grader: TaskGrader,
 ) -> None:
     """Execute the full command sequence and verify the grader marks the task as achieved."""
@@ -448,7 +448,7 @@ def test_intermediate_task_grading(
 def test_intermediate_task_partial_gives_no_completion(
     task_id: int,
     intermediate_tasks: list[dict],
-    backend: AwsBackend,
+    backend: SimulatorStrategy,
     grader: TaskGrader,
 ) -> None:
     """Executing only the first command of a multi-step task should not achieve it."""

@@ -52,7 +52,7 @@ _EXPERT = _make_task(TaskDifficulty.EXPERT, task_id=18)
 def _make_env():
     """Build an AwsRlEnvironment with all heavy dependencies mocked."""
     with (
-        patch("server.aws_rl_env_environment.AwsBackend") as MockBackend,
+        patch("server.aws_rl_env_environment.SimulatorStrategy") as MockBackend,
         patch("server.aws_rl_env_environment.Curriculum") as MockCurriculum,
         patch("server.aws_rl_env_environment.TaskGrader") as MockGrader,
         patch("server.aws_rl_env_environment.ChaosEngine") as MockChaos,

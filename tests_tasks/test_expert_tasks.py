@@ -19,7 +19,7 @@ import yaml
 from pathlib import Path
 
 from models import SuccessCriteria, Task, TaskID, TaskDifficulty, SetupCommand
-from server.services.aws_backend import AwsBackend
+from server.services.simulator_strategy import SimulatorStrategy
 from server.services.task_grader import TaskGrader
 from server.services.episode_tracker import EpisodeTracker
 
@@ -406,7 +406,7 @@ def _track_state(cmd: str, stdout: str, state: dict[str, str]) -> None:
 
 
 def _execute_setup(
-    task_entry: dict, backend: AwsBackend
+    task_entry: dict, backend: SimulatorStrategy
 ) -> tuple[list[tuple[str, bool, str, str]], dict[str, str]]:
     """Execute setup commands with patching; return results and tracked state."""
     results: list[tuple[str, bool, str, str]] = []
@@ -423,7 +423,7 @@ def _execute_setup(
 
 
 def _resolve_dynamic_commands(
-    task_id: int, backend: AwsBackend, state: dict[str, str]
+    task_id: int, backend: SimulatorStrategy, state: dict[str, str]
 ) -> list[str]:
     """Generate commands that depend on dynamic IDs from setup state."""
     if task_id == 111:
@@ -565,7 +565,7 @@ def _resolve_dynamic_commands(
 
 
 def _execute_all_commands(
-    task_id: int, backend: AwsBackend, state: dict[str, str] | None = None
+    task_id: int, backend: SimulatorStrategy, state: dict[str, str] | None = None
 ) -> list[tuple[str, bool, str, str]]:
     """Execute static + dynamic solution commands, return all (cmd, ok, out, err)."""
     if state is None:
@@ -596,12 +596,12 @@ def _execute_all_commands(
 
 
 @pytest.fixture(scope="module")
-def backend() -> AwsBackend:
-    return AwsBackend()
+def backend() -> SimulatorStrategy:
+    return SimulatorStrategy()
 
 
 @pytest.fixture(scope="module")
-def grader(backend: AwsBackend) -> TaskGrader:
+def grader(backend: SimulatorStrategy) -> TaskGrader:
     return TaskGrader(backend)
 
 
@@ -661,7 +661,7 @@ def test_all_expert_tasks_have_commands(expert_tasks: list[dict]) -> None:
 def test_expert_task_setup_executes(
     task_id: int,
     expert_tasks: list[dict],
-    backend: AwsBackend,
+    backend: SimulatorStrategy,
 ) -> None:
     """All setup commands must execute successfully to provision initial state."""
     entry = next((t for t in expert_tasks if t["task_id"] == task_id), None)
@@ -685,7 +685,7 @@ def test_expert_task_setup_executes(
 def test_expert_task_commands_execute(
     task_id: int,
     expert_tasks: list[dict],
-    backend: AwsBackend,
+    backend: SimulatorStrategy,
 ) -> None:
     """All solution commands must execute successfully after setup."""
     entry = next((t for t in expert_tasks if t["task_id"] == task_id), None)
@@ -710,7 +710,7 @@ def test_expert_task_commands_execute(
 def test_expert_task_grading(
     task_id: int,
     expert_tasks: list[dict],
-    backend: AwsBackend,
+    backend: SimulatorStrategy,
     grader: TaskGrader,
 ) -> None:
     """Execute setup + full solution and verify the grader marks the task as achieved."""
@@ -747,7 +747,7 @@ def test_expert_task_grading(
 def test_expert_task_setup_only_gives_no_completion(
     task_id: int,
     expert_tasks: list[dict],
-    backend: AwsBackend,
+    backend: SimulatorStrategy,
     grader: TaskGrader,
 ) -> None:
     """Running only setup commands (no agent fix actions) should not achieve the task."""
@@ -779,7 +779,7 @@ def test_expert_task_setup_only_gives_no_completion(
 def test_expert_task_partial_gives_no_completion(
     task_id: int,
     expert_tasks: list[dict],
-    backend: AwsBackend,
+    backend: SimulatorStrategy,
     grader: TaskGrader,
 ) -> None:
     """Executing only the first solution command should not achieve a multi-step task."""

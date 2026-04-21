@@ -47,6 +47,8 @@ except Exception as e:  # pragma: no cover
 
 from models import AwsRlAction, AwsRlObservation
 from server.aws_rl_env_environment import AwsRlEnvironment
+from server.services.aws_strategy import AwsStrategy
+from server.services.simulator_strategy import SimulatorStrategy
 
 # Force ENABLE_WEB_INTERFACE=false so OpenEnv creates API-only app (no Gradio)
 os.environ["ENABLE_WEB_INTERFACE"] = "false"
@@ -67,6 +69,7 @@ os.environ["ENABLE_WEB_INTERFACE"] = "false"
 # create_app() would reject max_concurrent_envs=0 at import time.
 POOL_SIZE = max(int(os.getenv("AWS_RL_ENV_POOL_SIZE", "1")), 1)
 BASE_MINISTACK_PORT = int(os.getenv("AWS_RL_ENV_MINISTACK_BASE_PORT", "4566"))
+BACKEND_TYPE = os.getenv("BACKEND_TYPE", "simulator")  # "simulator" | "aws"
 
 
 class MiniStackPool:
@@ -101,12 +104,14 @@ class MiniStackPool:
 def make_env_factory(
     pool_size: int,
     base_port: int,
+    backend_type: str = "simulator",
 ) -> tuple[MiniStackPool | None, Callable[[], AwsRlEnvironment]]:
     """Build the WebSocket-session env factory.
 
     Returns (pool, factory).
 
-    - pool_size <= 1: returns (None, plain AwsRlEnvironment constructor).
+    - backend_type="aws": pool is skipped; all sessions share AwsStrategy.
+    - pool_size <= 1: returns (None, plain SimulatorStrategy constructor).
     - pool_size >  1: returns (MiniStackPool, factory that acquires a port,
       constructs AwsRlEnvironment bound to that port, and injects a
       release callback so env.close() returns the port to the pool).
@@ -114,21 +119,24 @@ def make_env_factory(
     Extracted as a pure function so tests can exercise both branches
     without reloading the module.
     """
+    if backend_type == "aws":
+        return None, lambda: AwsRlEnvironment(strategy=AwsStrategy())
+
     if pool_size > 1:
         pool = MiniStackPool(range(base_port, base_port + pool_size))
 
         def factory() -> AwsRlEnvironment:
             port = pool.acquire()
-            env = AwsRlEnvironment(aws_infra_url=f"http://localhost:{port}")
+            env = AwsRlEnvironment(strategy=SimulatorStrategy(f"http://localhost:{port}"))
             env._pool_release = lambda p=port: pool.release(p)
             return env
 
         return pool, factory
 
-    return None, lambda: AwsRlEnvironment()
+    return None, lambda: AwsRlEnvironment(strategy=SimulatorStrategy())
 
 
-_pool, _env_factory = make_env_factory(POOL_SIZE, BASE_MINISTACK_PORT)
+_pool, _env_factory = make_env_factory(POOL_SIZE, BASE_MINISTACK_PORT, BACKEND_TYPE)
 
 
 app = create_app(

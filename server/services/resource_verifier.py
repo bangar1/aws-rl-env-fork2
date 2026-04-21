@@ -6,7 +6,7 @@ import json
 import logging
 from typing import Any
 
-from server.services.aws_backend import AwsBackend
+from server.services.environment_strategy import EnvironmentStrategy
 
 logger = logging.getLogger(__name__)
 
@@ -54,7 +54,7 @@ def _extract_json_path(data: Any, path: str) -> Any:
 class ResourceVerifier:
     """Verifies resource state by querying MiniStack via AWS CLI."""
 
-    def __init__(self, backend: AwsBackend) -> None:
+    def __init__(self, backend: EnvironmentStrategy) -> None:
         self._backend = backend
 
     def resource_exists(self, service: str, name: str) -> bool:

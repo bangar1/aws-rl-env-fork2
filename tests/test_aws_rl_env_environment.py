@@ -37,7 +37,7 @@ _DUMMY_TASK = Task(
 def _make_env():
     """Create an AwsRlEnvironment with all dependencies mocked."""
     with (
-        patch("server.aws_rl_env_environment.AwsBackend") as MockBackend,
+        patch("server.aws_rl_env_environment.SimulatorStrategy") as MockBackend,
         patch("server.aws_rl_env_environment.Curriculum") as MockCurriculum,
         patch("server.aws_rl_env_environment.TaskGrader") as MockGrader,
         patch("server.aws_rl_env_environment.EnvironmentDesigner") as MockDesigner,

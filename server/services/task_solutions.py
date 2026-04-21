@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from server.services.aws_backend import AwsBackend
+    from server.services.environment_strategy import EnvironmentStrategy
     from server.services.episode_tracker import EpisodeTracker
 
 _ROLE = "arn:aws:iam::000000000000:role"
@@ -84,7 +84,7 @@ def _load_static() -> dict[int, list[str]]:
 # ---------------------------------------------------------------------------
 
 
-def _advanced_commands(task_id: int, backend: AwsBackend, step: int) -> list[str]:
+def _advanced_commands(task_id: int, backend: EnvironmentStrategy, step: int) -> list[str]:
     """Return the full ordered command list for an advanced task.
 
     Some commands depend on outputs from prior steps. We execute discovery
@@ -617,7 +617,7 @@ def _advanced_commands(task_id: int, backend: AwsBackend, step: int) -> list[str
 
 
 def _expert_dynamic_command(
-    task_id: int, backend: AwsBackend, step: int, static_cmds: list[str]
+    task_id: int, backend: EnvironmentStrategy, step: int, static_cmds: list[str]
 ) -> list[str]:
     """Append dynamically resolved commands for expert tasks that need runtime IDs."""
     cmds = list(static_cmds)
@@ -702,7 +702,7 @@ def _expert_dynamic_command(
 
 
 def _intermediate_dynamic(
-    task_id: int, backend: AwsBackend, step: int, static_cmds: list[str]
+    task_id: int, backend: EnvironmentStrategy, step: int, static_cmds: list[str]
 ) -> list[str]:
     """Resolve dynamic follow-up commands for intermediate tasks."""
     cmds = list(static_cmds)
@@ -803,7 +803,7 @@ _EXPERT_DYNAMIC_IDS = {114, 115, 126}
 
 def get_next_solution(
     task_id: int,
-    backend: AwsBackend,
+    backend: EnvironmentStrategy,
     tracker: EpisodeTracker,
 ) -> dict:
     """Return the next solution command for the given task.

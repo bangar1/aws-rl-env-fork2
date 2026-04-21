@@ -13,7 +13,7 @@ from enum import Enum
 from pydantic import BaseModel, Field
 
 from models import SetupCommand, Task
-from server.services.aws_backend import AwsBackend
+from server.services.environment_strategy import EnvironmentStrategy
 from server.services.drift_engine import DriftEngine
 
 logger = logging.getLogger(__name__)
@@ -46,7 +46,7 @@ class EnvironmentDesigner:
             logger.error("Failed to set up environment: %s", result.errors)
     """
 
-    def __init__(self, backend: AwsBackend) -> None:
+    def __init__(self, backend: EnvironmentStrategy) -> None:
         self._backend = backend
         self._drift_engine = DriftEngine(backend)
 
