@@ -33,6 +33,8 @@ train = [
     # .venv/bin/python -m ipykernel install --user --name aws-rl-env --display-name "Python (aws-rl-env)"
     "ipykernel",
     "ipywidgets>=8.1.0",
+    "datasets>=4.8.4",
+    "huggingface-hub>=1.9.0",
 ]
 
 

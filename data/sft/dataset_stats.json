@@ -1,0 +1,229 @@
+{
+  "train": {
+    "total": 1500,
+    "by_source": {
+      "verification": 67,
+      "multi_step_continuation": 301,
+      "success_first_step": 826,
+      "hint_usage": 74,
+      "failure_recovery": 232
+    },
+    "by_source_pct": {
+      "verification": 0.045,
+      "multi_step_continuation": 0.201,
+      "success_first_step": 0.551,
+      "hint_usage": 0.049,
+      "failure_recovery": 0.155
+    },
+    "by_tier": {
+      "intermediate": 666,
+      "warmup": 456,
+      "beginner": 378
+    },
+    "by_tier_pct": {
+      "intermediate": 0.444,
+      "warmup": 0.304,
+      "beginner": 0.252
+    },
+    "unique_tasks": 72,
+    "top_tasks": [
+      [
+        86,
+        47
+      ],
+      [
+        13,
+        40
+      ],
+      [
+        67,
+        37
+      ],
+      [
+        14,
+        36
+      ],
+      [
+        68,
+        35
+      ],
+      [
+        85,
+        35
+      ],
+      [
+        69,
+        34
+      ],
+      [
+        80,
+        33
+      ],
+      [
+        72,
+        33
+      ],
+      [
+        11,
+        32
+      ]
+    ]
+  },
+  "val": {
+    "total": 150,
+    "by_source": {
+      "success_first_step": 92,
+      "multi_step_continuation": 28,
+      "hint_usage": 6,
+      "failure_recovery": 16,
+      "verification": 8
+    },
+    "by_source_pct": {
+      "success_first_step": 0.613,
+      "multi_step_continuation": 0.187,
+      "hint_usage": 0.04,
+      "failure_recovery": 0.107,
+      "verification": 0.053
+    },
+    "by_tier": {
+      "warmup": 47,
+      "intermediate": 67,
+      "beginner": 36
+    },
+    "by_tier_pct": {
+      "warmup": 0.313,
+      "intermediate": 0.447,
+      "beginner": 0.24
+    },
+    "unique_tasks": 63,
+    "top_tasks": [
+      [
+        66,
+        7
+      ],
+      [
+        2,
+        6
+      ],
+      [
+        67,
+        6
+      ],
+      [
+        11,
+        6
+      ],
+      [
+        74,
+        5
+      ],
+      [
+        70,
+        5
+      ],
+      [
+        32,
+        5
+      ],
+      [
+        71,
+        4
+      ],
+      [
+        42,
+        4
+      ],
+      [
+        37,
+        3
+      ]
+    ]
+  },
+  "reserve": {
+    "total": 200,
+    "by_source": {
+      "failure_recovery": 30,
+      "success_first_step": 100,
+      "multi_step_continuation": 41,
+      "verification": 17,
+      "hint_usage": 12
+    },
+    "by_source_pct": {
+      "failure_recovery": 0.15,
+      "success_first_step": 0.5,
+      "multi_step_continuation": 0.205,
+      "verification": 0.085,
+      "hint_usage": 0.06
+    },
+    "by_tier": {
+      "warmup": 74,
+      "intermediate": 89,
+      "beginner": 37
+    },
+    "by_tier_pct": {
+      "warmup": 0.37,
+      "intermediate": 0.445,
+      "beginner": 0.185
+    },
+    "unique_tasks": 66,
+    "top_tasks": [
+      [
+        72,
+        10
+      ],
+      [
+        81,
+        7
+      ],
+      [
+        34,
+        6
+      ],
+      [
+        86,
+        6
+      ],
+      [
+        74,
+        6
+      ],
+      [
+        67,
+        6
+      ],
+      [
+        71,
+        6
+      ],
+      [
+        27,
+        5
+      ],
+      [
+        0,
+        5
+      ],
+      [
+        42,
+        5
+      ]
+    ]
+  },
+  "targets": {
+    "source_mix": {
+      "success_first_step": 0.55,
+      "multi_step_continuation": 0.2,
+      "failure_recovery": 0.15,
+      "verification": 0.05,
+      "hint_usage": 0.05
+    },
+    "tier_weights": {
+      "warmup": 0.5,
+      "beginner": 0.3,
+      "intermediate": 0.15,
+      "advanced": 0.05,
+      "expert": 0.0
+    }
+  },
+  "seed": 42
+}
