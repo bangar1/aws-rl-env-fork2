@@ -1,0 +1,218 @@
+[
+  {
+    "task": 37,
+    "tier": "warmup",
+    "latency": 54.28046274185181,
+    "len": 0,
+    "answer": "",
+    "match": false
+  },
+  {
+    "task": 12,
+    "tier": "intermediate",
+    "latency": 8.290419101715088,
+    "len": 72,
+    "answer": "aws dynamodb create-table --table-name orders --partition-key 'order_id'",
+    "match": false
+  },
+  {
+    "task": 72,
+    "tier": "intermediate",
+    "latency": 7.423021078109741,
+    "len": 284,
+    "answer": "aws lambda: create-function --region us-west-2 --output \" scheduled-task.py\" \\",
+    "match": false
+  },
+  {
+    "task": 9,
+    "tier": "beginner",
+    "latency": 15.53481388092041,
+    "len": 351,
+    "answer": "To create an SNS topic named 'notifications', we need to establish an endpoint where messages can be",
+    "match": false
+  },
+  {
+    "task": 60,
+    "tier": "beginner",
+    "latency": 13.613614082336426,
+    "len": 602,
+    "answer": "The next step is to create an API Gateway named 'payments-api' using the `aws apigatewayv2` command ",
+    "match": false
+  },
+  {
+    "task": 83,
+    "tier": "intermediate",
+    "latency": 9.628867149353027,
+    "len": 90,
+    "answer": "aws s3 create-bucket firehose-delivery",
+    "match": false
+  },
+  {
+    "task": 5,
+    "tier": "warmup",
+    "latency": 60.064430952072144,
+    "len": 0,
+    "answer": "",
+    "match": false
+  },
+  {
+    "task": 2,
+    "tier": "warmup",
+    "latency": 10.473068714141846,
+    "len": 336,
+    "answer": "aws dynamodb lists --exit",
+    "match": false
+  },
+  {
+    "task": 47,
+    "tier": "beginner",
+    "latency": 13.250765800476074,
+    "len": 376,
+    "answer": "To create the secret 'db-credentials' in Secrets Manager using AWS CLI:\n\n1. Create an S3 bucket: `aw",
+    "match": false
+  },
+  {
+    "task": 66,
+    "tier": "intermediate",
+    "latency": 13.784569025039673,
+    "len": 472,
+    "answer": "aws s3 create-bucket app-assets",
+    "match": false
+  },
+  {
+    "task": 31,
+    "tier": "warmup",
+    "latency": 14.71139407157898,
+    "len": 35,
+    "answer": "aws elastic describe-cache-clusters",
+    "match": false
+  },
+  {
+    "task": 58,
+    "tier": "beginner",
+    "latency": 11.794392108917236,
+    "len": 106,
+    "answer": "aws cloudformation create-stack --template-body '{\"AWSTemplateFormatVersion\":\"2010-09-09\",\"Resources",
+    "match": false
+  },
+  {
+    "task": 67,
+    "tier": "intermediate",
+    "latency": 15.779146194458008,
+    "len": 153,
+    "answer": "aws dynamodb create-table --table-name user-sessions --partition-key session_id",
+    "match": false
+  },
+  {
+    "task": 11,
+    "tier": "intermediate",
+    "latency": 7.437592029571533,
+    "len": 43,
+    "answer": "aws s3 bucket-create --bucket data-pipeline",
+    "match": false
+  },
+  {
+    "task": 56,
+    "tier": "beginner",
+    "latency": 15.874552965164185,
+    "len": 714,
+    "answer": "aws ssm params --key-value myparams.json",
+    "match": false
+  },
+  {
+    "task": 74,
+    "tier": "intermediate",
+    "latency": 12.650897026062012,
+    "len": 703,
+    "answer": "aws secretsmanager create-secret --name rds-master-password --secret-string '{\"host\":\"db.local\",\"por",
+    "match": false
+  },
+  {
+    "task": 1,
+    "tier": "warmup",
+    "latency": 6.757205963134766,
+    "len": 145,
+    "answer": "aws ec2 list-instances --status",
+    "match": false
+  },
+  {
+    "task": 54,
+    "tier": "beginner",
+    "latency": 7.496580123901367,
+    "len": 41,
+    "answer": "aws efs create-file-system shared-storage",
+    "match": false
+  },
+  {
+    "task": 78,
+    "tier": "intermediate",
+    "latency": 13.132467031478882,
+    "len": 86,
+    "answer": "'aws ebs create-volume data-volume us-east-1a gp3 20'\n'aws ebs tag-volume data-volume'",
+    "match": false
+  },
+  {
+    "task": 85,
+    "tier": "intermediate",
+    "latency": 12.821953773498535,
+    "len": 243,
+    "answer": "aws dynamodb create-table --table-name products --key-schema AttributeName=product_id,AttributeName=",
+    "match": false
+  },
+  {
+    "task": 67,
+    "tier": "intermediate",
+    "latency": 11.840989112854004,
+    "len": 438,
+    "answer": "aws s3api create-bucket --bucket session-exports",
+    "match": false
+  },
+  {
+    "task": 13,
+    "tier": "intermediate",
+    "latency": 13.328326225280762,
+    "len": 427,
+    "answer": "aws s3 topic --name Alerts",
+    "match": false
+  },
+  {
+    "task": 86,
+    "tier": "intermediate",
+    "latency": 15.017242908477783,
+    "len": 280,
+    "answer": "aws iam checkRolePolicy --role-name firehose-delivery-role --policy-name s3-write-policy",
+    "match": false
+  },
+  {
+    "task": 82,
+    "tier": "intermediate",
+    "latency": 10.307376146316528,
+    "len": 473,
+    "answer": "aws apigwv2 create-endpoint --name products-api-endpoint --region us-west-2 --protocol-type http --r",
+    "match": false
+  },
+  {
+    "task": 32,
+    "tier": "warmup",
+    "latency": 15.806228876113892,
+    "len": 120,
+    "answer": "aws athena query --list",
+    "match": false
+  },
+  {
+    "task": 76,
+    "tier": "intermediate",
+    "latency": 27.969022035598755,
+    "len": 841,
+    "answer": "aws cognito create-user-pool --pool-name app-users",
+    "match": false
+  },
+  {
+    "task": 74,
+    "tier": "intermediate",
+    "latency": 14.159678936004639,
+    "len": 237,
+    "answer": "To create an RDS instance with a master password derived from a secret, use the following AWS CLI co",
+    "match": false
+  }
+]

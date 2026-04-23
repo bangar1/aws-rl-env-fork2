@@ -1,0 +1,405 @@
+Found 11 chat models: ['smollm2-360m', 'deepseek-r1-distill-qwen-1.5b', 'qwen2.5-coder-1.5b-instruct', 'qwen2.5-coder-3b-instruct', 'smollm2-1.7b-instruct', 'smollm2-135m-instruct', 'smollm-1.7b-instruct-v0.2', 'smollm-360m-instruct', 'qwen/qwen3-4b-2507', 'smollm-360m-instruct-v0.2', 'smollm2-360m-instruct']
+Eval set: 27 prompts (one per (tier, source) combo)
+
+[1/27] tier=warmup source=success_first_step task_id=37
+  expected: 'aws route53 list-hosted-zones'
+    ✗ smollm2-360m                          1.1s  "'aws s3 ls'\n\nStep: 1\nLast command output: 'Environment reset. Infra st"
+    ✗ deepseek-r1-distill-qwen-1.5b         4.4s  ''
+    ✗ qwen2.5-coder-1.5b-instruct           2.8s  'This command will list all hosted zones in the current AWS environment'
+    ✓ qwen2.5-coder-3b-instruct             2.8s  'aws route53 list-hosted-zones'
+    ✗ smollm2-1.7b-instruct                 1.9s  '\'aws route53 list-hosted-zones --output text --query "HostedZoneSummar'
+    ~ smollm2-135m-instruct                 0.9s  'aws s3 ls --zone=region-name --bucket=bucket-name --key=key-value --vo'
+    ~ smollm-1.7b-instruct-v0.2             3.9s  'aws s3 ls --region us-east-2 --bucket my-bucket --output-format json'
+    ~ smollm-360m-instruct                  1.3s  'aws ec2 describe-hosts --region=us-east-1 --tags=route-53'
+    ~ qwen/qwen3-4b-2507                    9.8s  'aws route53 list-hosted-zones-by-name'
+    ~ smollm-360m-instruct-v0.2             2.0s  'aws s3 ls --format=csv --output=csv.txt'
+    ✗ smollm2-360m-instruct                 0.8s  '\'aws s3 ls --query "name=*.zone" --format json\''
+
+[2/27] tier=intermediate source=multi_step_continuation task_id=12
+  expected: 'aws dynamodb put-item --table-name orders --item \'{"order_id":{"S":"001"},"status":{"S":"p'
+    ✗ smollm2-360m                          1.8s  "TASK: Create a DynamoDB table named 'orders' with partition key 'order"
+    ✗ deepseek-r1-distill-qwen-1.5b         3.9s  ''
+    ~ qwen2.5-coder-1.5b-instruct           2.4s  'aws dynamodb put-item --table-name orders --item \'{"order_id": {"S": "'
+    ~ qwen2.5-coder-3b-instruct             3.1s  'aws dynamodb put-item --table-name orders --item \'{"order_id": {"S": "'
+    ~ smollm2-1.7b-instruct                 2.0s  "aws dynamodb put-item --table-name orders --primary-key order_id='001'"
+    ~ smollm2-135m-instruct                 1.1s  'aws dynamodb create-table orders 001'
+    ✗ smollm-1.7b-instruct-v0.2             3.9s  "Step 1: Create a DynamoDB table named 'orders' with partition key 'ord"
+    ~ smollm-360m-instruct                  1.8s  'aws dynamodb create-table --table-name orders --key-schema AttributeNa'
+    ~ qwen/qwen3-4b-2507                   10.2s  'aws dynamodb put-item --table-name orders --item \'{"order_id":"001","s'
+    ✗ smollm-360m-instruct-v0.2             2.3s  "Here's how you can implement this:\n\n```python\nimport boto3\n\ndef create"
+    ~ smollm2-360m-instruct                 0.9s  "aws dynamodb put-item --table-name orders --key order_id='001' --value"
+
+[3/27] tier=intermediate source=hint_usage task_id=72
+  expected: 'aws help --task-hint'
+    ✗ smollm2-360m                          1.6s  'You are given the following response from the AWS console:\n\n```json\n{\n'
+    ✗ deepseek-r1-distill-qwen-1.5b         3.9s  ''
+    ~ qwen2.5-coder-1.5b-instruct           4.1s  'aws lambda create-function --function-name scheduled-task --runtime py'
+    ~ qwen2.5-coder-3b-instruct             3.8s  'aws lambda create-function --function-name scheduled-task --runtime py'
+    ✗ smollm2-1.7b-instruct                 2.1s  "'aws s3 cp /tmp/dummy.zip s3://my-bucket/dummy.zip --region us-east-1'"
+    ✗ smollm2-135m-instruct                 1.1s  "AWS Lambda Command: Create a Lambda function named 'scheduled-task' wi"
+    ✗ smollm-1.7b-instruct-v0.2             4.0s  "TASK: Create a Lambda function named 'scheduled-task' with runtime pyt"
+    ✗ smollm-360m-instruct                  1.8s  "To create the Lambda function named 'scheduled-task' and add it to an "
+    ~ qwen/qwen3-4b-2507                   11.5s  'aws lambda create-function --function-name scheduled-task --runtime py'
+    ✗ smollm-360m-instruct-v0.2             2.3s  "Here's how you can implement this task using the AWS CLI:\n\n```python\ni"
+    ✗ smollm2-360m-instruct                 0.8s  "'aws s3 cp fileb:///tmp/dummy.zip --recursive .'"
+
+[4/27] tier=beginner source=success_first_step task_id=9
+  expected: 'aws sns create-topic --name notifications'
+    ✗ smollm2-360m                          1.6s  "TASK: Create an SNS topic named 'notifications'.\n\nStep: 1\nLast command"
+    ✗ deepseek-r1-distill-qwen-1.5b         3.9s  ''
+    ✗ qwen2.5-coder-1.5b-instruct           2.2s  "This command creates a new SNS topic named 'notifications'."
+    ✓ qwen2.5-coder-3b-instruct             2.6s  'aws sns create-topic --name notifications'
+    ✗ smollm2-1.7b-instruct                 2.1s  "'aws sns create-topic --name notifications'"
+    ~ smollm2-135m-instruct                 1.1s  'aws s3 ls --bucket=/path/to/s3 -o /path/to/s3-output.json -n notificat'
+    ✗ smollm-1.7b-instruct-v0.2             2.9s  "TASK: Create an SNS topic named 'notifications'.\n\nStep: 1\nLast command"
+    ✗ smollm-360m-instruct                  1.7s  'To create the notification topic, you can use the following SNS comman'
+    ✓ qwen/qwen3-4b-2507                    9.8s  'aws sns create-topic --name notifications'
+    ~ smollm-360m-instruct-v0.2             2.1s  'aws s3 ls --recurse-objects --limit 100 --include-object-type=file --i'
+    ✗ smollm2-360m-instruct                 1.0s  "'aws s3 put-object --bucket my-bucket --key my-key --content-type file"
+
+[5/27] tier=beginner source=failure_recovery task_id=60
+  expected: 'aws apigatewayv2 create-api --name payments-api --protocol-type HTTP'
+    ✗ smollm2-360m                          1.6s  "TASK: Create an API Gateway V2 HTTP API named 'payments-api' with prot"
+    ✗ deepseek-r1-distill-qwen-1.5b         4.2s  ''
+    ~ qwen2.5-coder-1.5b-instruct           2.4s  'aws apigatewayv2 create-api --protocol-type HTTP --name payments-api'
+    ✓ qwen2.5-coder-3b-instruct             2.9s  'aws apigatewayv2 create-api --name payments-api --protocol-type HTTP'
+    ~ smollm2-1.7b-instruct                 1.8s  'aws apigatewayv2 create-rest-api --name payments-api'
+    ✗ smollm2-135m-instruct                 1.1s  "Here's a new task for you to send an AWS CLI command:\n\n1. Create an AP"
+    ✗ smollm-1.7b-instruct-v0.2             3.7s  "Step 1: Create an API Gateway V2 HTTP API named 'payments-api' with pr"
+    ✗ smollm-360m-instruct                  1.7s  "To create an API Gateway V2 HTTP API named 'payments-api' with protoco"
+    ✓ qwen/qwen3-4b-2507                   10.2s  'aws apigatewayv2 create-api --name payments-api --protocol-type HTTP'
+    ~ smollm-360m-instruct-v0.2             2.2s  'aws apigatewayv2 create-api --name PaymentsApi --protocol-type HTTP --'
+    ~ smollm2-360m-instruct                 0.7s  'aws apigatewayv2 create-api --protocol-type HTTP'
+
+[6/27] tier=intermediate source=success_first_step task_id=83
+  expected: 'aws s3api create-bucket --bucket firehose-delivery'
+    ✗ smollm2-360m                          1.6s  "TASK: Create an S3 bucket named 'firehose-delivery', then create a Kin"
+    ✗ deepseek-r1-distill-qwen-1.5b         3.9s  ''
+    ~ qwen2.5-coder-1.5b-instruct           2.1s  'aws s3 mb s3://firehose-delivery'
+    ~ qwen2.5-coder-3b-instruct             2.7s  'aws s3 mb s3://firehose-delivery'
+    ✗ smollm2-1.7b-instruct                 1.8s  "'aws s3 mb s3://firehose-delivery/ --profile aws-dev-prod'"
+    ~ smollm2-135m-instruct                 0.8s  'aws s3 ls -l /path/to/firehose-delivery --bucket=firehose-delivery --d'
+    ~ smollm-1.7b-instruct-v0.2             3.1s  'aws s3 ls --bucket-name=firehose-delivery --prefix=event-stream --outp'
+    ~ smollm-360m-instruct                  1.7s  'aws s3 ls --bucket=firehose-delivery --output=event-stream'
+    ~ qwen/qwen3-4b-2507                    9.9s  'aws s3 mb s3://firehose-delivery --create-bucket --region us-east-1'
+    ~ smollm-360m-instruct-v0.2             2.2s  'aws s3 ls --format=csv --output-file=firehose-delivery/s3-ls-output.cs'
+    ✗ smollm2-360m-instruct                 0.8s  "'aws s3 cp 'firehose-delivery' s3://firehose-delivery/event-stream'"
+
+[7/27] tier=warmup source=success_first_step task_id=5
+  expected: 'aws sns list-topics'
+    ✗ smollm2-360m                          1.6s  'Command: \'aws sns list\'\nOutput: [\n    {\n        "TopicArn": "arn:aws:s'
+    ✗ deepseek-r1-distill-qwen-1.5b         3.8s  ''
+    ✓ qwen2.5-coder-1.5b-instruct           1.8s  'aws sns list-topics'
+    ✓ qwen2.5-coder-3b-instruct             2.4s  'aws sns list-topics'
+    ✗ smollm2-1.7b-instruct                 1.7s  "'aws sns list-topics --profile myprofile'"
+    ~ smollm2-135m-instruct                 0.8s  'aws s3 ls --list-topics'
+    ~ smollm-1.7b-instruct-v0.2             3.9s  'aws s3 ls --bucket <bucket_name> --prefix <prefix> --output-format jso'
+    ~ smollm-360m-instruct                  1.1s  'aws s3 ls --format=json'
+    ✓ qwen/qwen3-4b-2507                    9.4s  'aws sns list-topics'
+    ✗ smollm-360m-instruct-v0.2             1.9s  "Here's how you can implement this:\n\n```python\nimport boto3\n\ndef list_s"
+    ✗ smollm2-360m-instruct                 1.6s  '\'aws s3 ls --query "arn:sns/*:*" --query "arn:sns/*:*" --query "arn:sn'
+
+[8/27] tier=warmup source=success_first_step task_id=2
+  expected: 'aws dynamodb list-tables'
+    ✗ smollm2-360m                          1.6s  "''\n\nStep: 1\nLast command output: 'aws dynamodb list-tables'\nLast error"
+    ✗ deepseek-r1-distill-qwen-1.5b         3.8s  ''
+    ✓ qwen2.5-coder-1.5b-instruct           1.8s  'aws dynamodb list-tables'
+    ✓ qwen2.5-coder-3b-instruct             2.4s  'aws dynamodb list-tables'
+    ✗ smollm2-1.7b-instruct                 1.7s  '\'aws dynamodb list-tables --query "TableNames" --output text\''
+    ~ smollm2-135m-instruct                 1.0s  "aws s3 ls --format=json | grep -v '^[[:blank::]]' | awk '{print $1}' >"
+    ✗ smollm-1.7b-instruct-v0.2             4.0s  'Here is the updated code:\n\n```python\nimport subprocess\n\ndef get_dynamo'
+    ~ smollm-360m-instruct                  1.5s  'aws describe-table --format=json'
+    ✓ qwen/qwen3-4b-2507                    9.7s  'aws dynamodb list-tables'
+    ✗ smollm-360m-instruct-v0.2             2.1s  "Here's how you can implement this:\n\n```python\nimport boto3\n\ndef list_t"
+    ✗ smollm2-360m-instruct                 0.8s  '\'aws dynamodb list --query "Table Name" --output text\''
+
+[9/27] tier=beginner source=success_first_step task_id=47
+  expected: 'aws secretsmanager create-secret --name db-credentials --secret-string \'{"username":"admin'
+    ✗ smollm2-360m                          1.7s  "TASK: Create a secret in Secrets Manager named 'db-credentials' with t"
+    ✗ deepseek-r1-distill-qwen-1.5b         4.0s  ''
+    ✗ qwen2.5-coder-1.5b-instruct           2.5s  ''
+    ✓ qwen2.5-coder-3b-instruct             3.0s  'aws secretsmanager create-secret --name db-credentials --secret-string'
+    ✗ smollm2-1.7b-instruct                 2.0s  "'aws secretsmanager create-secret --name db-credentials --secret-strin"
+    ~ smollm2-135m-instruct                 1.2s  'aws s3 ls --bucket=/var/log /path/to/db-credentials'
+    ~ smollm-1.7b-instruct-v0.2             3.3s  'aws secretsmanager create-secret --name db-credentials --value \'{"user'
+    ~ smollm-360m-instruct                  1.9s  'aws s3 ls -k --key=my-secret-key --key-type=public --key-value={{"user'
+    ~ qwen/qwen3-4b-2507                   10.6s  'aws secretsmanager create-secret --name "db-credentials" --secret-stri'
+    ~ smollm-360m-instruct-v0.2             2.3s  'aws s3 ls --format=json --pretty=indent --include-metadata=true --excl'
+    ✗ smollm2-360m-instruct                 1.0s  '\'aws secretsmanager create-secret --name db-credentials --value "{\\"us'
+
+[10/27] tier=intermediate source=success_first_step task_id=66
+  expected: 'aws s3api create-bucket --bucket app-assets'
+    ✗ smollm2-360m                          1.7s  "TASK: Create an S3 bucket named 'app-assets', then create an IAM polic"
+    ✗ deepseek-r1-distill-qwen-1.5b         3.8s  ''
+    ~ qwen2.5-coder-1.5b-instruct           2.3s  'aws s3 mb s3://app-assets'
+    ✓ qwen2.5-coder-3b-instruct             2.9s  'aws s3api create-bucket --bucket app-assets'
+    ~ smollm2-1.7b-instruct                 1.6s  'aws s3 mb s3://app-assets'
+    ~ smollm2-135m-instruct                 1.2s  'aws s3 ls -l /app-assets --bucket=/app-assets --read-policy=app-assets'
+    ~ smollm-1.7b-instruct-v0.2             4.2s  'aws s3 ls --bucket "app-assets" --print-dir --print-prefixes --print-a'
+    ~ smollm-360m-instruct                  1.8s  'aws s3 ls -v --region "us-east-2" --bucket "app-assets"'
+    ~ qwen/qwen3-4b-2507                   10.0s  'aws s3api create-bucket --bucket app-assets --region us-east-1'
+    ~ smollm-360m-instruct-v0.2             2.4s  'aws s3 ls --recurse-objects --filter \'{"name": "app-assets"}\''
+    ~ smollm2-360m-instruct                 1.1s  "aws s3 cp 's3://app-assets' --recursive /path/to/app-assets"
+
+[11/27] tier=warmup source=failure_recovery task_id=31
+  expected: 'aws elasticache describe-cache-clusters'
+    ✗ smollm2-360m                          1.6s  'TASK: Describe all ElastiCache clusters in the environment.\n\nStep: 2\nL'
+    ✗ deepseek-r1-distill-qwen-1.5b         3.8s  ''
+    ~ qwen2.5-coder-1.5b-instruct           2.0s  'aws elastic describe-cache-clusters'
+    ~ qwen2.5-coder-3b-instruct             3.1s  'aws elastiCache describe-cache-clusters'
+    ✗ smollm2-1.7b-instruct                 2.1s  '\'aws ec2 list-instances --filters "Name=instance-state-code,Values=16"'
+    ✗ smollm2-135m-instruct                 0.9s  '$ aws elastic describe-cache-clusters --cluster=my_elastiCache\n======='
+    ✗ smollm-1.7b-instruct-v0.2             3.2s  'Step: 2\nLast command output: \'\'\nLast error: "aws: error: argument comm'
+    ~ smollm-360m-instruct                  1.9s  'aws ec2 describe-instances --cluster-options=elastic-compute-cluster-o'
+    ✓ qwen/qwen3-4b-2507                    9.8s  'aws elasticache describe-cache-clusters'
+    ~ smollm-360m-instruct-v0.2             2.4s  'aws echo "Elastic Cache Clusters" | aws describe-cache-clusters'
+    ✗ smollm2-360m-instruct                 1.0s  '"aws elasticdescribe-cache-clusters --query-options "cluster_name, clu'
+
+[12/27] tier=beginner source=failure_recovery task_id=58
+  expected: 'aws cloudformation create-stack --stack-name vpc-stack --template-body \'{"AWSTemplateForma'
+    ✗ smollm2-360m                          1.6s  "TASK: Create a CloudFormation stack named 'vpc-stack' using the templa"
+    ✗ deepseek-r1-distill-qwen-1.5b         3.8s  ''
+    ~ qwen2.5-coder-1.5b-instruct           2.5s  'aws cloudformation create-stack --stack-name vpc-stack --template-url '
+    ~ qwen2.5-coder-3b-instruct             3.1s  'aws cloudformation create-stack --stack-name vpc-stack --template-url '
+    ~ smollm2-1.7b-instruct                 2.1s  'aws cloudformation create-stack --template-url https://s3.amazonaws.co'
+    ~ smollm2-135m-instruct                 1.1s  'aws cloudformation create-stack vpc-stack --template-body'
+    ~ smollm-1.7b-instruct-v0.2             4.1s  'aws cloudformation create-stack --template-body \'{"AWSTemplateFormatVe'
+    ✗ smollm-360m-instruct                  1.7s  'To achieve the desired result, you can use the following steps:\n\n1. Cr'
+    ~ qwen/qwen3-4b-2507                   10.1s  'aws cloudformation create-stack --stack-name vpc-stack --template-url '
+    ✗ smollm-360m-instruct-v0.2             2.0s  "Here's how you can implement this task using the template URL:\n\n```pyt"
+    ✗ smollm2-360m-instruct                 1.0s  '\'aws cloudformation create-stack --template-body \'{"AWSTemplateFormatV'
+
+[13/27] tier=intermediate source=hint_usage task_id=67
+  expected: 'aws help --task-hint'
+    ✗ smollm2-360m                          1.7s  "TASK: Create a DynamoDB table named 'user-sessions' with partition key"
+    ✗ deepseek-r1-distill-qwen-1.5b         4.1s  ''
+    ~ qwen2.5-coder-1.5b-instruct           2.6s  'aws dynamodb create-table --table-name user-sessions --attribute-defin'
+    ~ qwen2.5-coder-3b-instruct             3.6s  'aws dynamodb create-table --table-name user-sessions --key-schema Attr'
+    ~ smollm2-1.7b-instruct                 1.7s  'aws s3 mb s3://session-exports/'
+    ~ smollm2-135m-instruct                 0.9s  "aws s3 create-table --bucket=session-exports --key='S' --format=json -"
+    ✗ smollm-1.7b-instruct-v0.2             4.0s  "To complete the task, you need to create a DynamoDB table named 'user-"
+    ✗ smollm-360m-instruct                  1.6s  "To create the DynamoDB table 'user-sessions' and S3 bucket 'session-ex"
+    ~ qwen/qwen3-4b-2507                   10.5s  'aws dynamodb create-table --table-name user-sessions --attribute-defin'
+    ~ smollm-360m-instruct-v0.2             2.1s  'aws s3 ls --recurse-objects --filter \'{"name": "user_id"}\' --limit 100'
+    ~ smollm2-360m-instruct                 1.3s  'aws s3 cp /path/to/user-sessions/* /path/to/session-exports/'
+
+[14/27] tier=intermediate source=multi_step_continuation task_id=11
+  expected: 'aws s3api put-object --bucket data-pipeline --key test.txt --content-type text/plain'
+    ✗ smollm2-360m                          2.0s  "TASK: Create an S3 bucket named 'data-pipeline' and upload a file to i"
+    ✗ deepseek-r1-distill-qwen-1.5b         4.0s  ''
+    ~ qwen2.5-coder-1.5b-instruct           2.3s  'aws s3 cp /path/to/your/file.txt s3://data-pipeline/data-pipeline.txt'
+    ~ qwen2.5-coder-3b-instruct             2.9s  'aws s3 cp /path/to/your/file s3://data-pipeline/'
+    ~ smollm2-1.7b-instruct                 2.2s  'aws s3 cp /home/user/data.txt s3://data-pipeline/data.txt'
+    ✗ smollm2-135m-instruct                 0.9s  "Here's the next step in your task:\n\n2. 'aws s3api create-bucket --buck"
+    ✗ smollm-1.7b-instruct-v0.2             4.2s  "Step 2: Create an S3 bucket named 'data-pipeline' and upload a file to"
+    ~ smollm-360m-instruct                  1.9s  'aws s3 create-bucket --bucket=data-pipeline'
+    ~ qwen/qwen3-4b-2507                    9.8s  'aws s3 cp ./sample-data.txt s3://data-pipeline/ --region us-east-1'
+    ~ smollm-360m-instruct-v0.2             2.2s  'aws s3 api create-bucket --bucket data-pipeline'
+    ~ smollm2-360m-instruct                 1.4s  'aws s3api put-object --bucket data-pipeline --key my_file.txt --conten'
+
+[15/27] tier=beginner source=success_first_step task_id=56
+  expected: 'aws ssm put-parameter --name /config/app/database-url --type String --value mysql://localh'
+    ✗ smollm2-360m                          1.6s  "TASK: Create an SSM parameter named '/config/app/database-url' of type"
+    ✗ deepseek-r1-distill-qwen-1.5b         4.0s  ''
+    ~ qwen2.5-coder-1.5b-instruct           2.4s  'aws ssm put-parameter --name /config/app/database-url --type String --'
+    ~ qwen2.5-coder-3b-instruct             3.0s  'aws ssm put-parameter --name /config/app/database-url --value mysql://'
+    ✗ smollm2-1.7b-instruct                 2.2s  "'aws ssm param create --name /config/app/database-url --type String --"
+    ~ smollm2-135m-instruct                 1.0s  "aws ssm create-parameter --config '/config/app/database-url' --param '"
+    ~ smollm-1.7b-instruct-v0.2             3.5s  'aws ssm create-parameter --name=/config/app/database-url --type=string'
+    ~ smollm-360m-instruct                  1.7s  'aws sms send -c my_app -p my_username -p my_password -s /config/app/da'
+    ~ qwen/qwen3-4b-2507                   10.8s  'aws ssm put-parameter --name "/config/app/database-url" --type String '
+    ~ smollm-360m-instruct-v0.2             2.5s  'aws s3 ls --format=csv --output-file=mydb.csv'
+    ~ smollm2-360m-instruct                 1.0s  "aws ssm revoke --service-name 'mydb' --parameter-name '/config/app/dat"
+
+[16/27] tier=intermediate source=multi_step_continuation task_id=74
+  expected: 'aws rds create-db-instance --db-instance-identifier app-database --engine mysql --db-insta'
+    ✗ smollm2-360m                          1.8s  "TASK: Create a secret in Secrets Manager named 'rds-master-password' w"
+    ✗ deepseek-r1-distill-qwen-1.5b         4.0s  ''
+    ~ qwen2.5-coder-1.5b-instruct           3.4s  'aws rds create-db-instance --engine mysql --db-instance-class db.t3.mi'
+    ~ qwen2.5-coder-3b-instruct             4.4s  'aws rds create-db-instance \\'
+    ~ smollm2-1.7b-instruct                 2.5s  'aws s3 cp /var/lib/rancher/secretsmanager/rds-master-password aws:secr'
+    ~ smollm2-135m-instruct                 0.8s  'aws secretsmanager create-secret --name rds-master-password --secret-s'
+    ✗ smollm-1.7b-instruct-v0.2             4.4s  "Step 2: Create an RDS DB instance named 'app-database' with engine mys"
+    ✗ smollm-360m-instruct                  1.7s  'To achieve this, you can use the following steps:\n\n1. Create a secret '
+    ~ qwen/qwen3-4b-2507                   12.5s  'aws rds create-db-instance --db-instance-identifier app-database --db-'
+    ✗ smollm-360m-instruct-v0.2             2.0s  "Here's how you can implement this:\n\n```python\nimport boto3\n\ndef create"
+    ~ smollm2-360m-instruct                 1.0s  'aws secretsmanager create-secret --name rds-master-password --secret-s'
+
+[17/27] tier=warmup source=failure_recovery task_id=1
+  expected: 'aws ec2 describe-instances'
+    ✗ smollm2-360m                          1.7s  'TASK: Describe all EC2 instances in the environment.\n\nStep: 2\nLast com'
+    ✗ deepseek-r1-distill-qwen-1.5b         4.4s  ''
+    ✓ qwen2.5-coder-1.5b-instruct           2.2s  'aws ec2 describe-instances'
+    ✓ qwen2.5-coder-3b-instruct             2.9s  'aws ec2 describe-instances'
+    ✗ smollm2-1.7b-instruct                 1.8s  "'aws ec2 describe-instances'"
+    ✗ smollm2-135m-instruct                 0.8s  "$ aws ec2 list-instances --query=count | grep -v '^[a-zA-Z]+' | where "
+    ✗ smollm-1.7b-instruct-v0.2             3.1s  'Step 2:\nLast command output: \'\'\nLast error: "aws: error: argument oper'
+    ~ smollm-360m-instruct                  1.8s  'aws ec2 ls --format=json --tags=aws_instance_type --tags=aws_instance_'
+    ✓ qwen/qwen3-4b-2507                    9.8s  'aws ec2 describe-instances'
+    ~ smollm-360m-instruct-v0.2             2.4s  'aws ec2 list-instances --list-instances'
+    ✗ smollm2-360m-instruct                 0.7s  "'aws ec2 describe-instances'"
+
+[18/27] tier=beginner source=failure_recovery task_id=54
+  expected: 'aws efs create-file-system --creation-token shared-storage'
+    ✗ smollm2-360m                          1.8s  "TASK: Create an EFS file system with a creation token of 'shared-stora"
+    ✗ deepseek-r1-distill-qwen-1.5b         4.0s  ''
+    ✓ qwen2.5-coder-1.5b-instruct           2.2s  'aws efs create-file-system --creation-token shared-storage'
+    ✓ qwen2.5-coder-3b-instruct             2.8s  'aws efs create-file-system --creation-token shared-storage'
+    ~ smollm2-1.7b-instruct                 1.8s  "aws efs create-file-system --creation-token 'shared-storage'"
+    ✗ smollm2-135m-instruct                 1.1s  '$ aws efs create-file-system shared_storage\nCreating EFS file system w'
+    ✗ smollm-1.7b-instruct-v0.2             4.1s  "Step 2: Create an EFS file system with a creation token of 'shared-sto"
+    ✗ smollm-360m-instruct                  1.7s  'To achieve this, you can use the following commands in a single comman'
+    ✓ qwen/qwen3-4b-2507                    9.7s  'aws efs create-file-system --creation-token shared-storage'
+    ~ smollm-360m-instruct-v0.2             2.2s  'aws efs create-file-system --creation-token=shared-storage --file-syst'
+    ~ smollm2-360m-instruct                 1.6s  'aws ec2 create-volume --volume-name shared-storage --size 5 --availabi'
+
+[19/27] tier=intermediate source=success_first_step task_id=78
+  expected: 'aws ec2 create-volume --size 20 --availability-zone us-east-1a --volume-type gp3 --tag-spe'
+    ✗ smollm2-360m                          1.6s  'TASK: Create an EBS volume of 20 GiB in availability zone us-east-1a w'
+    ✗ deepseek-r1-distill-qwen-1.5b         3.8s  ''
+    ✗ qwen2.5-coder-1.5b-instruct           2.6s  ''
+    ~ qwen2.5-coder-3b-instruct             2.8s  'aws ec2 create-volume --availability-zone us-east-1a --size 20 --volum'
+    ~ smollm2-1.7b-instruct                 2.4s  'aws ec2 start-instances --instance-ids i-0123456789abcdef0 --instance-'
+    ~ smollm2-135m-instruct                 1.1s  'aws s3 ls -l | grep "gp3" | awk \'{print $1}\' > /path/to/output-file.tx'
+    ✗ smollm-1.7b-instruct-v0.2             3.4s  'TASK: Create an EBS volume of 20 GiB in availability zone us-east-1a w'
+    ~ smollm-360m-instruct                  1.8s  'aws ec2 describe-volume --tags=name=data-volume --tags-type=gp3 --tags'
+    ~ qwen/qwen3-4b-2507                    9.9s  'aws ec2 create-volume --availability-zone us-east-1a --size 20 --volum'
+    ~ smollm-360m-instruct-v0.2             2.2s  'aws s3 ls --format=json --include-metadata --exclude-tags=data-volume '
+    ✗ smollm2-360m-instruct                 0.9s  "'aws ec2 create-volume --output volume-name --zone us-east-1a --type g"
+
+[20/27] tier=intermediate source=verification task_id=85
+  expected: 'aws dynamodb scan --table-name products'
+    ✗ smollm2-360m                          1.6s  "TASK: Create a DynamoDB table named 'products' with partition key 'pro"
+    ✗ deepseek-r1-distill-qwen-1.5b         4.0s  ''
+    ~ qwen2.5-coder-1.5b-instruct           2.5s  'aws dynamodb put-item --table-name products --item \'{"product_id":{"S"'
+    ~ qwen2.5-coder-3b-instruct             3.2s  'aws dynamodb get-item --table-name products --key \'{"product_id": {"S"'
+    ~ smollm2-1.7b-instruct                 3.3s  'aws dynamodb create-item --table-name products --attribute-definitions'
+    ~ smollm2-135m-instruct                 1.2s  'aws dynamodb create-table products --table-name products --key-schema '
+    ✗ smollm-1.7b-instruct-v0.2             4.5s  'Step 2: aws dynamodb put-item --table-name products --item \'{"product_'
+    ~ smollm-360m-instruct                  2.0s  'aws dynamodb create-table --table-name products --key-schema Attribute'
+    ~ qwen/qwen3-4b-2507                   11.4s  'aws dynamodb create-table --table-name products --key-schema Attribute'
+    ✗ smollm-360m-instruct-v0.2             2.1s  "Here's how you can implement this:\n\n```python\nimport boto3\n\ndef create"
+    ~ smollm2-360m-instruct                 1.5s  "aws s3 cp 'https://s3.amazonaws.com/products-bucket/P001.zip' S3://pro"
+
+[21/27] tier=intermediate source=verification task_id=67
+  expected: 'aws s3api head-bucket --bucket session-exports'
+    ✗ smollm2-360m                          1.7s  "TASK: Create a DynamoDB table named 'user-sessions' with partition key"
+    ✗ deepseek-r1-distill-qwen-1.5b         4.5s  ''
+    ~ qwen2.5-coder-1.5b-instruct           2.5s  'aws dynamodb put-item --table-name user-sessions --item \'{"session_id"'
+    ~ qwen2.5-coder-3b-instruct             3.1s  'aws dynamodb describe-table --table-name user-sessions'
+    ~ smollm2-1.7b-instruct                 2.1s  'aws s3api put-bucket-versioning --bucket session-exports --versioning-'
+    ✗ smollm2-135m-instruct                 1.1s  "Here's the next step:\n\n1. Create a DynamoDB table named 'user-sessions"
+    ~ smollm-1.7b-instruct-v0.2             4.0s  'aws dynamodb create-table --table-name user-sessions --key-schema Attr'
+    ~ smollm-360m-instruct                  1.7s  'aws s3 create-table --table-name user-sessions --key-schema AttributeN'
+    ~ qwen/qwen3-4b-2507                   10.1s  'aws s3api create-bucket --bucket session-exports --create-bucket-confi'
+    ✗ smollm-360m-instruct-v0.2             2.2s  "Here's how you can implement this:\n\n```python\nimport boto3\n\ndef send_c"
+    ~ smollm2-360m-instruct                 0.8s  'aws s3api create-bucket --bucket session-exports'
+
+[22/27] tier=intermediate source=hint_usage task_id=13
+  expected: 'aws help --task-hint'
+    ✗ smollm2-360m                          1.6s  "TASK: Create an SNS topic named 'alerts', then create an SQS queue nam"
+    ✗ deepseek-r1-distill-qwen-1.5b         3.8s  ''
+    ~ qwen2.5-coder-1.5b-instruct           1.9s  'aws sns create-topic --name alerts'
+    ~ qwen2.5-coder-3b-instruct             2.5s  'aws sns create-topic --name alerts'
+    ~ smollm2-1.7b-instruct                 1.7s  'aws sns create-topic --name alerts'
+    ~ smollm2-135m-instruct                 1.2s  'aws s3 ls -l /path/to/s3-bucket/sns --queue alert-inbox'
+    ~ smollm-1.7b-instruct-v0.2             4.1s  'aws s3 ls --bucket=my-bucket --prefix=my-folder/ --recurse --output-fo'
+    ✗ smollm-360m-instruct                  1.8s  "To create an SNS topic named 'alerts' and a SQS queue named 'alert-inb"
+    ~ qwen/qwen3-4b-2507                   10.3s  'aws sns create-topic --name alerts'
+    ~ smollm-360m-instruct-v0.2             2.5s  'aws s3 ls --format=json --pretty=indent --limit=1000000 --recurse-subs'
+    ~ smollm2-360m-instruct                 1.5s  'aws s3 put-object --bucket my-bucket-name --key my-key-name --content-'
+
+[23/27] tier=intermediate source=verification task_id=86
+  expected: 'aws iam list-attached-role-policies --role-name firehose-delivery-role'
+    ✗ smollm2-360m                          1.8s  "TASK: Create an IAM role named 'firehose-delivery-role' with an assume"
+    ✗ deepseek-r1-distill-qwen-1.5b         4.2s  ''
+    ~ qwen2.5-coder-1.5b-instruct           3.2s  'aws iam create-role --role-name firehose-delivery-role --assume-role-p'
+    ~ qwen2.5-coder-3b-instruct             4.1s  'aws iam attach-role-policy --role-name firehose-delivery-role --policy'
+    ~ smollm2-1.7b-instruct                 2.9s  'aws iam attach-role-policy --role-name firehose-delivery-role --policy'
+    ✗ smollm2-135m-instruct                 1.4s  'AWS CLI commands are sent to the console in a specific order, starting'
+    ✗ smollm-1.7b-instruct-v0.2             4.1s  "Step 1: Create an IAM role named 'firehose-delivery-role' with an assu"
+    ~ smollm-360m-instruct                  1.7s  'aws iam create-role --role-namefirehose-delivery-role --assume-role-po'
+    ~ qwen/qwen3-4b-2507                   11.7s  'aws iam attach-role-policy --role-name firehose-delivery-role --policy'
+    ~ smollm-360m-instruct-v0.2             2.5s  'aws iam create-role --role-namefirehose-delivery-role --assume-role-po'
+    ~ smollm2-360m-instruct                 1.1s  'aws iam attach-role-policy --role-name firehose-delivery-role --policy'
+
+[24/27] tier=intermediate source=failure_recovery task_id=82
+  expected: 'aws apigatewayv2 create-api --name products-api --protocol-type HTTP'
+    ✗ smollm2-360m                          1.6s  "TASK: Create an HTTP API in API Gateway V2 named 'products-api' with p"
+    ✗ deepseek-r1-distill-qwen-1.5b         3.7s  ''
+    ~ qwen2.5-coder-1.5b-instruct           2.3s  'aws apigwv2 create-route --api-id <API_ID> --route-key GET /products -'
+    ~ qwen2.5-coder-3b-instruct             2.7s  'aws apigwv2 create-route --api-id <API_ID> --route-key GET /products'
+    ~ smollm2-1.7b-instruct                 1.9s  'aws apigateway v2 put-route-item --apigw-id products-api --route-key G'
+    ~ smollm2-135m-instruct                 1.2s  'aws apigwv2 create-api --name products-api --protocol-type HTTP /produ'
+    ✗ smollm-1.7b-instruct-v0.2             2.7s  "Step 2: Create an HTTP API in API Gateway V2 named 'products-api' with"
+    ✗ smollm-360m-instruct                  1.6s  'To create the API gateway, you need to define a route that routes to t'
+    ~ qwen/qwen3-4b-2507                    9.9s  'aws apigwv2 create-route --api-id d1a2b3c4e5f6g7h8i9j0k1l2 --route-key'
+    ✗ smollm-360m-instruct-v0.2             1.8s  'Step 1: Last command output: \'\'\nStep 2: Last error: "aws: error: argum'
+    ~ smollm2-360m-instruct                 0.8s  'aws apigwv2 create-api --name products-api --protocol-type HTTP'
+
+[25/27] tier=warmup source=failure_recovery task_id=32
+  expected: 'aws athena list-named-queries'
+    ✗ smollm2-360m                          1.5s  'TASK: List all Athena named queries in the environment.\n\nStep: 2\nLast '
+    ✗ deepseek-r1-distill-qwen-1.5b         3.9s  ''
+    ✓ qwen2.5-coder-1.5b-instruct           1.9s  'aws athena list-named-queries'
+    ✓ qwen2.5-coder-3b-instruct             2.5s  'aws athena list-named-queries'
+    ✓ smollm2-1.7b-instruct                 1.7s  'aws athena list-named-queries'
+    ✗ smollm2-135m-instruct                 1.2s  "Here's the next step in your task:\n\n2. 'aws athena list-named-queries'"
+    ✗ smollm-1.7b-instruct-v0.2             3.0s  "Step 2:\nLast command output: ''\nLast error: 'aws: error: unknown optio"
+    ~ smollm-360m-instruct                  1.6s  'aws athena list-named-queries --foo bar'
+    ✓ qwen/qwen3-4b-2507                    9.5s  'aws athena list-named-queries'
+    ✗ smollm-360m-instruct-v0.2             2.1s  "Here's how you can implement this:\n\n```python\nimport boto3\n\ndef send_c"
+    ✗ smollm2-360m-instruct                 0.8s  "'aws athena list-named-queries --foo bar'"
+
+[26/27] tier=intermediate source=failure_recovery task_id=76
+  expected: 'aws cognito-idp create-user-pool --pool-name app-users'
+    ✗ smollm2-360m                          1.6s  "TASK: Create a Cognito user pool named 'app-users', then create a user"
+    ✗ deepseek-r1-distill-qwen-1.5b         4.0s  ''
+    ✓ qwen2.5-coder-1.5b-instruct           2.5s  'aws cognito-idp create-user-pool --pool-name app-users'
+    ~ qwen2.5-coder-3b-instruct             3.4s  'aws cognito-idp create-user-pool-client --user-pool-id <user_pool_id> '
+    ✓ smollm2-1.7b-instruct                 2.2s  'aws cognito-idp create-user-pool --pool-name app-users'
+    ✗ smollm2-135m-instruct                 2.1s  "Here's the next step in creating a Cognito user pool and client using "
+    ~ smollm-1.7b-instruct-v0.2             4.4s  'aws cognito-idp create-user-pool --name app-users'
+    ~ smollm-360m-instruct                  1.8s  'aws cognito-idp create-user-pool --pool-name=app-users'
+    ✓ qwen/qwen3-4b-2507                   11.2s  'aws cognito-idp create-user-pool --pool-name app-users'
+    ✗ smollm-360m-instruct-v0.2             2.4s  "Step: 2\nLast command output: ''\nLast error: 'aws: error: the following"
+    ✗ smollm2-360m-instruct                 1.0s  "'aws cognito-idp create-user-pool --pool-name app-users'"
+
+[27/27] tier=intermediate source=failure_recovery task_id=74
+  expected: 'aws rds create-db-instance --db-instance-identifier app-database --engine mysql --db-insta'
+    ✗ smollm2-360m                          2.3s  "TASK: Create a secret in Secrets Manager named 'rds-master-password' w"
+    ✗ deepseek-r1-distill-qwen-1.5b         6.5s  ''
+    ~ qwen2.5-coder-1.5b-instruct           3.7s  'aws secretsmanager put-secret-value --secret-id rds-master-password --'
+    ✓ qwen2.5-coder-3b-instruct             4.8s  'aws rds create-db-instance --db-instance-identifier app-database --eng'
+    ~ smollm2-1.7b-instruct                 2.8s  'aws secretsmanager get-secret-value --secret-id rds-master-password'
+    ✗ smollm2-135m-instruct                 1.6s  "Here's the updated task:\n\n1. Create a secret in Secrets Manager named "
+    ✗ smollm-1.7b-instruct-v0.2             6.4s  'To complete the task, you need to follow these steps:\n\n1. Create a sec'
+    ✗ smollm-360m-instruct                  2.5s  'To achieve this, you can use the following steps:\n\n1. Create a Secret '
+    ~ qwen/qwen3-4b-2507                   13.7s  'aws secretsmanager create-secret --name rds-master-password --secret-s'
+    ✗ smollm-360m-instruct-v0.2             3.1s  "Here's how you can implement this:\n\n```python\nimport boto3\n\ndef create"
+    ~ smollm2-360m-instruct                 1.4s  'aws secretsmanager create-secret --name rds-master-password --secret-s'
+
+==============================================================================================================
+Model                                  n errs  fmt%  +xtr%  exact%  svc%   op%   lat   len
+--------------------------------------------------------------------------------------------------------------
+qwen2.5-coder-3b-instruct             27    0   85%   100%     41%   70%   63%  3.1s   86
+qwen/qwen3-4b-2507                    27    0  100%   100%     33%   74%   59% 10.4s  108
+qwen2.5-coder-1.5b-instruct           27    0   81%    85%     22%   48%   44%  2.5s  110
+smollm2-1.7b-instruct                 27    0   63%    63%      7%   63%   37%  2.1s   87
+smollm-360m-instruct                  27    0    0%    63%      0%   26%    7%  1.7s  402
+smollm2-135m-instruct                 27    0    0%    59%      0%   15%    7%  1.1s  337
+smollm-360m-instruct-v0.2             27    0    0%    56%      0%   15%    7%  2.2s  364
+smollm2-360m-instruct                 27    0   52%    52%      0%   48%   33%  1.0s  137
+smollm-1.7b-instruct-v0.2             27    0    0%    37%      0%   15%   11%  3.9s  342
+smollm2-360m                          27    0    0%     0%      0%    0%    0%  1.7s  390
+deepseek-r1-distill-qwen-1.5b         27    0    0%     0%      0%    0%    0%  4.1s    0
+==============================================================================================================
+Column legend:
+  fmt%    — raw output starts with 'aws ' (no preamble, no fences)
+  +xtr%   — starts with 'aws ' after stripping fences/prose
+  exact%  — extracted command matches canonical exactly
+  svc%    — same AWS service (e.g. s3, dynamodb)
+  op%     — same operation (e.g. create-bucket)
+  lat     — mean seconds per call  |  len — mean raw chars
+
+Full results saved to data/sft/model_eval_full.json
