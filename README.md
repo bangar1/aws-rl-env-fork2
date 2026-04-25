@@ -11,244 +11,167 @@ tags:
   - openenv
 ---
 
-# AWS Cloud CLI and SRE Reinforcement Learning Environment
+<p align="center">
+  <img src="docs/figures/ministack_logo.png" alt="MiniStack logo" height="110"/>
+</p>
 
-A **OpenEnv** RL environment** for training AI agents on real-world AWS cloud operations. The agent sends AWS CLI commands as actions, receives structured observations, and progresses through a **curriculum of 120+ tasks** across 5 difficulty tiers — from basic listing to SRE incident response and security posture auditing.
+# AWS Cloud CLI & SRE — A Reinforcement-Learning Environment + Training Pipeline
 
-The agents interact with a **real-world AWS Shell simulator** — a vendored MiniStack emulator (34 AWS services, in-memory, zero-cost) inside the same Docker container. The response of every executed command is the same as production AWS. The grading system evaluates rewards and penalties based on the **actual AWS infrastructure state** instead of static metrics. No AWS account needed.
+> An OpenEnv-compatible RL environment with a curriculum of **120+ AWS tasks** across 5 difficulty tiers, paired with a complete **SFT → GRPO** training pipeline (Qwen2.5-Coder-3B + LoRA + Optuna). Vendored MiniStack simulator means **zero AWS cost**, real CLI semantics, and 8-way parallel rollouts that fit on a single GPU.
 
-> **[Try the Playground](https://sizzing-aws-rl-env.hf.space/web)** | **[API Docs](https://sizzing-aws-rl-env.hf.space/docs)** | **[Hugging Face Space](https://huggingface.co/spaces/Sizzing/aws_rl_env)**
-
-
-## Task Tiers (100+ Tasks)
-
-### Warmup — 20 tasks
-> List resources — single read-only commands
-
-- Run one AWS CLI command to list or describe a resource type
-- S3 buckets, EC2 instances, DynamoDB tables, Lambda functions, RDS, EBS volumes
-- Graded by **command_match** — checks operation + service pair
-- No setup required, no state mutations
-
-### Beginner — 20 tasks
-> Create single resources with verification
-
-- Create an S3 bucket, DynamoDB table, SQS queue, or Lambda function
-- Graded by **resource_creation** — verifies the exact resource exists in the AWS Infrastructure Simulator
-- Introduces resource name validation — "my-bucket-2" won't satisfy a check for "my-bucket"
-- First tier where idempotency bonus (+0.02) can be earned
-
-### Intermediate — 20 tasks
-> Multi-step workflows — create, configure, connect
-
-- Ordered sequences: create a bucket then enable versioning, create a table then add an item
-- Graded by **multi_step** — validates each step was completed in order
-- Chaos injection begins at **10% probability** — resources may be silently mutated mid-episode
-- Rollback penalty (-0.1) starts to matter with multi-step create/delete patterns
-
-### Advanced — 20 tasks
-> Cross-service architectures spanning multiple AWS services
-
-- Wire Lambda to SQS, configure API Gateway with integrations, build event-driven pipelines
-- Graded by **multi_step + services** — all required services must be configured
-- Chaos injection escalates to **20% probability** — DynamoDB throughput, Lambda configs may change
-- Hints cost more: 3 hints = only 61% of max reward (0.85³ decay)
-
-### Expert — 20 tasks
-> SRE incidents, drift detection & security posture audits
-
-- Fix overly permissive S3 policies, replace broad IAM inline policies, repair broken infrastructure
-- Graded by **state_checks** — actual CLI commands run against MiniStack at grading time
-- Chaos injection at **30% probability** — maximum perturbation frequency
-- **6 drift detection tasks** — correct infra is provisioned, then 2-3 random mutations applied from a pool
-- Agent must audit environment, discover which resources drifted, and fix only those
-- Drift is randomized per episode — prevents memorization of fix sequences
+| | |
+|---|---|
+| **Live demo** | [sizzing-aws-rl-env.hf.space/web](https://sizzing-aws-rl-env.hf.space/web) — try the playground in a browser |
+| **API docs**  | [sizzing-aws-rl-env.hf.space/docs](https://sizzing-aws-rl-env.hf.space/docs) (Swagger), [/redoc](https://sizzing-aws-rl-env.hf.space/redoc) |
+| **HF Space**  | [huggingface.co/spaces/Sizzing/aws_rl_env](https://huggingface.co/spaces/Sizzing/aws_rl_env) |
+| **SFT adapter**| [Sizzing/aws-rl-sft-qwen25coder3b-adapter](https://huggingface.co/Sizzing/aws-rl-sft-qwen25coder3b-adapter) |
+| **Dataset**   | [Sizzing/aws-rl-sft](https://huggingface.co/datasets/Sizzing/aws-rl-sft) |
 
 ---
 
-## Features
+## Table of contents
 
-### 1. Curriculum & Training
+1. [What this is & why it matters](#1-what-this-is--why-it-matters)
+2. [Highlights — full feature inventory](#2-highlights--full-feature-inventory)
+3. [Architecture](#3-architecture)
+4. [Live demo & Quick Start](#4-live-demo--quick-start)
+5. [Run on Colab](#5-run-on-colab)
+6. [Action / Observation spec](#6-action--observation-spec)
+7. [Curriculum & Reward (overview)](#7-curriculum--reward-overview)
+8. [Training pipeline (SFT → GRPO)](#8-training-pipeline-sft--grpo)
+9. [Parallel rollout architecture](#9-parallel-rollout-architecture)
+10. [MiniStack: vendored & customized](#10-ministack-vendored--customized)
+11. [Results & Benchmarks](#11-results--benchmarks)
+12. [Repository map](#12-repository-map)
+13. [Configuration & Running](#13-configuration--running)
+14. [Testing](#14-testing)
+15. [Tech stack](#15-tech-stack)
+16. [Links](#16-links)
+17. [Acknowledgments](#17-acknowledgments)
 
-Adaptive learning system that tracks mastery and selects optimal tasks.
+---
 
-#### Progressive Difficulty
-- **What:** The environment organizes 120+ tasks across 5 tiers: Warmup, Beginner, Intermediate, Advanced, and Expert. Tasks progress from simple listing operations to complex SRE incident response and drift detection scenarios.
-- **Why:** Prevents the agent from being overwhelmed by complex tasks early on. Scaffolded difficulty ensures the agent builds foundational skills before tackling multi-service architectures.
-- **How:** The `CurriculumManager` maintains per-agent tier state. Promotion requires meeting a minimum episode count and success rate threshold. A fast-track mechanism allows agents scoring 90%+ on 3 consecutive episodes to skip the minimum wait.
-- **Metrics:** 5 Difficulty Tiers | 120+ Total Tasks | 90% Fast-track Threshold
+## 1. What this is & why it matters
 
-#### Mastery Tracking
-- **What:** Each task independently tracks the agent's performance using a weighted success rate over a sliding window. Tasks "graduate" when performance exceeds the mastery threshold consistently.
-- **Why:** Ensures the agent truly masters a skill before moving on. Prevents lucky single completions from being treated as mastery. Un-graduation catches skill decay.
-- **How:** A `mastery_window` of 10 episodes and `mastery_threshold` of 0.7 (70% success). Minimum 3 attempts required before graduation. Recent results are weighted more heavily using exponential decay (factor 0.85). Graduated tasks can un-graduate if performance drops.
-- **Metrics:** 70% Mastery Threshold | 10 Window Size | 0.85 Decay Factor
+Modern AI agents are increasingly asked to operate cloud infrastructure — provisioning resources, fixing misconfigurations, responding to drift. Training such agents needs (a) a realistic environment, (b) reliable reward signals, and (c) enough scale to make RL feasible. Existing options force a hard tradeoff: real AWS costs hundreds of dollars per training run and is impossible to reset; toy emulators don't behave like production AWS.
 
-#### Spaced Repetition
-- **What:** Graduated tasks don't disappear — they resurface at exponentially increasing intervals (3, 6, 12, 24, 48 episodes) for re-testing, earning a +30 priority bonus when due.
-- **Why:** Prevents catastrophic forgetting. The agent must retain skills even as it learns new ones. Exponential spacing is the most efficient retention schedule, borrowed from cognitive science.
-- **How:** Each task tracks a `spaced_rep_interval` starting at 3 episodes. When re-tested and passes, the interval doubles (up to 48). If it fails, the interval resets. `_is_spaced_rep_due()` checks elapsed episodes against the interval.
-- **Metrics:** +30 Spaced Rep Bonus | 3→48 Interval Range | 2x Interval Growth
+**This project closes that gap.** We built:
 
-#### Priority Selection
-- **What:** Tasks are ranked by a composite score combining novelty, weakness, spaced repetition due dates, and recency. The highest-scoring task is selected for each episode.
-- **Why:** Optimizes the training curriculum by ensuring the agent explores new tasks, practices weak areas, revisits graduated skills, and maintains variety — all balanced automatically.
-- **How:** `score = novelty_bonus (+100 if never attempted) + weakness_weight (+50 × (1 - success_rate)) + spaced_rep_bonus (+30 if due) - recency_penalty (-20 if attempted in last 2 episodes)`. Uses exponential decay (0.85) to emphasize recent performance.
-- **Metrics:** +100 Novelty Bonus | +50 Max Weakness Weight | -20 Recency Penalty
+1. **An OpenEnv-compatible RL environment** that speaks real AWS CLI semantics. The agent sends `aws s3 mb …`, `aws iam create-role …`, and so on — the exact same commands a human SRE would type.
+2. **A vendored, customized MiniStack simulator** that responds with production-equivalent JSON, runs locally for zero cost, supports 34 AWS services, and exposes a single-call state-introspection endpoint we added so the grader has cheap ground-truth access.
+3. **A 120+ task curriculum** across 5 tiers (warmup → expert) with adaptive selection, mastery tracking, spaced repetition, chaos injection, and drift-detection scenarios — every feature designed to keep the reward signal honest and prevent the agent from gaming it.
+4. **A complete SFT → GRPO training pipeline.** A 1,500-row synthetic dataset spanning 5 trajectory shapes, an 11-model base benchmark, LoRA fine-tuning, and TRL GRPO with multi-turn rollouts and Optuna hyperparameter search.
+5. **An 8-way parallel-rollout architecture.** Server-side MiniStack pool, client-side `GrpoPool`, in-process `MultiTurnEnvPool` — three coordinated layers that let G=8 concurrent rollouts run on one GPU without state contamination.
 
-#### Tier Progression
-- **What:** Agents advance through tiers via standard promotion (minimum episodes + success rate) or fast-track (3 consecutive high-scoring episodes). Tiers gate access to increasingly complex task pools.
-- **Why:** Provides structure to the learning process. Standard promotion ensures sufficient exposure; fast-track rewards agents that demonstrate immediate competence.
-- **How:** Standard: complete `min_episodes` at current tier with `success_rate >= advance_rate`. Fast-track: 3 consecutive episodes at >= 90% success bypasses the minimum episode requirement. Un-promotion is not supported — agents cannot drop tiers.
-- **Metrics:** 3 Fast-track Streak | 90% Fast-track Rate | 5 Total Tiers
+Everything is reproducible: the dataset is generated by a deterministic script, the model selection is documented end-to-end, training entry points run on Colab, and the env runs locally in a single Docker container with no external network requirement.
 
-### 2. Reward Shaping
+---
 
-Dense reward signals that encourage operational discipline and real progress.
+## 2. Highlights — full feature inventory
+
+This is the complete surface area of the project. Each entry links to deeper documentation in the corresponding sub-README.
+
+### Environment & Curriculum
+- **[120+ tasks across 5 tiers](server/services/tasks/)** — warmup (25), beginner (25), intermediate (25), advanced (25), expert (24), drift (9). YAML-defined task spec per tier.
+- **[Curriculum learning with priority scoring](server/README.md#7-curriculum-manager)** — `score = novelty + weakness − recency + spaced_rep_bonus` drives task selection.
+- **[Mastery tracking](server/README.md#7-curriculum-manager)** — sliding 10-episode window, 0.7 threshold, 0.85 exponential decay, supports un-graduation.
+- **[Spaced repetition](server/README.md#7-curriculum-manager)** — graduated tasks resurface at intervals `[3, 6, 12, 24, 48]` to prevent forgetting.
+- **[Tier promotion](server/README.md#7-curriculum-manager)** — standard (min episodes + success rate) + fast-track (3 consecutive ≥90% episodes).
+- **[Strategy pattern: simulator vs real AWS](server/README.md#4-strategy-pattern-simulator-vs-real-aws)** — `BACKEND_TYPE=simulator` (default) or `aws`, no code fork.
+
+### Reward shaping
+- **[Five grading strategies](server/README.md#8-reward-shaping--taskgrader)** — command-match (warmup), resource-creation (beginner), multi-step (intermediate), multi-step+services (advanced), state-checks (expert).
+- **[Dense partial-progress signal](server/README.md#8-reward-shaping--taskgrader)** — clamped to `[0.0, 0.99]`, `1.0` reserved for verified completion.
+- **[Rollback penalty](server/README.md#8-reward-shaping--taskgrader)** — `−0.1` per `(create-X, …, delete-X)` pair.
+- **[Idempotency bonus](server/README.md#8-reward-shaping--taskgrader)** — `+0.02` for graceful "already exists" retry.
+- **[Hint decay](server/README.md#13-hint-provider)** — three-level progressive hints with `0.85^n` reward multiplier.
+- **[Chaos survival bonus](server/README.md#11-chaos-engine)** — `×1.05` if the agent completes a chaotic task.
+
+### Resilience & adversarial features
+- **[Chaos injection](server/README.md#11-chaos-engine)** — silent mid-episode mutations, tier-scaled probabilities (10/20/30%) on services the task is touching.
+- **[Drift detection](server/README.md#12-drift-engine)** — 6 expert tasks, 2–3 random mutations from a per-task pool, randomized per episode (no memorization).
+- **[Security-posture audit tasks](server/README.md#17-security-posture-audit-examples)** — S3 public bucket lockdown, IAM least-privilege, Lambda secret rotation.
+- **[8-layer anti-reward-hacking](server/README.md#9-anti-reward-hacking--8-defense-layers)** — ground-truth verification, dedup, grader invisibility, command allow-list, no-credit-for-reads, monotonic progress, exact resource-name validation, final state checks.
+
+### Training pipeline
+- **[Synthetic SFT dataset (1,500 rows)](data/README.md)** — 5 trajectory types: success / multi-step continuation / failure recovery / verification / hint usage.
+- **[Rigorous base-model selection](data/sft/MODEL_EVALUATION.md)** — 11 models × 27 prompts, [Qwen2.5-Coder-3B-Instruct](https://huggingface.co/unsloth/Qwen2.5-Coder-3B-Instruct-bnb-4bit) wins.
+- **[LoRA SFT](train/README.md#1-sft-stage--supervised-lora)** — `r ∈ {8,16,32}`, `lora_alpha = r × multiplier`, attention-only adaptation.
+- **[GRPO RL via TRL](train/README.md#2-grpo-stage--reinforcement-learning)** — group-relative advantages, KL to SFT reference, `dapo` loss, no critic.
+- **[Multi-turn rollouts](train/README.md#4-multi-turn-rollouts--parallel-envs)** — up to `MAX_TURNS=6`, observation fed back as next-turn user message.
+- **[Optuna hyperparameter search](train/README.md#3-optuna-hyperparameter-search)** — TPE sampler over 8-dim space, frozen held-out validation set.
+- **[HuggingFace integration](data/README.md#7-huggingface-publishing)** — adapter + dataset published to Hub, OpenEnv Space deployment.
+
+### Parallel rollout architecture
+- **[Server-side MiniStack pool](server/README.md#6-server-side-ministack-pool-parallel-rollouts)** — `MiniStackPool` ([server/app.py](server/app.py)), free-list of ports, lock-guarded acquire/release.
+- **[Client-side GrpoPool](scripts/README.md#2-three-coordinated-pool-layers)** — async-native, all-or-nothing connect, asyncio.gather for concurrent rollouts.
+- **[In-process MultiTurnEnvPool](train/README.md#4-multi-turn-rollouts--parallel-envs)** — sync API, owns a background asyncio loop, used by the trainer.
+- **[8 isolated rollouts on one server](scripts/README.md#7-running-the-multi-connection-demo)** — proof in [scripts/TestMultipleConnects.ipynb](scripts/TestMultipleConnects.ipynb).
+
+### Vendored simulator
+- **[MiniStack as git subtree](server/README.md#5-ministack-vendored-fork--customizations)** — vendored at [aws_infra/](aws_infra/) (commit `2c38c0b`). 34 AWS services. MIT.
+- **[Custom `/_ministack/state` endpoint](server/README.md#5-ministack-vendored-fork--customizations)** — added in commit `a648c3a`; returns full infra inventory in one call.
+- **[Upstream sync workflow](server/README.md#5-ministack-vendored-fork--customizations)** — periodic `git subtree pull`; isolated patches keep conflicts minimal.
+
+### Operations & deployment
+- **[OpenEnv-compliant](https://github.com/openai/openenv)** — `/reset`, `/step`, `/state`, `/schema`, `/ws` HTTP+WebSocket endpoints.
+- **[Web playground UI](server/README.md#19-web-playground)** — `/web` route, 40 AWS service icons, Jinja2 + JS frontend.
+- **[Docker-first deployment](Dockerfile)** — multi-stage build, container ships server + N MiniStack instances + AWS CLI.
+- **[Comprehensive test suite](#14-testing)** — 10 unit tests + 6 tier-integration suites covering 134 tasks.
+
+---
+
+## 3. Architecture
 
 ```
-if task_achieved:       reward = 1.0
-else:
-    reward = partial_progress * 0.8        # base: scaled to [0.0, 0.8]
-    if progress_increased: reward += 0.1   # dense signal for advancing
-    if command_failed:     reward *= 0.5   # penalty for errors
-    reward = clamp(reward, 0.0, 0.99)      # never 1.0 without completion
-    reward *= 0.85 ** hints_used           # hint decay
-    if survived_chaos:    reward *= 1.05   # chaos survival bonus
+┌────────────────────────────────── Docker container ──────────────────────────────────┐
+│                                                                                      │
+│   FastAPI server  (port 8000)                                                        │
+│   ├── OpenEnv router       /reset  /step  /state  /schema  /ws  /health              │
+│   ├── Web playground       /web  (Jinja2 + 40 AWS icon SVGs)                         │
+│   ├── env_factory          per-WS-session AwsRlEnvironment instance                  │
+│   │                        (acquires a MiniStack port from MiniStackPool)            │
+│   └── Services                                                                       │
+│       Curriculum · TaskGrader · ResourceVerifier · ChaosEngine · DriftEngine         │
+│       HintProvider · EpisodeTracker · EnvironmentDesigner · EnvironmentStrategy      │
+│                                                                                      │
+│                                                                                      │
+│   MiniStack instances    :4566  :4567  :4568  …  :4566+POOL_SIZE-1                   │
+│   (vendored at aws_infra/, started by the Dockerfile entrypoint)                     │
+│                                                                                      │
+└──────────────────────────────────────────────────────────────────────────────────────┘
+                ▲                                  ▲
+                │ HTTP/WS                          │ AWS CLI subprocess
+                │                                  │ (AWS_ENDPOINT_URL=http://localhost:4566+i)
+                │                                  │
+        ┌───────┴───────────┐              ┌───────┴───────────┐
+        │   RL Agent        │              │  AWS CLI commands │
+        │   (client.py)     │              │  the agent emits  │
+        └───────────────────┘              └───────────────────┘
 ```
 
-#### Rollback Penalty & Idempotency Bonus
-- **What:** Detects create→delete pairs on the same resource (rollbacks) and penalizes them (-0.1 each). Rewards graceful "already exists" handling (+0.02) where the agent retries idempotently.
-- **Why:** First RL environment rewarding operational discipline. In production, create-then-delete cycles are wasteful. Handling "already exists" gracefully is a sign of robust automation.
-- **How:** `EpisodeTracker.detect_rollbacks()` scans command history for paired create/delete operations on the same resource. Idempotency detection looks for commands that fail with "already exists" patterns (BucketAlreadyExists, ResourceInUseException, etc.) followed by successful continuation.
-- **Metrics:** -0.1 Rollback Penalty | +0.02 Idempotency Bonus | Per-pair Detection
+A more visual diagram (architecture + curriculum progression) will live at `docs/figures/architecture_diagram.png` once added.
 
-#### Shaped Reward System
-- **What:** Rewards are carefully shaped: 1.0 for full completion, 0.0-0.8 for partial progress, +0.1 progress bonus for advancing, ×0.5 for failures, capped at 0.99 without completion. Chaos bonus (×1.05) and hint decay (×0.85^n) layer on top.
-- **Why:** Dense reward signal prevents sparse-reward stagnation. The agent gets meaningful feedback on every step, not just at episode end. Capping at 0.99 ensures only real completion earns full credit.
-- **How:** `TaskGrader` dispatches to 5 strategies by tier: `command_match` (warmup), `resource_creation` (beginner), `multi_step` (intermediate), `multi_step+services` (advanced), and `state_checks` (expert). Each returns `partial_progress` which is converted to reward with bonuses/penalties applied.
-- **Metrics:** 1.0 Max Reward | 0.99 Progress Cap | ×1.05 Chaos Bonus
+### Episode lifecycle
 
-#### Multi-Strategy Grading
-- **What:** Five distinct grading strategies, one per tier: `command_match` checks operation+service pairs, `resource_creation` verifies resources exist, `multi_step` validates ordered sequences, advanced adds service coverage, and expert runs `state_checks` against MiniStack.
-- **Why:** Each tier tests fundamentally different skills. A single grading strategy would either be too lenient for beginners or miss the nuance needed for expert SRE tasks.
-- **How:** `TaskGrader.grade()` dispatches based on the task's `grading_strategy` field. Each strategy returns a `GradeResult` with `partial_progress` (0.0-1.0), `completed` flag, and details. Grading is deterministic and fully automated.
-- **Metrics:** 5 Grading Strategies | 100% Automated | Per-tier Selection
+1. **`reset()`** — wipes simulator state, picks next task from the curriculum, runs `setup_commands`, applies drift if applicable, returns initial observation.
+2. **`step(action)`** — validates the command (must start with `aws `), intercepts hint requests, executes via the strategy, records in tracker, grades with shaped reward, optionally injects chaos, returns observation.
+3. **Hint** — agent sends `aws help --task-hint`; intercepted before reaching MiniStack; returns next-level hint, increments `hints_used` (which decays final reward by `0.85^n`).
+4. **Termination** — `task_achieved=True` or `step_count >= MAX_STEPS` (default 15).
 
-### 3. Resilience & Adaptability
-
-Features that test agent robustness under unpredictable conditions.
-
-#### Progressive Hint System
-- **What:** A 3-level hint system where each level reveals progressively more detail: Level 1 names the AWS services, Level 2 describes the operations, Level 3 gives near-complete command structure. Each hint reduces the final reward by ×0.85.
-- **Why:** Creates an information-reward tradeoff unique in RL. The agent learns to wean off hints over time — initially relying on them for unfamiliar tasks, then solving independently for maximum reward. From GRPO perspective, it creates a natural exploration/exploitation axis within a single episode.
-- **How:** Agent issues special command `aws help --task-hint` as its action (intercepted before reaching MiniStack). Hints auto-generated from `SuccessCriteria` fields (services, steps, operations). Reward decay: `final_reward *= 0.85 ^ hints_used` — 0 hints: 1.0×, 1 hint: 0.85×, 2 hints: 0.72×, 3 hints: 0.61×. Curriculum naturally penalizes hint-dependent agents: lower rewards → slower graduation.
-- **Metrics:** 3 Hint Levels | ×0.85 Decay Per Hint | ~61% Reward with 3 Hints
-
-#### Chaos Injection Engine
-- **What:** Silently mutates AWS resource state mid-episode to test agent resilience. Perturbations are scoped to services the current task uses. If the agent completes despite chaos, it earns a ×1.05 bonus.
-- **Why:** Tests whether the agent can handle unexpected state changes — a critical SRE skill. Prevents brittle memorization of exact command sequences. Probability scales with tier difficulty.
-- **How:** `ChaosEngine` selects perturbation templates specific to the services in use (S3 policy changes, DynamoDB throughput modifications, Lambda config alterations, etc.). Resource names are extracted from successful commands via regex. Chaos probability: 10% (Intermediate), 20% (Advanced), 30% (Expert).
-- **Metrics:** ×1.05 Chaos Survival Bonus | 10-30% Probability by Tier | 5 Service Templates
-
-#### Drift Detection Tasks
-- **What:** 6 expert-tier tasks where infrastructure is provisioned correctly, then 2-3 random mutations are applied from a pool. The agent must audit, discover drifted resources, and fix only those — without knowing which drifted.
-- **Why:** Randomized per episode, preventing memorization. Tests real SRE audit skills: the agent must reason about desired vs. actual state, not just follow a script.
-- **How:** `DriftEngine` randomly selects 2-3 mutations from a task's `possible_drifts` pool and applies them after setup. Each task defines a `desired_state_spec` (natural language) and `state_checks` (ground truth CLI commands). Examples: S3 versioning/encryption drift, DynamoDB throughput changes, SNS subscription modifications.
-- **Metrics:** 6 Drift Tasks | 2-3 Mutations Per Episode | Random Selection Per Run
-
-### 4. Security Posture Audit
-
-Tests *reasoning about configuration state* — the agent must READ and ANALYZE existing infrastructure, not just build things. Unlike SRE tasks (broken functionality), these have *working but insecure* infrastructure.
-
-#### Public S3 Bucket Lockdown
-- **What:** A pre-provisioned S3 bucket "public-assets" has an overly permissive bucket policy granting access to any principal (`Principal: *`). The agent must read the policy, identify the vulnerability, and replace it with a restrictive policy allowing only a specific IAM role.
-- **Why:** Tests security reasoning — the infrastructure is functional but insecure. Unlike SRE tasks where things are broken, here the agent must understand what "correct" security posture looks like and make the right judgment call.
-- **How:** Setup creates the bucket with a wide-open policy. State checks verify the new policy denies `Principal: *` and only allows the `app-role` principal to perform `s3:GetObject`.
-- **Metrics:** S3 Target Service | Policy Attack Surface | Expert Tier
-
-#### IAM Least Privilege
-- **What:** An IAM role "app-role" has an inline policy with `Action: *` and `Resource: *` — full admin access. The agent must replace it with a least-privilege policy allowing only `dynamodb:GetItem` and `dynamodb:PutItem` on the users table.
-- **Why:** IAM misconfiguration is the #1 cloud security risk. This task tests whether the agent understands permission scoping and can reason about what access an application actually needs vs. what it currently has.
-- **How:** Setup creates the role with a wildcard policy. The agent must craft a replacement policy document with specific actions and resource ARN. State checks verify the policy document matches the expected least-privilege permissions.
-- **Metrics:** IAM Target Service | 2 Allowed Actions | Expert Tier
-
-#### Secrets in Lambda Environment
-- **What:** A Lambda function "data-processor" has a database password stored as a plaintext environment variable (`DB_PASSWORD=hunter2`). The agent must create a secret in Secrets Manager, update the Lambda to reference the secret ARN, and remove the plaintext variable.
-- **Why:** Plaintext secrets in environment variables is a critical security anti-pattern. This task combines multiple services (Lambda + Secrets Manager) and tests the agent's ability to perform a safe credential rotation without breaking the function.
-- **How:** Setup creates the Lambda with the plaintext env var. The agent must: (1) create a secret in Secrets Manager, (2) add `SECRET_ARN` env var to Lambda, (3) remove `DB_PASSWORD`. State checks verify all three conditions.
-- **Metrics:** 2 Services Involved | 3 Required Steps | Expert Tier
-
-### 5. Anti-Reward-Hacking (8 Defense Layers)
-
-8 defense layers that prevent the agent from gaming the reward system.
-
-#### 1. Ground-Truth Verification via MiniStack
-- **What:** The grader never trusts agent command output. It independently queries MiniStack (the simulated AWS backend) to verify resource state for 20+ services. Even if the agent crafts fake-looking stdout, the grader checks actual state.
-- **Why:** Prevents reward hacking through output fabrication. The agent cannot game the system by producing convincing but fake CLI output — ground truth is always checked server-side.
-- **How:** `ResourceVerifier` has per-service verification methods that query MiniStack directly. For expert tasks, `StateCheck` assertions run actual AWS CLI commands against MiniStack at grading time, checking either `output_contains` (substring) or `json_path` extraction with expected values.
-- **Metrics:** 20+ Verified Services | 100% Server-side | 0 Agent Visibility
-
-#### 2. Deduplication
-- **What:** `EpisodeTracker.has_executed_operation()` tracks which (operation, resource) pairs have been credited. Running the same successful command twice does NOT increase `partial_progress`. Progress can only increase, never re-earn.
-- **Why:** Prevents the agent from gaming the reward system by repeating the same command to accumulate credit. Each unique operation earns credit exactly once.
-- **How:** `credit_operation()` records each (operation, resource) pair. Before granting credit, `is_operation_already_credited()` checks if this exact pair was already rewarded. The check is deterministic and happens at grading time.
-- **Metrics:** 1x Credit Per Operation | Exact Match Type | (op, res) Tracking Granularity
-
-#### 3. Grader Invisibility
-- **What:** The verification commands run by `ResourceVerifier` are NOT returned in the observation's `command_output`. They happen server-side during grading. The agent cannot observe or mimic them.
-- **Why:** If the agent could see which verification commands the grader runs, it could learn to craft fake outputs that match expected patterns. Keeping grader logic invisible forces the agent to actually perform the task.
-- **How:** `ResourceVerifier` executes AWS CLI commands against MiniStack in a separate execution context. Results are consumed internally by the grading pipeline. The observation returned to the agent only contains output from the agent's own commands.
-- **Metrics:** 0 Grader Cmds Exposed | Server Execution Context | 20+ Hidden Verifications
-
-#### 4. Command Allowlisting
-- **What:** Only commands starting with `aws` are executed. Any attempt to run shell commands, pipe to other tools, use redirects, or escape the sandbox is rejected with `success=False`.
-- **Why:** Prevents the agent from escaping the AWS CLI sandbox. Without this, the agent could potentially execute arbitrary shell commands, access the filesystem, or interfere with the environment.
-- **How:** The environment's `step()` method validates the command before execution. Commands not starting with `aws` are immediately rejected.
-- **Metrics:** `aws *` Allowed Pattern | 0 Shell Access | Instant Rejection
-
-#### 5. No Verification Reward
-- **What:** If the agent runs a command that matches a `state_check` command exactly (e.g., `aws s3api get-bucket-versioning --bucket app-config-store`), it gets no progress credit. Progress is only earned through `steps` operations (mutating commands), not read-only queries.
-- **Why:** Prevents the agent from gaming progress by running the same verification commands the grader uses. The agent can run read commands to understand state, but only mutation commands earn progress.
-- **How:** During grading, the `TaskGrader` checks if the agent's command matches any `state_check` command. Matching commands are flagged as verification-only and excluded from credit. Only commands matching `steps` operations (create, put, update, delete) earn `partial_progress`.
-- **Metrics:** 0 Credit for Reads | Mutate Rewarded Actions | Exact Match Detection
-
-#### 6. Monotonic Progress
-- **What:** `partial_progress` can only increase within an episode. It is clamped to [0.0, 0.99] — reaching 1.0 requires actual task completion. The agent cannot lose progress, but also cannot re-earn it.
-- **Why:** Prevents cycling strategies where the agent creates and destroys resources repeatedly. Combined with deduplication, this ensures steady forward progress.
-- **How:** In `TaskGrader`, `previous_progress` tracks the highest progress seen. New progress is always `max(previous, current)`. Reward is clamped at 0.99 for partial completion, reserving 1.0 exclusively for verified full completion.
-- **Metrics:** 0.99 Max Without Completion | 1.0 Requires Full Completion | max() Progress Function
-
-#### 7. Resource Name Validation
-- **What:** For `resource_exists` checks, the verifier matches the exact resource name, not just any resource of that type. Creating "my-test-bucket-2" doesn't satisfy a check for "my-test-bucket".
-- **Why:** Prevents the agent from creating arbitrarily named resources to game the verification system. Forces precise execution of the task requirements.
-- **How:** `ResourceVerifier`'s per-service methods (`verify_s3_bucket`, `verify_dynamodb_table`, etc.) compare against the exact expected resource name from the task definition. Each of the 20+ supported services has its own verification logic.
-- **Metrics:** Exact Name Matching | 20+ Verified Services | 0 Partial Matches
-
-#### 8. State Checks Verify Final State
-- **What:** For expert SRE tasks, `state_checks` run actual AWS CLI commands against MiniStack at grading time. The grader verifies the final infrastructure state — not the commands the agent ran.
-- **Why:** The agent cannot fake the state. MiniStack is the ground truth. This decouples "what the agent did" from "what was actually achieved", making reward hacking extremely difficult.
-- **How:** Each expert task defines `state_checks` with command + assertion pairs. Assertions support `output_contains` (substring match on CLI output) and `json_path + expected` (JSON extraction). The grader runs these checks against the live MiniStack state independently of the agent.
-- **Metrics:** CLI Verification Method | 2 Assertion Types | Live State Source
+Full mechanics in [server/README.md](server/README.md).
 
 ---
 
-## Supported AWS Services (34)
+## 4. Live demo & Quick Start
 
-| Category | Services |
-|----------|----------|
-| **Storage & DB** | S3, DynamoDB, RDS, ElastiCache, EFS |
-| **Compute** | Lambda, ECS, EC2, Step Functions |
-| **Messaging** | SQS, SNS, Kinesis, EventBridge, Firehose |
-| **API** | API Gateway v1/v2, ALB/ELBv2 |
-| **Security** | IAM, STS, Cognito, ACM, WAF v2, Secrets Manager |
-| **Monitoring** | CloudWatch, CloudWatch Logs, SSM |
-| **Infrastructure** | CloudFormation, Route53 |
-| **Other** | SES, Athena, Glue, EMR |
+### Try it in a browser
 
----
+The hosted playground lets you click around any task without writing code:
 
-## Quick Start
+> **[sizzing-aws-rl-env.hf.space/web](https://sizzing-aws-rl-env.hf.space/web)**
+
+### Python client
 
 ```python
 from aws_rl_env import AwsRlAction, AwsRlEnv
@@ -261,7 +184,7 @@ with AwsRlEnv.from_docker_image("aws-rl-env:latest") as env:
     print(f"Reward: {result.reward}, Done: {result.done}")
 ```
 
-Or connect to a running server:
+Or against a running server:
 
 ```python
 env = AwsRlEnv(base_url="http://localhost:8000")
@@ -269,7 +192,7 @@ result = env.reset()
 result = env.step(AwsRlAction(command="aws s3 ls"))
 ```
 
-WebSocket API:
+### WebSocket API
 
 ```python
 import websockets, json
@@ -282,116 +205,42 @@ async with websockets.connect("wss://sizzing-aws-rl-env.hf.space/ws") as ws:
     obs = json.loads(await ws.recv())
 ```
 
----
+### Local Docker
 
-## Architecture
-
-```
-┌─────────────────────────────────────────────────────────┐
-│                    Docker Container                     │
-│                                                         │
-│  ┌─────────────────────┐      ┌────────────────────┐    │
-│  │  FastAPI RL Server  │      │  AWS Simulator     │    │
-│  │  (port 8000)        │─────>│  (port 4566)       │    │
-│  │                     │      │  34 AWS services   │    │
-│  │  - Environment      │      │  In-memory state   │    │
-│  │  - Curriculum       │      │  Reset API         │    │
-│  │  - Grading Engine   │      │  (Ministack)       │    │
-│  │  - Episode Tracker  │      │                    │    │
-│  │  - Hint Provider    │      │                    │    │
-│  └─────────────────────┘      └────────────────────┘    │
-│          ^                             ^                │
-│          | OpenEnv HTTP/WS             | AWS CLI calls  │
-└──────────┼─────────────────────────────┼────────────────┘
-           |                             |
-      RL Agent (client, External)     (internal only)
+```bash
+make docker-build           # build the image
+make docker-run             # foreground; serves on :8000
+make docker-run-detach      # background
+make docker-health          # liveness probe
 ```
 
-### Episode Lifecycle
+For training (8-way parallel rollouts):
 
-1. **`reset()`** — Wipes AWS Infracture state, selects next task from curriculum, provisions setup commands (if any), returns initial observation
-2. **`step(action)`** — Validates command (`aws` prefix only), executes against MiniStack, records in tracker, grades with shaped reward, returns observation
-3. **Hint request** — Agent sends `aws help --task-hint` to get a progressive hint (costs reward)
-4. **Terminates** when `task_achieved == True` or max steps reached
+```bash
+AWS_RL_ENV_POOL_SIZE=8 make run
+```
 
 ---
 
+## 5. Run on Colab
 
-## Core Classes
+The full pipeline is reproducible on a Colab GPU runtime. Drop your token into Colab Secrets, set `ENV_BASE_URL` to your HF Space (or local with ngrok), and run.
 
-### `AwsRlEnvironment`
+| Notebook                                                                            | What it does                                          | Open in Colab                                |
+|-------------------------------------------------------------------------------------|-------------------------------------------------------|----------------------------------------------|
+| [aws_rl_env_colab.ipynb](aws_rl_env_colab.ipynb)                                    | End-to-end driver: validation, Optuna search, full GRPO training, plotting, optional push-to-Hub | <!-- TODO: paste Colab URL here --> |
+| [train/train_sft_lora.ipynb](train/train_sft_lora.ipynb)                            | Stage 1 — SFT LoRA fine-tuning of Qwen2.5-Coder-3B    | <!-- TODO: paste Colab URL here --> |
+| [train/train_grpo_lora.ipynb](train/train_grpo_lora.ipynb)                          | Stage 2 — GRPO RL training with multi-turn rollouts   | <!-- TODO: paste Colab URL here --> |
+| [compare/compare_base_vs_sft.ipynb](compare/compare_base_vs_sft.ipynb)              | Side-by-side: base model vs SFT adapter (dataset + RL env) | <!-- TODO: paste Colab URL here --> |
+| [scripts/TestMultipleConnects.ipynb](scripts/TestMultipleConnects.ipynb)            | Demo: 8 simultaneous WebSocket sessions stay isolated | <!-- TODO: paste Colab URL here --> |
 
-[server/aws_rl_env_environment.py](server/aws_rl_env_environment.py) — Implements the OpenEnv `Environment` interface. Orchestrates all services.
-
-| Method | Description |
-|--------|-------------|
-| `reset()` | Wipe infra, select task, provision setup, return initial observation |
-| `step(action)` | Execute command (or intercept hint request), grade, update curriculum, return observation |
-
-### `Curriculum`
-
-[server/services/curriculum.py](server/services/curriculum.py) — Priority-queue-based task selection with progressive difficulty.
-
-Selects the next task using a **max-heap scored by**:
-
-```
-score = (
-    novelty_bonus          # +100 if never attempted (explore first)
-    + weakness_weight      # +50 * (1 - task_success_rate) — worse tasks get higher priority
-    + spaced_rep_bonus     # +30 if graduated task is "due" for re-test
-    - recency_penalty      # -20 if attempted in last 2 episodes (ensure variety)
-)
-```
-
-### `TaskGrader`
-
-[server/services/task_grader.py](server/services/task_grader.py) — Evaluates task completion using a dispatcher pattern. Rewards are always in [0.0, 1.0].
-
-**Grading strategies by tier:**
-
-| Tier | Strategy | How it works |
-|------|----------|--------------|
-| Warmup | Command match | Checks command contains service string + correct operation |
-| Beginner | Resource creation | Verifies resource actually exists in MiniStack via `ResourceVerifier` |
-| Intermediate | Multi-step | Tracks ordered sequence of (operation, resource) pairs |
-| Advanced | Multi-step + services | All steps completed AND all required services touched |
-| Expert | State checks | Runs arbitrary AWS CLI commands to assert end-state (ground truth) |
-
-### `HintProvider`
-
-[server/services/hint_provider.py](server/services/hint_provider.py) — Generates progressive hints from `SuccessCriteria` fields.
-
-| Hint Level | What it reveals | Example |
-|-----------|----------------|---------|
-| Level 1 | Which AWS services to use | "You'll need IAM and Lambda" |
-| Level 2 | Which operations | "Start with create-role, then put-role-policy" |
-| Level 3 | Near-complete command structure | "Use: aws iam create-role --role-name ..." |
-
-### `EpisodeTracker`
-
-[server/services/episode_tracker.py](server/services/episode_tracker.py) — Maintains per-episode step history. Parses AWS CLI commands to extract (service, operation, resource) tuples. Tracks credited operations for deduplication, monotonic progress, and hint usage.
-
-### `ResourceVerifier`
-
-[server/services/resource_verifier.py](server/services/resource_verifier.py) — Queries MiniStack directly to verify ground-truth resource state. Service-specific checks for S3, DynamoDB, Lambda, SQS, SNS, IAM, Secrets Manager, and API Gateway. Also evaluates `StateCheck` assertions (substring match, JSON path extraction).
-
-### `EnvironmentDesigner`
-
-[server/services/environment_designer.py](server/services/environment_designer.py) — Provisions initial AWS state via setup commands before the agent acts. Used by SRE/expert tasks to create broken or insecure infrastructure the agent must fix.
-
-### `AwsBackend`
-
-[server/services/aws_backend.py](server/services/aws_backend.py) — Executes AWS CLI commands against MiniStack (`AWS_ENDPOINT_URL=http://localhost:4566`). Provides `reset_environment()` via MiniStack's `/_ministack/reset` endpoint.
-
-### `AwsRlEnv` (Client)
-
-[client.py](client.py) — OpenEnv HTTP/WebSocket client. Wraps `reset()` and `step()` calls to the server.
+Replace each `<!-- TODO -->` with the Colab badge URL once published.
 
 ---
 
-## Data Models
+## 6. Action / Observation spec
 
-[models.py](models.py) — All Pydantic models and type aliases.
+The full Pydantic data models — kept inline so any reader can wire up an agent without leaving this page. Source: [models.py](models.py).
 
 ### Action
 
@@ -400,51 +249,53 @@ class AwsRlAction(Action):
     command: str   # AWS CLI command, e.g. "aws s3 ls"
 ```
 
+The environment validates that `command` starts with `aws `; anything else is rejected with `success=False`.
+
 ### Observation
 
 ```python
 class AwsRlObservation(Observation):
     episode_id: EpisodeID
     step_count: StepCount
-    command_success: bool
-    command_output: str          # stdout from AWS CLI
-    error: str                   # stderr if failed
-    task: TaskInfo | None        # masked task definition (hides success criteria)
+    command_success: bool          # exit code == 0
+    command_output: str            # stdout from the AWS CLI invocation
+    error: str                     # stderr (empty if success)
+    task: TaskInfo | None          # masked task definition (no success criteria)
     task_achieved: bool
-    partial_progress: float      # current task progress in [0.0, 1.0]
-    hints_used: int              # number of hints requested this episode
-    hint_text: str               # most recent hint text (if any)
+    partial_progress: float        # current task progress in [0.0, 1.0]
+    hints_used: int                # cumulative hint count this episode
+    hint_text: str                 # most recent hint text (if any)
 ```
 
-### Environment State
+### State
 
 ```python
 class AwsRlState(State):
-    current_task: Task | None    # full task assigned for the episode
-    tracker: TrackerState        # episode tracker snapshot
-    infra_state: dict            # AWS infrastructure state keyed by service name
-    chaos_occurred: bool         # whether chaos was injected this episode
-    current_tier: str            # agent's current difficulty tier
+    current_task: Task | None      # full task assigned for the episode
+    tracker: TrackerState          # episode tracker snapshot
+    infra_state: dict              # AWS infrastructure state keyed by service name
+    chaos_occurred: bool           # whether chaos was injected this episode
+    current_tier: str              # agent's current difficulty tier
 
 class TrackerState:
-    step_count: int              # steps taken this episode
-    hints_used: int              # hints requested this episode
-    progress: float              # current partial progress [0.0, 1.0]
-    commands_executed: list[str] # commands executed this episode
-    credited_operations: list[str]  # (operation, resource) pairs that earned credit
+    step_count: int                # steps taken this episode
+    hints_used: int                # hints requested this episode
+    progress: float                # current partial progress [0.0, 1.0]
+    commands_executed: list[str]   # commands executed this episode
+    credited_operations: list[str] # (operation, resource) pairs that earned credit
 ```
 
-### Task Definitions
+### Task definitions
 
 ```python
 class Task:
     task_id: TaskID
-    difficulty: TaskDifficulty   # warmup | beginner | intermediate | advanced | expert
-    description: str             # human-readable goal
+    difficulty: TaskDifficulty       # warmup | beginner | intermediate | advanced | expert
+    description: str                 # human-readable goal
     success_criteria: SuccessCriteria
-    setup_commands: list[SetupCommand]       # pre-provision for SRE tasks
-    desired_state_spec: str | None           # natural-language desired end state (drift tasks)
-    possible_drifts: list[SetupCommand]      # pool of mutations for DriftEngine
+    setup_commands: list[SetupCommand]      # pre-provision for SRE tasks
+    desired_state_spec: str | None          # natural-language desired end state (drift tasks)
+    possible_drifts: list[SetupCommand]     # pool of mutations for DriftEngine
 
 class TaskInfo:
     """Agent-visible subset of Task — masks success_criteria, setup_commands, and possible_drifts."""
@@ -454,143 +305,311 @@ class TaskInfo:
     desired_state_spec: str | None
 
 class SuccessCriteria:
-    command_contains: str | None           # warmup/beginner
-    operation: str | None                  # warmup/beginner
-    resource_exists: ResourceExistsCheck | None  # beginner
-    steps: list[StepCriteria]             # intermediate/advanced/expert
-    services: list[AwsService]            # advanced/expert
-    state_checks: list[StateCheck]        # expert (ground truth)
+    command_contains: str | None                   # warmup/beginner
+    operation: str | None                          # warmup/beginner
+    resource_exists: ResourceExistsCheck | None    # beginner
+    steps: list[StepCriteria]                      # intermediate/advanced/expert
+    services: list[AwsService]                     # advanced/expert
+    state_checks: list[StateCheck]                 # expert (ground truth)
 ```
 
-### Curriculum Configuration
+### Curriculum config
 
 ```python
 class TierConfig:
-    min_episodes: int         # minimum episodes before promotion
-    advance_rate: float       # tier success rate threshold (0.6 - 1.0)
-    mastery_window: int       # sliding window size (default: 10)
-    mastery_threshold: float  # per-task graduation threshold (default: 0.7)
+    min_episodes: int          # minimum episodes before promotion
+    advance_rate: float        # tier success rate threshold (0.6 - 1.0)
+    mastery_window: int        # sliding window size (default: 10)
+    mastery_threshold: float   # per-task graduation threshold (default: 0.7)
     fast_track_rate: float    # early promotion threshold (default: 0.9)
-    chaos_probability: float  # probability of chaos injection per step (default: 0.0)
+    chaos_probability: float   # probability of chaos injection per step
 
 class SpacedRepState:
-    interval: int                  # episodes until next re-test (3 -> 48)
+    interval: int                  # episodes until next re-test (3 → 48)
     last_graduated_episode: int    # when last graduated
 ```
 
 ---
 
-## Project Structure
+## 7. Curriculum & Reward (overview)
+
+The curriculum and reward stack is the heart of the project. This section is the elevator pitch; **the full mechanics — priority scoring math, anti-reward-hacking layers, chaos engine, drift engine — live in [server/README.md](server/README.md)**.
+
+### Priority scoring (one-formula task selection)
 
 ```
-aws-rl-env/
-├── __init__.py                    # Exports: AwsRlEnv, AwsRlAction, AwsRlObservation
-├── models.py                      # Pydantic data models & type aliases
-├── client.py                      # AwsRlEnv OpenEnv client
-├── inference.py                   # LLM agent inference script
-├── inference-complete.py          # Full inference pipeline with curriculum
-├── server/
-│   ├── app.py                     # FastAPI application + web UI endpoints
-│   ├── aws_rl_env_environment.py  # Core RL environment (reset/step)
-│   ├── templates/
-│   │   └── index.html             # Web playground UI
-│   ├── static/
-│   │   ├── css/style.css          # Playground styles
-│   │   └── js/app.js              # Playground frontend logic
-│   └── services/
-│       ├── aws_backend.py         # MiniStack command executor
-│       ├── task_grader.py         # Grading engine with reward shaping
-│       ├── curriculum.py          # Curriculum learning manager
-│       ├── episode_tracker.py     # Per-episode step history & hints
-│       ├── resource_verifier.py   # Ground-truth state verification
-│       ├── environment_designer.py # Setup provisioning for SRE tasks
-│       ├── hint_provider.py       # Progressive hint generator
-│       ├── chaos_engine.py        # Chaos injection engine
-│       ├── drift_engine.py        # Drift detection engine
-│       ├── task_solutions.py      # Reference solutions for tasks
-│       └── tasks/
-│           ├── warmup.yaml        # 20 listing tasks
-│           ├── beginner.yaml      # 20 creation tasks
-│           ├── intermediate.yaml  # 20 multi-step tasks
-│           ├── advanced.yaml      # 20 architecture tasks
-│           ├── expert.yaml        # 20 SRE/security tasks
-│           └── drift.yaml         # Drift detection tasks
-├── tests/                         # Unit tests for core services
-│   ├── test_aws_rl_env_environment.py
-│   ├── test_drift_engine.py
-│   ├── test_environment_designer.py
-│   ├── test_episode_tracker.py
-│   ├── test_hint_provider.py
-│   ├── test_resource_verifier.py
-│   └── test_task_grader.py
-├── tests_tasks/                   # Integration tests per task tier
-│   ├── test_warmup_tasks.py
-│   ├── test_beginner_tasks.py
-│   ├── test_intermediate_tasks.py
-│   ├── test_advanced_tasks.py
-│   ├── test_expert_tasks.py
-│   └── test_drift_tasks.py
-├── aws_infra/                     # MiniStack emulator (git subtree from ministackorg/ministack)
-│   └── ministack/
-│       ├── app.py                 # MiniStack ASGI router
-│       ├── core/                  # Routing, persistence, responses
-│       └── services/              # AWS service implementations
-├── Dockerfile                     # Multi-stage build (server + MiniStack)
-├── Makefile                       # Dev tasks: run, format, lint, docker-*
-├── openenv.yaml                   # OpenEnv manifest
-└── pyproject.toml                 # Dependencies & build config
+score = novelty_bonus          # +100 if never attempted
+      + weakness_weight        # +50 × (1 − task_success_rate)
+      + spaced_rep_bonus       # +30 if a graduated task is "due" for re-test
+      − recency_penalty        # −20 if attempted in the last 2 episodes
 ```
+
+Exploration, weakness-targeting, anti-forgetting, and variety — all balanced by one weighted sum.
+
+### Reward shaping
+
+```
+if task_achieved:
+    reward = 1.0
+    if survived_chaos:    reward *= 1.05      # chaos survival bonus
+else:
+    reward = partial_progress * 0.8           # ≤ 0.8 from steps alone
+    if progress_increased: reward += 0.1      # dense progress signal
+    if command_failed:     reward *= 0.5      # error penalty
+    reward -= 0.1 * rollback_count            # waste penalty
+    reward += 0.02 * idempotent_retries       # graceful retry bonus
+    reward = clamp(reward, 0.0, 0.99)         # 1.0 reserved for completion
+
+reward *= 0.85 ** hints_used                  # hint decay applied last
+```
+
+The agent's loss surface is intentionally narrow: only doing the task earns full reward, and every reward-hacking shortcut we identified during design has a defense layer (full list in [server/README.md §9](server/README.md#9-anti-reward-hacking--8-defense-layers)).
+
+> Curriculum progression visual will live at `docs/figures/curriculum_progression.png`.
 
 ---
 
-## Running
+## 8. Training pipeline (SFT → GRPO)
+
+The training pipeline runs in two stages, both reproducible on Colab. Full detail in **[train/README.md](train/README.md)**.
+
+```
+                      ┌────────── data/sft/ ──────────┐
+                      │  1,500 train · 150 val rows   │
+                      │  5 trajectory types           │
+                      └───────────────┬───────────────┘
+                                      ▼
+   STAGE 1 — Supervised Fine-Tuning   train/train_sft_lora.ipynb
+   Qwen2.5-Coder-3B-Instruct + LoRA r=8/16/32 (Optuna) → SFT adapter
+                                      │
+                                      │ Sizzing/aws-rl-sft-qwen25coder3b-adapter
+                                      ▼
+   STAGE 2 — GRPO RL                  train/train_grpo_lora.ipynb
+   G=8 parallel rollouts · multi-turn · reward = env return
+   Optuna over (lr, β, G, T, top_p, lora_r, max_turns)
+```
+
+### Numbers worth knowing
+
+| | |
+|---|---|
+| **Base model** | `unsloth/Qwen2.5-Coder-3B-Instruct-bnb-4bit` — picked via [data/sft/MODEL_EVALUATION.md](data/sft/MODEL_EVALUATION.md) |
+| **SFT LoRA** | `r ∈ {8,16,32}`, `lora_alpha = r × multiplier`, target = attention only, dropout `[0.005, 0.031]` |
+| **GRPO config** | `G=8`, `β=0.04`, `lr=5e-6`, `T=0.9`, `top_p=0.95`, `max_turns=6`, loss=`dapo` |
+| **Optuna search** | TPE sampler, 6 trials × 30 GRPO steps, frozen 10-task held-out val set |
+| **Final training** | 200 GRPO steps with best config |
+
+### Training graphs
+
+> Embed once notebook is executed:
+> ![SFT loss curve](docs/figures/sft_loss_curve.png)
+> ![GRPO mean reward over training](docs/figures/grpo_reward_curve.png)
+> ![Per-rollout reward by curriculum tier](docs/figures/grpo_per_tier_curve.png)
+> ![Optuna parameter importance](docs/figures/optuna_param_importance.png)
+
+---
+
+## 9. Parallel rollout architecture
+
+GRPO needs `G` rollouts on the same task per training step. We run all G in parallel with **state isolation guaranteed**. Three coordinated pool layers make it work:
+
+```
+                        Trainer (G=8 generations needed per step)
+                                        │
+                   ┌────────────────────┼────────────────────┐
+                   ▼                    ▼                    ▼
+            MultiTurnEnvPool        GrpoPool            (in-process)
+            (train_grpo.py)         (scripts/grpo_pool.py)
+            sync API                async API
+                   │                    │
+                   └─────── 8 WebSocket connections ────────┘
+                                        │
+                                        ▼
+                            FastAPI server  :8000
+                            + OpenEnv max_concurrent_envs=8
+                                        │
+                                        ▼
+                            MiniStackPool (free-list, lock-guarded)
+                            acquire(port) on connect, release on disconnect
+                                        │
+                                        ▼
+                    8 isolated MiniStack instances :4566..:4573
+```
+
+Wall-clock impact: an 8-rollout × 6-turn episode runs in ~300 ms of env time vs ~2.4 s sequential. Full mechanics, including the **all-or-nothing connect protocol** that prevents pool-slot leakage on flake, are in **[scripts/README.md](scripts/README.md)**.
+
+---
+
+## 10. MiniStack: vendored & customized
+
+The simulator powering the env is **vendored** as a git subtree at [aws_infra/](aws_infra/), not pulled as a black-box dependency. We forked it because we needed:
+
+1. A custom `/_ministack/state` JSON endpoint so the grader can read the entire infra inventory in **one HTTP call** instead of iterating 20+ list APIs per grading pass. Added in commit `a648c3a "feat: Add support for service state retrieval and action listing across multiple AWS services"`.
+2. A reproducible build with no runtime network requirement — the Docker image bundles a specific MiniStack revision.
+3. The freedom to extend service coverage on demand.
+
+Custom commits live as small, isolated patches so periodic upstream syncs (`af2e945`, `579597b`) replay cleanly. To inspect:
+
+```bash
+git show a648c3a               # the state-endpoint diff
+git log --oneline -- aws_infra/  # only the aws_infra subtree history
+```
+
+Full subtree workflow + commit-by-commit detail in [server/README.md §5](server/README.md#5-ministack-vendored-fork--customizations). Upstream MiniStack docs (81 KB) are preserved at [aws_infra/README.md](aws_infra/README.md).
+
+---
+
+## 11. Results & Benchmarks
+
+### Base-model selection
+
+We evaluated 11 chat models on 27 held-out prompts. **Qwen2.5-Coder-3B-Instruct** wins on every metric that matters: 41% exact match (highest), 63% operation match (highest), 3.1 s/call (3× faster than the 4B runner-up). Full report:
+
+> **[data/sft/MODEL_EVALUATION.md](data/sft/MODEL_EVALUATION.md)** — 270-line writeup, per-model verdicts, methodology
+
+> ![Top 4 candidate models on the held-out benchmark](docs/figures/model_eval_chart.png)
+
+### Base vs SFT — actual results
+
+After running the SFT pipeline end-to-end, the eval delta on the same held-out prompts is striking. Numbers from [out/delta_summary.json](out/delta_summary.json):
+
+| Metric          | Base   | Post-SFT | Delta       |
+|-----------------|:------:|:--------:|:-----------:|
+| `format_pct`    | 33.3%  | **100.0%** | **+66.7 pp** |
+| `exact_pct`     | 38.9%  | **88.9%**  | **+50.0 pp** |
+| `service_pct`   | 77.8%  | **88.9%**  | +11.1 pp    |
+| `operation_pct` | 61.1%  | **88.9%**  | +27.8 pp    |
+| `avg_latency`   | 2.03s  | **1.40s**  | −0.63s (faster!) |
+| `avg_len`       | 85.8   | 74.7     | −11 chars (tighter) |
+
+> ![Base vs SFT eval-metrics comparison](docs/figures/base_vs_sft_success.png)
+
+Every target from [data/sft/MODEL_EVALUATION.md §11](data/sft/MODEL_EVALUATION.md) is met or exceeded. Format compliance is now perfect; the model never wraps commands in fences or quotes after SFT. Exact-match jumped from 39% to 89% — the agent now emits the canonical command for ~9 of every 10 prompts.
+
+The richer two-mode benchmark (dataset eval + live RL env eval) is in [compare/compare_base_vs_sft.ipynb](compare/compare_base_vs_sft.ipynb); methodology in [compare/README.md](compare/README.md).
+
+> ![Dataset comparison: base vs SFT (per-row scores)](docs/figures/compare_dataset.png)
+> ![RL env comparison: base vs SFT (per-episode rewards)](docs/figures/compare_rl_env.png)
+
+### SFT training curves
+
+> ![SFT loss curve over training](docs/figures/sft_loss_curve.png)
+
+### Optuna SFT search
+
+The best SFT trial (out of 6) used `lora_r=16, lora_alpha=16, dropout=0.0058, lr=4.03e-4, warmup=0.1`. Full study at [out/optuna_study.json](out/optuna_study.json).
+
+> ![Optuna parameter importances](docs/figures/optuna_param_importance.png)
+> ![Optuna optimization history](docs/figures/optuna_history.png)
+
+### GRPO results (live multi-step env eval)
+
+After 35 GRPO steps on top of the SFT adapter (config from [out_grpo/optuna_best.json](out_grpo/optuna_best.json) — `lr=1.6e-5, β=0.0021, T=0.99`), we re-evaluated end-to-end on 100+ episodes:
+
+| Metric                        | Base + SFT | Base + SFT + GRPO | Δ            |
+|-------------------------------|:---------:|:-----------------:|:------------:|
+| Overall success rate          | 86.8%     | 86.2%             | −0.5 pp      |
+| Overall mean reward           | 0.883     | 0.877             | −0.006       |
+| Beginner success              | 96.2%     | **100.0%**        | **+3.8 pp**  |
+| Intermediate success          | 81.0%     | **87.0%**         | **+6.0 pp**  |
+| Warmup success                | 96.0%     | 90.2%             | −5.8 pp      |
+| Expert success                | 22.2%     | 22.2%             | flat         |
+| Drift repair rate             | 22.2%     | 22.2%             | flat         |
+| Destructive-action fail rate  | 15.1%     | 14.7%             | −0.4 pp      |
+| Steps to solve                | 1.45      | 1.55              | +0.10        |
+
+> ![SFT vs GRPO metrics grid](docs/figures/sft_vs_grpo_metrics_grid.png)
+> ![SFT vs GRPO by tier](docs/figures/sft_vs_grpo_by_tier.png)
+
+**Honest reading:** the 35-step GRPO run preserves the SFT gains and modestly improves the middle tiers (beginner +3.8 pp, intermediate +6.0 pp) — but does not crack the **expert-tier bottleneck** (22% success on SRE / drift / security-posture tasks). With longer GRPO runs and more curriculum exposure to expert tasks, this is the next gain to chase. The full episode-level data is in [out_grpo/grpo_multi_step.json](out_grpo/grpo_multi_step.json).
+
+### GRPO training curves
+
+Per-step training signals from the final 35-step GRPO run ([out_grpo/final_grpo/checkpoint-35/trainer_state.json](out_grpo/final_grpo/checkpoint-35/trainer_state.json)):
+
+> ![GRPO final per-step training signals](docs/figures/grpo_final_per_step.png)
+> ![GRPO env reward over training](docs/figures/grpo_reward_curve.png)
+
+Optuna search across 4 trials picked the final config:
+
+> ![GRPO Optuna trial comparison](docs/figures/grpo_optuna_trials_comparison.png)
+> ![GRPO Optuna parameter importances](docs/figures/grpo_optuna_importances.png)
+> ![GRPO Optuna optimization history](docs/figures/grpo_optuna_history.png)
+
+### Qualitative rollouts (post-GRPO)
+
+One sample episode per tier from [out_grpo/qualitative_rollouts.json](out_grpo/qualitative_rollouts.json):
+
+> ![Qualitative rollouts on representative tasks](docs/figures/qualitative_rollouts.png)
+
+---
+
+## 12. Repository map
+
+| Path                           | Purpose                                                            | Sub-README                              |
+|--------------------------------|--------------------------------------------------------------------|-----------------------------------------|
+| [server/](server/)             | OpenEnv FastAPI server, env logic, services, web playground       | [server/README.md](server/README.md)    |
+| [train/](train/)               | SFT and GRPO training notebooks                                   | [train/README.md](train/README.md)      |
+| [data/](data/)                 | SFT dataset, base-model selection, eval harness                   | [data/README.md](data/README.md) · [MODEL_EVALUATION.md](data/sft/MODEL_EVALUATION.md) |
+| [compare/](compare/)           | Base vs SFT side-by-side benchmark                                | [compare/README.md](compare/README.md)  |
+| [scripts/](scripts/)           | Parallel-rollout architecture + multi-connection demo             | [scripts/README.md](scripts/README.md)  |
+| [aws_infra/](aws_infra/)       | Vendored MiniStack simulator (git subtree)                        | [aws_infra/README.md](aws_infra/README.md) |
+| [out/](out/)                   | Reference SFT training output (Optuna study, baseline + post-train metrics, plots, final adapter checkpoints) | (see [train/README.md §7](train/README.md#7-logging-and-artifacts)) |
+| [out_grpo/](out_grpo/)         | Reference GRPO training output (Optuna study, baseline + post-train multi-step eval, qualitative rollouts, final adapter, 10 ready plots) | (see [train/README.md §7](train/README.md#7-logging-and-artifacts)) |
+| [tests/](tests/), [tests_tasks/](tests_tasks/) | Unit + tier-integration test suites                       | (see [§14](#14-testing))                |
+| [models.py](models.py)         | Pydantic data models for action/observation/task                  | (inline §6)                             |
+| [client.py](client.py)         | OpenEnv HTTP/WebSocket client wrapper                             | —                                       |
+| [inference.py](inference.py)   | Single-model agent loop (matches RL eval mode of `compare/`)      | —                                       |
+| [train_grpo.py](train_grpo.py) | GRPO trainer (1,283 LOC) — `MultiTurnEnvPool`, Optuna, plotting   | (see [train/README.md](train/README.md)) |
+| [aws_rl_env_colab.ipynb](aws_rl_env_colab.ipynb) | Colab driver for the full training pipeline             | —                                       |
+| [docs/figures/](docs/figures/) | All README graphs and screenshots                                  | —                                       |
+
+---
+
+## 13. Configuration & Running
 
 ### Docker (recommended)
 
 ```bash
-make docker-build          # Build image
-make docker-run            # Run on port 8000
-make docker-run-detach     # Run in background
-make docker-health         # Health check
+make docker-build          # build the image
+make docker-run            # foreground on :8000
+make docker-run-detach     # background
+make docker-health         # liveness probe
 ```
 
-### Local (without Docker)
-
-Use the combined Makefile target:
+### Local
 
 ```bash
-make run                   # Starts MiniStack + server
+make install-all           # uv sync + install aws_infra (MiniStack) editable
+make run                   # starts MiniStack pool + FastAPI server
 ```
 
-### OpenEnv Deployment
+### OpenEnv deployment
 
 ```bash
-make openenv-validate      # Validate config
-make openenv-build         # Build environment
-make openenv-push          # Push to HuggingFace Spaces
+make openenv-validate      # validate config
+make openenv-build         # build environment
+make openenv-push          # push to HuggingFace Spaces
 ```
 
----
+### Environment variables
 
-## Configuration
+| Variable                            | Default                  | Description                                                       |
+|-------------------------------------|--------------------------|-------------------------------------------------------------------|
+| `AWS_INFRA_URL`                     | `http://localhost:4566`  | MiniStack endpoint (used when `POOL_SIZE=1`)                      |
+| `AWS_RL_ENV_POOL_SIZE`              | `1`                      | **Server-side MiniStack pool size; set to 8 for GRPO training**   |
+| `AWS_RL_ENV_MINISTACK_BASE_PORT`    | `4566`                   | First MiniStack port; pool covers `[BASE, BASE + POOL_SIZE)`      |
+| `BACKEND_TYPE`                      | `simulator`              | `simulator` (MiniStack) or `aws` (real AWS, no pool)              |
+| `AWS_ACCESS_KEY_ID`                 | `test`                   | AWS credentials (any value works for the simulator)               |
+| `AWS_SECRET_ACCESS_KEY`             | `test`                   | AWS credentials (any value works for the simulator)               |
+| `AWS_DEFAULT_REGION`                | `us-east-1`              | AWS region                                                         |
+| `MAX_STEPS`                         | `15`                     | Max steps per episode                                              |
+| `API_BASE_URL`                      | —                        | LLM API endpoint for [inference.py](inference.py)                 |
+| `MODEL_NAME`                        | —                        | LLM model name for [inference.py](inference.py)                   |
+| `HF_TOKEN`                          | —                        | HuggingFace token (dataset/adapter access, push)                  |
+| `TEMPERATURE`                       | `0.7`                    | LLM sampling temperature                                          |
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `AWS_INFRA_URL` | `http://localhost:4566` | AWS Infra endpoint |
-| `AWS_ACCESS_KEY_ID` | `test` | AWS credentials (any value works) |
-| `AWS_SECRET_ACCESS_KEY` | `test` | AWS credentials (any value works) |
-| `AWS_DEFAULT_REGION` | `us-east-1` | AWS region |
-| `MAX_STEPS` | `15` | Max steps per episode |
-| `API_BASE_URL` | — | LLM API endpoint (for inference.py) |
-| `MODEL_NAME` | — | LLM model name (for inference.py) |
-| `HF_TOKEN` | — | HuggingFace token (for inference.py) |
-| `TEMPERATURE` | `0.7` | LLM sampling temperature |
-
----
-
-## Curriculum Stats API
-
-The curriculum exposes detailed training progress:
+### Curriculum stats API
 
 ```python
 curriculum.get_stats()
@@ -609,10 +628,98 @@ curriculum.get_stats()
 
 ---
 
-## Links
+## 14. Testing
 
+The test suite covers both isolated unit logic and end-to-end task execution against MiniStack.
+
+### Unit tests — [tests/](tests/)
+
+```bash
+pytest tests/ -v
+```
+
+| File                                                                                         | Covers                                                          |
+|----------------------------------------------------------------------------------------------|-----------------------------------------------------------------|
+| [test_aws_rl_env_environment.py](tests/test_aws_rl_env_environment.py)                       | Environment lifecycle, reset/step semantics, reward integration |
+| [test_task_grader.py](tests/test_task_grader.py)                                             | All 5 grading strategies, partial progress, penalties, bonuses  |
+| [test_resource_verifier.py](tests/test_resource_verifier.py)                                 | Per-service ground-truth verification (20+ services)            |
+| [test_episode_tracker.py](tests/test_episode_tracker.py)                                     | Command parsing, dedup, monotonic progress, rollback detection  |
+| [test_episode_context.py](tests/test_episode_context.py)                                     | Per-episode context lifecycle                                   |
+| [test_drift_engine.py](tests/test_drift_engine.py)                                           | Random drift selection, mutation application                    |
+| [test_hint_provider.py](tests/test_hint_provider.py)                                         | Three-level progressive hints, decay computation                |
+| [test_environment_designer.py](tests/test_environment_designer.py)                           | Setup-command provisioning                                      |
+| [test_pool.py](tests/test_pool.py)                                                           | Server-side `MiniStackPool` acquire/release, exhaustion         |
+| [test_grpo_pool.py](tests/test_grpo_pool.py)                                                 | Client-side `GrpoPool` connect/close, all-or-nothing rollback   |
+
+### Tier integration tests — [tests_tasks/](tests_tasks/)
+
+```bash
+pytest tests_tasks/ -v
+```
+
+134 tasks exercised end-to-end:
+
+| File                                                                                                | Tasks |
+|-----------------------------------------------------------------------------------------------------|------:|
+| [test_warmup_tasks.py](tests_tasks/test_warmup_tasks.py)                                            |   25  |
+| [test_beginner_tasks.py](tests_tasks/test_beginner_tasks.py)                                        |   25  |
+| [test_intermediate_tasks.py](tests_tasks/test_intermediate_tasks.py)                                |   25  |
+| [test_advanced_tasks.py](tests_tasks/test_advanced_tasks.py)                                        |   25  |
+| [test_expert_tasks.py](tests_tasks/test_expert_tasks.py)                                            |   24  |
+| [test_drift_tasks.py](tests_tasks/test_drift_tasks.py)                                              |    9  |
+| **Total**                                                                                           | **133** |
+
+These tests double as the source of truth for canonical solutions used by the SFT dataset generator (extracted via AST — see [data/README.md §1](data/README.md#1-sft-dataset-generation)).
+
+---
+
+## 15. Tech stack
+
+- **Python 3.12**, [`uv`](https://github.com/astral-sh/uv) for dependency management, multi-stage Docker
+- **FastAPI**, **OpenEnv** (HTTP + WebSocket env protocol), **uvicorn**
+- **TRL ≥ 0.21** (`GRPOTrainer`, `GRPOConfig`)
+- **PEFT** (LoRA), **Unsloth** (4-bit quantized base, fused training kernels)
+- **Transformers ≥ 4.45**, **datasets ≥ 2.20**, **HuggingFace Hub ≥ 0.24**
+- **Optuna ≥ 3.6** (TPE sampler, SQLite study storage)
+- **asyncio** + **websockets** + **httpx** (parallel rollout orchestration)
+- **MiniStack** (vendored at [aws_infra/](aws_infra/), 34 AWS services)
+- **AWS CLI v2** (subprocess invocation against MiniStack endpoint)
+- **matplotlib**, **plotly** (training curves, Optuna visualizations)
+- **pytest** (16 test files, ~250 KB of test code)
+
+---
+
+## 16. Links
+
+- **Live demo**: [sizzing-aws-rl-env.hf.space/web](https://sizzing-aws-rl-env.hf.space/web)
+- **HF Space**: [huggingface.co/spaces/Sizzing/aws_rl_env](https://huggingface.co/spaces/Sizzing/aws_rl_env)
+- **API docs**: [/docs](https://sizzing-aws-rl-env.hf.space/docs) · [/redoc](https://sizzing-aws-rl-env.hf.space/redoc)
+- **SFT adapter**: [Sizzing/aws-rl-sft-qwen25coder3b-adapter](https://huggingface.co/Sizzing/aws-rl-sft-qwen25coder3b-adapter)
+- **Dataset**: [Sizzing/aws-rl-sft](https://huggingface.co/datasets/Sizzing/aws-rl-sft)
 - **GitHub**: [github.com/udaykiranpadhy/aws-rl-env](https://github.com/udaykiranpadhy/aws-rl-env)
-- **Hugging Face Space**: [huggingface.co/spaces/Sizzing/aws_rl_env](https://huggingface.co/spaces/Sizzing/aws_rl_env)
-- **API Reference**: [/docs](https://sizzing-aws-rl-env.hf.space/docs)
-- **ReDoc**: [/redoc](https://sizzing-aws-rl-env.hf.space/redoc)
 - **Portfolio**: [portfolio.udaykp.dev](https://portfolio.udaykp.dev)
+- **Colab**: <!-- TODO: paste Colab URL here -->
+
+---
+
+## 17. Acknowledgments
+
+- **MiniStack** — vendored at [aws_infra/](aws_infra/). Upstream license preserved. Custom modifications attributable to commits `a648c3a`, `a00e981`; periodic upstream syncs `af2e945`, `579597b`.
+- **OpenEnv** — environment protocol and Python client framework.
+- **TRL** (HuggingFace) — `GRPOTrainer` implementation.
+- **Unsloth** — 4-bit quantized model loaders + fused training kernels.
+- **AWS service icons** in [server/static/img/aws/](server/static/img/aws/) — used in the web playground.
+
+---
+
+## Sub-README index
+
+For deep technical detail on any subsystem:
+
+- [server/README.md](server/README.md) — environment internals (curriculum, reward shaping, anti-hacking, chaos, drift, MiniStack-fork detail)
+- [train/README.md](train/README.md) — SFT + GRPO training pipeline (LoRA config, Optuna search, multi-turn rollouts)
+- [scripts/README.md](scripts/README.md) — parallel-rollout architecture (3 pool layers, all-or-nothing connect, concurrency safety)
+- [data/README.md](data/README.md) — dataset generation (5 trajectory types, AST extraction) + base-model selection summary
+- [data/sft/MODEL_EVALUATION.md](data/sft/MODEL_EVALUATION.md) — full 11-model benchmark report
+- [compare/README.md](compare/README.md) — base vs SFT comparison harness
+- [aws_infra/README.md](aws_infra/README.md) — vendored MiniStack upstream documentation (81 KB)
