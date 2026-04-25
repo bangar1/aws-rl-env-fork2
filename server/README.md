@@ -85,7 +85,7 @@ OpenEnv-compatible (created via `openenv.core.env_server.http_server.create_app`
 | GET    | `/health`| Liveness probe                                                  |
 | WS     | `/ws`    | Persistent session (one MiniStack acquired per connection)      |
 
-Web playground (only mounted when `AWS_RL_ENV_POOL_SIZE <= 1` — see §6):
+Web playground (always mounted; backed by a dedicated lazy MiniStack — see §6):
 
 | Method | Path             | Purpose                                                   |
 |--------|------------------|-----------------------------------------------------------|
@@ -227,9 +227,13 @@ The pool's `acquire()` raises `RuntimeError("MiniStack pool exhausted")` if a 9t
 
 The container's entrypoint starts `POOL_SIZE` MiniStack processes on ports `4566..4566+POOL_SIZE-1` before the FastAPI server is ready to accept connections. Each MiniStack runs the same image but has its own in-memory state — so the 8 rollouts cannot accidentally see each other's S3 buckets, IAM roles, etc.
 
-### Why the web playground is gated to `POOL_SIZE <= 1`
+### Web playground gets its own MiniStack (lazy, on a constant port)
 
-When the pool is active, port 4566 is owned by a pool slot. A shared web `_env` instance defaulting to `4566` would clobber whichever WebSocket session currently holds that port — playground-created buckets would leak into a GRPO rollout, and rollout-injected drift would leak into the playground. We refuse to mount the web routes in that case (see [server/app.py:171](app.py)).
+The pool owns `[BASE..BASE+N-1]` for WebSocket sessions. The web playground's shared `_env` cannot share those ports — a `/web/step` would clobber whichever rollout currently holds the same MiniStack. Instead, the web UI uses a **dedicated MiniStack on a constant port outside the pool's range** (`AWS_RL_ENV_WEB_MINISTACK_PORT`, default `4565`). The pool is constructed as `range(BASE, BASE+N)`, so `pool.acquire()` can never hand out the web port.
+
+That dedicated MiniStack is **spawned lazily** by the FastAPI server on the first `/web/*` request (`subprocess.Popen(["ministack", "-d"], env={"GATEWAY_PORT": "4565", ...})`). Training-only deployments — the common case — pay zero cost: the extra MiniStack only exists if a user actually opens the playground. First request takes ~1–3s for the bind; subsequent requests are fast (cached `_env`). A startup assertion refuses to boot if `AWS_RL_ENV_WEB_MINISTACK_PORT` falls inside the pool's range.
+
+`POOL_SIZE=1` keeps the legacy single-MiniStack path: the web env shares `:4566` with the lone pool MiniStack — no extra process, no extra port.
 
 ### Configuration
 
@@ -237,6 +241,7 @@ When the pool is active, port 4566 is owned by a pool slot. A shared web `_env` 
 |------------------------------------|---------|---------------------------------------------------------------|
 | `AWS_RL_ENV_POOL_SIZE`             | `1`     | Number of MiniStack instances + WebSocket session capacity    |
 | `AWS_RL_ENV_MINISTACK_BASE_PORT`   | `4566`  | First MiniStack port; pool covers `[BASE, BASE + N)`          |
+| `AWS_RL_ENV_WEB_MINISTACK_PORT`    | `4565`  | Web playground's dedicated MiniStack port (lazy spawn; must lie outside the pool's range when `POOL_SIZE>1`) |
 | `BACKEND_TYPE`                     | `simulator` | `simulator` (default, MiniStack) or `aws` (real AWS, pool disabled) |
 
 ### Cross-link
@@ -572,13 +577,13 @@ Useful for:
 
 ## 19. Web playground
 
-Mounted only when `AWS_RL_ENV_POOL_SIZE <= 1` (see §6). At [http://localhost:8000/web](http://localhost:8000/web) when running locally.
+Always mounted at [http://localhost:8000/web](http://localhost:8000/web). When `POOL_SIZE>1` the playground is backed by a **dedicated lazy-spawned MiniStack** on `AWS_RL_ENV_WEB_MINISTACK_PORT` (default `4565`) — see §6. First request takes ~1–3s while that MiniStack binds; subsequent requests are fast.
 
 - HTML: [server/templates/index.html](templates/index.html)
 - Static assets: [server/static/](static/) — CSS, JS, and **40 AWS service icons** in [server/static/img/aws/](static/img/aws/)
 - The playground talks to `/web/reset`, `/web/step`, `/web/state`, and `/web/solution` (the last one reveals the next canonical solution command — handy for demos and debugging task definitions).
 
-The playground runs a **single shared environment instance**. It is intentionally separate from the per-WebSocket sessions used during training so a curious user clicking around the web UI cannot interfere with an active GRPO rollout.
+The playground runs a **single shared environment instance** on its own MiniStack (or, with `POOL_SIZE=1`, the lone pool MiniStack on `:4566`). It is intentionally separate from the per-WebSocket sessions used during training so a curious user clicking around the web UI cannot interfere with an active GRPO rollout.
 
 ---
 

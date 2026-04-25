@@ -360,3 +360,328 @@ class TestFactoryConcurrencyIntegration:
             t.join()
 
         assert pool.free_count == 20
+
+
+# ---------------------------------------------------------------------------
+# Web playground coexistence with the MiniStack pool
+# ---------------------------------------------------------------------------
+
+
+def _run_in_subprocess(env_overrides: dict[str, str], code: str) -> tuple[int, str, str]:
+    """Run `code` in a fresh subprocess with the given env overrides.
+
+    Mirrors the pattern used by TestServerAppImportIsSafeForLegacyPoolSizes
+    to avoid module-cache pollution across env-var changes.
+    """
+    import os
+    import subprocess
+    import sys
+
+    env = {**os.environ, **env_overrides}
+    result = subprocess.run(
+        [sys.executable, "-c", code],
+        env=env,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    return result.returncode, result.stdout, result.stderr
+
+
+class TestWebRoutesMountUnconditionally:
+    """The web playground used to be gated on POOL_SIZE <= 1. It now mounts
+    regardless of pool size, with a dedicated lazy MiniStack on
+    AWS_RL_ENV_WEB_MINISTACK_PORT.
+    """
+
+    def test_web_routes_present_when_pool_size_8(self) -> None:
+        code = (
+            "import server.app as m;"
+            "paths = {getattr(r, 'path', None) for r in m.app.routes};"
+            "import sys;"
+            "missing = {'/web', '/web/reset', '/web/state', '/web/step', '/web/solution'} - paths;"
+            "sys.stdout.write('MISSING=' + repr(missing))"
+        )
+        rc, out, err = _run_in_subprocess({"AWS_RL_ENV_POOL_SIZE": "8"}, code)
+        assert rc == 0, f"import failed: {err}"
+        assert "MISSING=set()" in out, out
+
+    def test_web_routes_present_when_pool_size_1(self) -> None:
+        code = (
+            "import server.app as m;"
+            "paths = {getattr(r, 'path', None) for r in m.app.routes};"
+            "import sys;"
+            "missing = {'/web', '/web/reset', '/web/state', '/web/step', '/web/solution'} - paths;"
+            "sys.stdout.write('MISSING=' + repr(missing))"
+        )
+        rc, out, err = _run_in_subprocess({"AWS_RL_ENV_POOL_SIZE": "1"}, code)
+        assert rc == 0, f"import failed: {err}"
+        assert "MISSING=set()" in out, out
+
+
+class TestWebMiniStackPortConflictDetection:
+    """The startup-time guard refuses to boot if the configured web port falls
+    inside the pool's port range. Without it, a WebSocket session could acquire
+    the same port the web _env writes to and corrupt state in both directions.
+    """
+
+    def test_collision_inside_pool_range_raises(self) -> None:
+        code = "import server.app"
+        rc, _, err = _run_in_subprocess(
+            {
+                "AWS_RL_ENV_POOL_SIZE": "8",
+                "AWS_RL_ENV_MINISTACK_BASE_PORT": "4566",
+                "AWS_RL_ENV_WEB_MINISTACK_PORT": "4570",  # inside [4566..4573]
+            },
+            code,
+        )
+        assert rc != 0
+        assert "collides with pool range" in err
+
+    def test_web_port_just_below_pool_range_is_allowed(self) -> None:
+        code = "import server.app"
+        rc, _, err = _run_in_subprocess(
+            {
+                "AWS_RL_ENV_POOL_SIZE": "8",
+                "AWS_RL_ENV_MINISTACK_BASE_PORT": "4566",
+                "AWS_RL_ENV_WEB_MINISTACK_PORT": "4565",  # default
+            },
+            code,
+        )
+        assert rc == 0, err
+
+    def test_web_port_just_above_pool_range_is_allowed(self) -> None:
+        code = "import server.app"
+        rc, _, err = _run_in_subprocess(
+            {
+                "AWS_RL_ENV_POOL_SIZE": "8",
+                "AWS_RL_ENV_MINISTACK_BASE_PORT": "4566",
+                "AWS_RL_ENV_WEB_MINISTACK_PORT": "4574",  # one past 4573
+            },
+            code,
+        )
+        assert rc == 0, err
+
+    def test_collision_check_skipped_when_pool_size_1(self) -> None:
+        """POOL_SIZE=1 means no pool object exists, so the constant web port
+        is allowed to coincide with BASE_PORT (it just means the web env
+        shares the lone MiniStack). Backward-compat for legacy single-mode.
+        """
+        code = "import server.app"
+        rc, _, err = _run_in_subprocess(
+            {
+                "AWS_RL_ENV_POOL_SIZE": "1",
+                "AWS_RL_ENV_MINISTACK_BASE_PORT": "4566",
+                "AWS_RL_ENV_WEB_MINISTACK_PORT": "4566",
+            },
+            code,
+        )
+        assert rc == 0, err
+
+    def test_collision_check_skipped_when_backend_aws(self) -> None:
+        """BACKEND_TYPE=aws skips the pool entirely (all sessions share
+        AwsStrategy), so a "collision" with the pool's range is hypothetical
+        — the pool object is never constructed. Refusing to boot here would
+        be a false positive.
+        """
+        code = "import server.app"
+        rc, _, err = _run_in_subprocess(
+            {
+                "AWS_RL_ENV_POOL_SIZE": "8",
+                "AWS_RL_ENV_MINISTACK_BASE_PORT": "4566",
+                "AWS_RL_ENV_WEB_MINISTACK_PORT": "4570",  # would collide if simulator
+                "BACKEND_TYPE": "aws",
+            },
+            code,
+        )
+        assert rc == 0, err
+
+
+class TestWebEnvLazyConstruction:
+    def test_web_env_is_none_immediately_after_import(self) -> None:
+        """Lazy: the dedicated MiniStack should NOT spawn until a /web/*
+        request arrives. Importing the module must not subprocess anything.
+        """
+        code = (
+            "import server.app as m;"
+            "import sys;"
+            "sys.stdout.write('\\nRESULT=' + ('NONE' if m._web_env is None else 'NOT_NONE'))"
+        )
+        rc, out, err = _run_in_subprocess({"AWS_RL_ENV_POOL_SIZE": "8"}, code)
+        assert rc == 0, err
+        assert out.strip().splitlines()[-1] == "RESULT=NONE"
+
+    def test_get_web_env_legacy_uses_default_port_for_pool_size_1(self) -> None:
+        """POOL_SIZE=1: web env shares the single MiniStack on :4566 — the
+        original behavior, locked down so it doesn't drift.
+        """
+        code = (
+            "import server.app as m;"
+            "env = m._get_web_env();"
+            "import sys;"
+            "sys.stdout.write('\\nRESULT=' + env._backend._aws_infra_url)"
+        )
+        rc, out, err = _run_in_subprocess({"AWS_RL_ENV_POOL_SIZE": "1"}, code)
+        assert rc == 0, err
+        assert out.strip().splitlines()[-1] == "RESULT=http://localhost:4566"
+
+    def test_get_web_env_uses_aws_strategy_when_backend_aws(self) -> None:
+        """BACKEND_TYPE=aws: web env wires AwsStrategy too. No MiniStack spawn.
+        Fixes the latent inconsistency where the web playground always used
+        the simulator regardless of training backend.
+        """
+        code = (
+            "import server.app as m;"
+            "from server.services.aws_strategy import AwsStrategy;"
+            "env = m._get_web_env();"
+            "import sys;"
+            "sys.stdout.write('\\nRESULT=' + ('AWS' if isinstance(env._backend, AwsStrategy) else 'NOT_AWS'))"
+        )
+        rc, out, err = _run_in_subprocess(
+            {"AWS_RL_ENV_POOL_SIZE": "8", "BACKEND_TYPE": "aws"},
+            code,
+        )
+        assert rc == 0, err
+        assert out.strip().splitlines()[-1] == "RESULT=AWS"
+
+
+class TestSpawnWebMiniStackShortCircuit:
+    """`_spawn_web_ministack` must not subprocess if the port is already
+    listening — otherwise a server restart would race against the existing
+    detached MiniStack and stall on the bind check.
+    """
+
+    def test_does_not_spawn_when_port_already_listening(self) -> None:
+        import socket
+
+        from server.app import _spawn_web_ministack
+
+        # Bind an ephemeral port to simulate a MiniStack already running.
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sentinel:
+            sentinel.bind(("127.0.0.1", 0))
+            sentinel.listen(1)
+            port = sentinel.getsockname()[1]
+
+            with patch("server.app.subprocess.Popen") as popen:
+                _spawn_web_ministack(port, timeout_s=0.5)
+
+            popen.assert_not_called()
+
+    def test_raises_on_bind_timeout(self) -> None:
+        """If the spawned MiniStack never binds, raise instead of hanging."""
+        from server.app import _spawn_web_ministack
+
+        # Pick a port that is almost certainly free; mock Popen so nothing
+        # actually starts. _spawn_web_ministack should poll and time out.
+        with patch("server.app.subprocess.Popen"):
+            with pytest.raises(RuntimeError, match="failed to bind"):
+                _spawn_web_ministack(port=1, timeout_s=0.3)
+
+
+class TestGetWebEnvAdversarial:
+    """Stress-test _get_web_env against the failure modes a real deployment
+    will eventually hit: concurrent first-request races, ministack-not-installed,
+    and spawn timeouts.
+
+    Each test patches at the module level inside an isolated subprocess so
+    real ministacks are never spawned.
+    """
+
+    def test_concurrent_first_requests_spawn_at_most_once(self) -> None:
+        """N threads racing on the cold start must result in exactly one
+        Popen call. The double-checked lock + cached _web_env enforce this.
+        Otherwise a busy /web/* moment at boot would spawn N ministacks all
+        fighting for the same port.
+        """
+        code = """
+import sys, threading
+from unittest.mock import patch
+import server.app as m
+with patch('server.app._spawn_web_ministack') as spawn:
+    spawn.return_value = None
+    def call():
+        m._get_web_env()
+    threads = [threading.Thread(target=call) for _ in range(20)]
+    for t in threads: t.start()
+    for t in threads: t.join()
+    sys.stdout.write('\\nRESULT=' + str(spawn.call_count))
+"""
+        rc, out, err = _run_in_subprocess({"AWS_RL_ENV_POOL_SIZE": "8"}, code)
+        assert rc == 0, err
+        assert out.strip().splitlines()[-1] == "RESULT=1"
+
+    def test_get_web_env_does_not_spawn_when_backend_aws(self) -> None:
+        """BACKEND_TYPE=aws path takes the AwsStrategy branch and never
+        subprocesses ministack — even with POOL_SIZE=8.
+        """
+        code = """
+import sys
+from unittest.mock import patch
+import server.app as m
+with patch('server.app.subprocess.Popen') as popen:
+    m._get_web_env()
+    sys.stdout.write('\\nRESULT=' + str(popen.call_count))
+"""
+        rc, out, err = _run_in_subprocess(
+            {"AWS_RL_ENV_POOL_SIZE": "8", "BACKEND_TYPE": "aws"},
+            code,
+        )
+        assert rc == 0, err
+        assert out.strip().splitlines()[-1] == "RESULT=0"
+
+    def test_get_web_env_does_not_spawn_when_pool_size_1(self) -> None:
+        """Legacy POOL_SIZE=1 path shares the lone pool MiniStack on :4566
+        and never spawns a separate web MiniStack.
+        """
+        code = """
+import sys
+from unittest.mock import patch
+import server.app as m
+with patch('server.app.subprocess.Popen') as popen:
+    m._get_web_env()
+    sys.stdout.write('\\nRESULT=' + str(popen.call_count))
+"""
+        rc, out, err = _run_in_subprocess({"AWS_RL_ENV_POOL_SIZE": "1"}, code)
+        assert rc == 0, err
+        assert out.strip().splitlines()[-1] == "RESULT=0"
+
+    def test_get_web_env_retries_after_spawn_failure(self) -> None:
+        """If the first spawn fails (e.g., ministack not installed yet, or
+        the bind timed out), _web_env stays None so a later request can
+        retry instead of permanently caching the failure.
+        """
+        code = """
+import sys
+from unittest.mock import patch
+import server.app as m
+with patch('server.app._spawn_web_ministack', side_effect=RuntimeError('boom')):
+    failed = False
+    try:
+        m._get_web_env()
+    except RuntimeError:
+        failed = True
+    assert failed, 'expected first call to raise'
+    assert m._web_env is None, '_web_env must stay None after spawn failure'
+sys.stdout.write('\\nRESULT=ok')
+"""
+        rc, out, err = _run_in_subprocess({"AWS_RL_ENV_POOL_SIZE": "8"}, code)
+        assert rc == 0, err
+        assert out.strip().splitlines()[-1] == "RESULT=ok"
+
+    def test_pool_factory_capacity_independent_of_web_env(self) -> None:
+        """The web _env is a module-level singleton, NOT produced by the
+        WebSocket factory. So a pool of 8 still hands out 8 distinct ports;
+        the web env doesn't steal a slot. Critical for the user's "8 WS +
+        web UI" goal.
+        """
+        pool, factory = make_env_factory(pool_size=8, base_port=4566)
+        assert pool is not None
+        envs = [factory() for _ in range(8)]
+        assert pool.free_count == 0
+        # 9th must fail — same as before this change
+        with pytest.raises(RuntimeError, match="exhausted"):
+            factory()
+        # Sanity: all 8 ports distinct, none equal to 4565 (web port)
+        ports = {int(e._backend._aws_infra_url.rsplit(":", 1)[-1]) for e in envs}
+        assert len(ports) == 8
+        assert 4565 not in ports

@@ -28,8 +28,14 @@ Usage:
     python -m server.app
 """
 
+import asyncio
 import os
+import shutil
+import socket
+import subprocess
+import sys
 import threading
+import time
 from pathlib import Path
 from typing import Any, Callable, Dict, Iterable
 
@@ -70,6 +76,22 @@ os.environ["ENABLE_WEB_INTERFACE"] = "false"
 POOL_SIZE = max(int(os.getenv("AWS_RL_ENV_POOL_SIZE", "1")), 1)
 BASE_MINISTACK_PORT = int(os.getenv("AWS_RL_ENV_MINISTACK_BASE_PORT", "4566"))
 BACKEND_TYPE = os.getenv("BACKEND_TYPE", "simulator")  # "simulator" | "aws"
+
+# Constant, dedicated MiniStack port for the web playground. Kept outside the
+# pool's range so a WebSocket session can never acquire it, eliminating the
+# state-bleed risk that previously gated the web UI when POOL_SIZE > 1.
+WEB_MINISTACK_PORT = int(os.getenv("AWS_RL_ENV_WEB_MINISTACK_PORT", "4565"))
+
+if (
+    BACKEND_TYPE != "aws"
+    and POOL_SIZE > 1
+    and BASE_MINISTACK_PORT <= WEB_MINISTACK_PORT < BASE_MINISTACK_PORT + POOL_SIZE
+):
+    raise RuntimeError(
+        f"AWS_RL_ENV_WEB_MINISTACK_PORT={WEB_MINISTACK_PORT} collides with pool range "
+        f"[{BASE_MINISTACK_PORT}..{BASE_MINISTACK_PORT + POOL_SIZE - 1}]. "
+        f"Pick a port outside the pool's range."
+    )
 
 
 class MiniStackPool:
@@ -156,84 +178,147 @@ app = create_app(
 # The web playground needs state across requests, so we maintain a shared
 # environment instance and expose /web/reset and /web/step.
 #
-# Only mounted when POOL_SIZE <= 1. With a pool active, port 4566 is
-# claimed by the pool and a shared web _env would collide with the
-# per-session MiniStacks.
-# If POOL_SIZE=8 and web mounts anyway, the module-level _env = AwsRlEnvironment()
-# defaults to http://localhost:4566 — which is also in the pool's range.
-# Any /web/step clobbers the MiniStack currently held by a WS session that
-# acquired port 4566. State corrupts both ways: web user's bucket appears in a
-# GRPO rollout; pool rollout's drift mutations show up in the web UI.
-
-
+# When POOL_SIZE > 1 the pool owns [BASE..BASE+N-1]; the web UI uses a
+# dedicated MiniStack on WEB_MINISTACK_PORT (constant, outside the pool's
+# range) so it can never collide with a WebSocket session. That MiniStack is
+# spawned lazily on the first /web/* request — training-only deployments pay
+# zero cost. Subsequent requests reuse the cached _web_env.
 # ---------------------------------------------------------------------------
 
-if POOL_SIZE <= 1:
-    _env = AwsRlEnvironment()
+_web_env: AwsRlEnvironment | None = None
+_web_env_lock = threading.Lock()
 
-    class WebStepRequest(BaseModel):
-        action: Dict[str, Any]
 
-    @app.post("/web/reset", include_in_schema=False)
-    async def web_reset():
-        obs = _env.reset()
-        return {
-            "observation": obs.model_dump(),
-            "reward": obs.reward,
-            "done": obs.done,
-        }
+def _port_listening(port: int) -> bool:
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.settimeout(0.2)
+        return s.connect_ex(("127.0.0.1", port)) == 0
 
-    @app.get("/web/solution", include_in_schema=False)
-    async def web_solution():
-        """Return the next solution command for the current task step."""
-        if not _env._current_task:
-            return {
-                "command": None,
-                "error": "No active task. Start a new episode first.",
-            }
 
-        from server.services.task_solutions import get_next_solution
-
-        result = get_next_solution(
-            task_id=_env._current_task.task_id,
-            backend=_env._backend,
-            tracker=_env._tracker,
-        )
-        result["task_id"] = _env._current_task.task_id
-        return result
-
-    @app.get("/web/state", include_in_schema=False)
-    async def web_state():
-        """Return the full AwsRlState for the web UI."""
-        return _env.state.model_dump()
-
-    @app.post("/web/step", include_in_schema=False)
-    async def web_step(request: WebStepRequest = Body(...)):
-        action = AwsRlAction(**request.action)
-        obs = _env.step(action)
-        return {
-            "observation": obs.model_dump(),
-            "reward": obs.reward,
-            "done": obs.done,
-        }
-
-    # ---------------------------------------------------------------------------
-    # Custom web UI
-    # ---------------------------------------------------------------------------
-
-    _server_dir = Path(__file__).parent
-    _templates = Jinja2Templates(directory=str(_server_dir / "templates"))
-    app.mount(
-        "/static", StaticFiles(directory=str(_server_dir / "static")), name="static"
+def _resolve_ministack_bin() -> str:
+    """Find the ministack entry point. Prefer the same venv as the running
+    Python (sys.executable's bin dir) before falling back to PATH — uvicorn
+    invoked via /full/path/to/.venv/bin/uvicorn doesn't always have the venv
+    on PATH, so a bare "ministack" lookup would FileNotFoundError.
+    """
+    candidate = Path(sys.executable).parent / "ministack"
+    if candidate.exists():
+        return str(candidate)
+    on_path = shutil.which("ministack")
+    if on_path:
+        return on_path
+    raise RuntimeError(
+        "Could not find the 'ministack' executable. Install with `uv sync` "
+        "or ensure the active venv's bin directory is on PATH."
     )
 
-    @app.get("/", response_class=RedirectResponse, include_in_schema=False)
-    async def root_redirect():
-        return RedirectResponse(url="/web")
 
-    @app.get("/web", response_class=HTMLResponse, include_in_schema=False)
-    async def web_ui(request: Request):
-        return _templates.TemplateResponse(request=request, name="index.html")
+def _spawn_web_ministack(port: int, timeout_s: float = 10.0) -> None:
+    if _port_listening(port):
+        return
+    subprocess.Popen(
+        [_resolve_ministack_bin(), "-d"],
+        env={**os.environ, "GATEWAY_PORT": str(port)},
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+    deadline = time.monotonic() + timeout_s
+    while time.monotonic() < deadline:
+        if _port_listening(port):
+            return
+        time.sleep(0.1)
+    raise RuntimeError(f"Web MiniStack failed to bind {port} within {timeout_s}s")
+
+
+def _get_web_env() -> AwsRlEnvironment:
+    global _web_env
+    if _web_env is not None:
+        return _web_env
+    with _web_env_lock:
+        if _web_env is not None:
+            return _web_env
+        if BACKEND_TYPE == "aws":
+            _web_env = AwsRlEnvironment(strategy=AwsStrategy())
+        elif POOL_SIZE > 1:
+            _spawn_web_ministack(WEB_MINISTACK_PORT)
+            _web_env = AwsRlEnvironment(
+                strategy=SimulatorStrategy(f"http://localhost:{WEB_MINISTACK_PORT}")
+            )
+        else:
+            _web_env = AwsRlEnvironment()
+        return _web_env
+
+
+class WebStepRequest(BaseModel):
+    action: Dict[str, Any]
+
+
+@app.post("/web/reset", include_in_schema=False)
+async def web_reset():
+    env = await asyncio.to_thread(_get_web_env)
+    obs = env.reset()
+    return {
+        "observation": obs.model_dump(),
+        "reward": obs.reward,
+        "done": obs.done,
+    }
+
+
+@app.get("/web/solution", include_in_schema=False)
+async def web_solution():
+    """Return the next solution command for the current task step."""
+    env = await asyncio.to_thread(_get_web_env)
+    if not env._current_task:
+        return {
+            "command": None,
+            "error": "No active task. Start a new episode first.",
+        }
+
+    from server.services.task_solutions import get_next_solution
+
+    result = get_next_solution(
+        task_id=env._current_task.task_id,
+        backend=env._backend,
+        tracker=env._tracker,
+    )
+    result["task_id"] = env._current_task.task_id
+    return result
+
+
+@app.get("/web/state", include_in_schema=False)
+async def web_state():
+    """Return the full AwsRlState for the web UI."""
+    env = await asyncio.to_thread(_get_web_env)
+    return env.state.model_dump()
+
+
+@app.post("/web/step", include_in_schema=False)
+async def web_step(request: WebStepRequest = Body(...)):
+    env = await asyncio.to_thread(_get_web_env)
+    action = AwsRlAction(**request.action)
+    obs = env.step(action)
+    return {
+        "observation": obs.model_dump(),
+        "reward": obs.reward,
+        "done": obs.done,
+    }
+
+
+_server_dir = Path(__file__).parent
+_templates = Jinja2Templates(directory=str(_server_dir / "templates"))
+app.mount(
+    "/static", StaticFiles(directory=str(_server_dir / "static")), name="static"
+)
+
+
+@app.get("/", response_class=RedirectResponse, include_in_schema=False)
+async def root_redirect():
+    return RedirectResponse(url="/web")
+
+
+@app.get("/web", response_class=HTMLResponse, include_in_schema=False)
+async def web_ui(request: Request):
+    return _templates.TemplateResponse(request=request, name="index.html")
 
 
 def main(host: str = "0.0.0.0", port: int = 8000):

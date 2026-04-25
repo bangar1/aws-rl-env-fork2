@@ -80,7 +80,7 @@ RUN mkdir -p /root/.aws && \
 ENV AWS_ENDPOINT_URL=http://localhost:4566
 
 # Enable the web interface for OpenEnv (if applicable)
-ENV ENABLE_WEB_INTERFACE=false
+ENV ENABLE_WEB_INTERFACE=true
 
 # Set PATH to use the virtual environment
 ENV PATH="/app/.venv/bin:$PATH"
@@ -90,6 +90,9 @@ ENV PYTHONPATH="/app/env:$PYTHONPATH"
 
 ENV AWS_RL_ENV_POOL_SIZE=8
 ENV AWS_RL_ENV_MINISTACK_BASE_PORT=4566
+# Dedicated port for the web playground's lazily-spawned MiniStack.
+# Kept outside the pool's range so a WebSocket session can never claim it.
+ENV AWS_RL_ENV_WEB_MINISTACK_PORT=4565
 
 # DEV_MODE=1 enables live reload via --reload flag
 ENV DEV_MODE=0
@@ -100,6 +103,9 @@ ENV MODEL_NAME=Qwen/Qwen2.5-72B-Instruct
 # Entrypoint: start N MiniStack instances (AWS_RL_ENV_POOL_SIZE, default 1),
 # then run the FastAPI server. Each MiniStack listens on a distinct port
 # starting at AWS_RL_ENV_MINISTACK_BASE_PORT (default 4566).
+# The web playground's MiniStack on AWS_RL_ENV_WEB_MINISTACK_PORT is NOT
+# started here — the FastAPI server spawns it lazily on the first /web/*
+# request so training-only deployments pay zero cost.
 # cloudflared tunnel --url localhost:8000
 CMD ["sh", "-c", "\
   POOL_SIZE=\"${AWS_RL_ENV_POOL_SIZE:-1}\"; \
