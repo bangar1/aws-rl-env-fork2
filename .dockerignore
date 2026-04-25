@@ -1,0 +1,21 @@
+.venv/
+**/__pycache__/
+**/*.pyc
+**/.pytest_cache/
+**/.mypy_cache/
+**/.ruff_cache/
+.git/
+.idea/
+.vscode/
+.DS_Store
+
+# Notebook outputs / training artifacts (rebuilt inside the job)
+train/out/
+outputs/
+*.ipynb_checkpoints/
+
+# Local-only screenshots, scratch
+scripts/Screenshot*.png
+*.png
+*.jpg
+*.jpeg
