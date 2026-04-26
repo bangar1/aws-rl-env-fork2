@@ -228,9 +228,9 @@ The full pipeline is reproducible on a Colab GPU runtime. Drop your token into C
 
 | Notebook                                                                            | What it does                                          | Open in Colab                                |
 |-------------------------------------------------------------------------------------|-------------------------------------------------------|----------------------------------------------|
-| [train/train_sft_lora.ipynb](train/train_sft_lora.ipynb)                            | Stage 1 — SFT LoRA fine-tuning of Qwen2.5-Coder-3B    | <!-- TODO: paste Colab URL here --> |
-| [train/train_grpo_lora.ipynb](train/train_grpo_lora.ipynb)                          | Stage 2 — GRPO RL training with multi-turn rollouts   | <!-- TODO: paste Colab URL here --> |
-| [compare/compare_base_vs_sft.ipynb](compare/compare_base_vs_sft.ipynb)              | Side-by-side: base model vs SFT adapter (dataset + RL env) | <!-- TODO: paste Colab URL here --> |
+| [train/train_sft_lora.ipynb](train/train_sft_lora.ipynb)                            | Stage 1 — SFT LoRA fine-tuning of Qwen2.5-Coder-3B    | https://colab.research.google.com/drive/1dm9sDaLxHX6s9zEG_SC0FQcKWKkc3TfL?usp=sharing|
+| [train/train_grpo_lora.ipynb](train/train_grpo_lora.ipynb)                          | Stage 2 — GRPO RL training with multi-turn rollouts   | https://colab.research.google.com/drive/1NwiOM0h_JpXXGRxfY_xZtDiaigvIaKjx?usp=sharing |
+| [compare/compare_base_vs_sft.ipynb](compare/compare_base_vs_sft.ipynb)              | Side-by-side: base model vs SFT adapter (dataset + RL env) | https://colab.research.google.com/drive/17406aiad8h4nAphV42vVNZ-a5SzZMIre?usp=sharing |
 
 Replace each `<!-- TODO -->` with the Colab badge URL once published.
 
@@ -686,9 +686,9 @@ These tests double as the source of truth for canonical solutions used by the SF
 - **HF Space**: [huggingface.co/spaces/Sizzing/aws_rl_env](https://huggingface.co/spaces/Sizzing/aws_rl_env)
 - **API docs**: [/docs](https://sizzing-aws-rl-env.hf.space/docs) · [/redoc](https://sizzing-aws-rl-env.hf.space/redoc)
 - **SFT adapter**: [Sizzing/aws-rl-sft-qwen25coder3b-adapter](https://huggingface.co/Sizzing/aws-rl-sft-qwen25coder3b-adapter)
+- **GRPO adapter**: [Sizzing/aws-rl-grpo-qwen25coder3b-adapter](https://huggingface.co/Sizzing/aws-rl-grpo-qwen25coder3b-adapter)
 - **Dataset**: [Sizzing/aws-rl-sft](https://huggingface.co/datasets/Sizzing/aws-rl-sft)
 - **GitHub**: [github.com/udaykiranpadhy/aws-rl-env](https://github.com/udaykiranpadhy/aws-rl-env)
-- **Colab**: <!-- TODO: paste Colab URL here -->
 
 ---
 
@@ -699,6 +699,7 @@ These tests double as the source of truth for canonical solutions used by the SF
 - **OpenEnv** — environment protocol and Python client framework.
 - **TRL** (HuggingFace) — `GRPOTrainer` implementation.
 - **Unsloth** — 4-bit quantized model loaders + fused training kernels.
+- **Google Colab** for providing their infrastructure to train models.
 - **AWS service icons** in [server/static/img/aws/](server/static/img/aws/) — used in the web playground.
 
 ---
