@@ -1691,7 +1691,193 @@
       font-size: 0.85rem;
       color: var(--text-muted);
     }
-  </style>>
+
+    /* ===== Training Figures Gallery ===== */
+    .figure-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1rem;
+      margin-top: 0.5rem;
+    }
+
+    .figure-grid.full {
+      grid-template-columns: 1fr;
+    }
+
+    .figure-card {
+      background: var(--surface-color);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      overflow: hidden;
+      transition: all 0.25s ease;
+      display: flex;
+      flex-direction: column;
+      cursor: zoom-in;
+      position: relative;
+    }
+
+    .figure-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+      border-color: var(--blue-accent);
+    }
+
+    .figure-card .figure-img-wrap {
+      background: #f8f9fa;
+      padding: 0.75rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 160px;
+    }
+
+    .figure-card img {
+      width: 100%;
+      height: auto;
+      display: block;
+      border-radius: 8px;
+    }
+
+    .figure-caption {
+      padding: 0.85rem 1rem 1rem;
+      border-top: 1px solid var(--border-color);
+    }
+
+    .figure-caption strong {
+      display: block;
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--text-main);
+      margin-bottom: 0.2rem;
+    }
+
+    .figure-caption span {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      line-height: 1.45;
+    }
+
+    /* ===== Stats strip ===== */
+    .stats-strip {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 0.75rem;
+      margin: 1.25rem 0 0.5rem;
+    }
+
+    .stat-tile {
+      background: #f8f9fa;
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      padding: 1rem;
+      text-align: center;
+      transition: all 0.2s ease;
+    }
+
+    .stat-tile:hover {
+      border-color: var(--blue-accent);
+      box-shadow: 0 2px 8px rgba(26, 115, 232, 0.1);
+    }
+
+    .stat-tile .stat-val {
+      display: block;
+      font-size: 1.6rem;
+      font-weight: 600;
+      color: var(--blue-accent);
+      line-height: 1.1;
+      margin-bottom: 0.2rem;
+    }
+
+    .stat-tile .stat-label {
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .stat-tile.success .stat-val {
+      color: #137333;
+    }
+
+    .stat-tile.warning .stat-val {
+      color: #b05a00;
+    }
+
+    /* ===== Lightbox for figures ===== */
+    #figure-lightbox {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.85);
+      z-index: 3000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+      cursor: zoom-out;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+    }
+
+    #figure-lightbox.open {
+      display: flex;
+      opacity: 1;
+    }
+
+    #figure-lightbox img {
+      max-width: 92vw;
+      max-height: 88vh;
+      border-radius: 12px;
+      box-shadow: 0 12px 48px rgba(0, 0, 0, 0.4);
+    }
+
+    /* ===== Comparison table ===== */
+    .results-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.92rem;
+      margin-top: 0.5rem;
+    }
+
+    .results-table th,
+    .results-table td {
+      padding: 0.7rem 1rem;
+      text-align: left;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .results-table th {
+      font-weight: 600;
+      color: var(--text-muted);
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      background: #f8f9fa;
+    }
+
+    .results-table th.num,
+    .results-table td.num {
+      text-align: right;
+    }
+
+    .results-table td.num {
+      font-family: 'Google Sans Mono', 'SF Mono', monospace;
+    }
+
+    .delta-up {
+      color: #137333;
+      font-weight: 600;
+    }
+
+    .delta-down {
+      color: #c5221f;
+      font-weight: 600;
+    }
+
+    .delta-flat {
+      color: var(--text-muted);
+    }
+  </style>
 </head>
 
 <body>
@@ -1702,6 +1888,7 @@
       <li><a href="#about" class="nav-link active">About</a></li>
       <li><a href="#tiers" class="nav-link">Tasks</a></li>
       <li><a href="#features" class="nav-link">Features</a></li>
+      <li><a href="#results" class="nav-link">Results</a></li>
       <li><a href="#api" class="nav-link">API</a></li>
       <li><a href="#playground" class="nav-link">Playground</a></li>
       <li><a href="#links" class="nav-link">Links</a></li>
@@ -1712,15 +1899,13 @@
   <section class="hero">
     <div class="hero-bg"></div>
     <div class="hero-content">
-      <h1 id="hero-title" class="type-animate">AWS Cloud CLI and SRE Reinforcement Learning Environment</h1>
-      <h2 id="hero-subtitle" class="type-animate">Train AI agents on real AWS cloud operations. The agents interact with
-        a real-world AWS Shell simulator. The agents send AWS CLI
-        commands as actions, receive structured observations, and progress through a set of curriculum tasks
-        across 5 difficulty tiers — from basic listing to SRE incident response. The response of the executed command is
-        perfectely same as of the production once. The grading system evaluates the rewards and penalties based on the
-        AWS Infrastructure's state instead of static metrics. The output is then used to guide the agent's learning
-        process. It applies a lot of advanced grading, teaching and anti reward hacking techniques which is discussed in
-        detail in the Features section.</h2>
+      <h1 id="hero-title" class="type-animate">AWS Cloud Operations &middot; RL Environment &amp; Training Pipeline</h1>
+      <h2 id="hero-subtitle" class="type-animate">Cloud agents fail in production not because they don&rsquo;t know the
+        commands &mdash; but because state drifts, services hiccup, and reward signals get gamed. We built an
+        environment that simulates all three: 120+ AWS tasks under chaos and drift, an 8-layer anti-reward-hacking
+        stack, and an adversarial curriculum that targets the agent&rsquo;s own weak spots. After SFT &rarr; GRPO on a
+        single GPU with 8 parallel rollouts, format compliance hit 100%, exact-match jumped 39% &rarr; 89%, and
+        intermediate-tier success climbed 81% &rarr; 87%.</h2>
       <div class="hero-cta-container hero-fade-up">
         <a href="#playground" class="btn-primary">
           Try the Playground
@@ -1755,20 +1940,31 @@
       <div class="right-col">
         <div class="card animate-up">
           <h3>Learn AWS by doing.</h3>
-          <p>An OpenEnv-compliant RL environment where agents execute real AWS CLI commands against a simulated cloud
-            infra in real time. The simulator is inspired by MiniStack AWS simulator. A lot of futher refinements were
-            performed on top of MiniStack simulator to achieve a more realistic and comprehensive learning experience.
-            A progressive curriculum tracks mastery and adapts difficulty in real-time.
-          </p>
-          <div class="skills-container">
+          <p>An OpenEnv-compatible RL environment where agents execute real AWS CLI commands against a vendored
+            MiniStack simulator that responds with production-equivalent JSON. 120+ tasks across 5 tiers (warmup &rarr;
+            expert) with adaptive selection, mastery tracking, spaced repetition, chaos injection and drift-detection
+            scenarios &mdash; every feature designed to keep the reward signal honest and prevent the agent from gaming
+            it. Trained end-to-end with a 1,500-row synthetic SFT dataset and TRL GRPO with 8-way parallel rollouts on a
+            single GPU.</p>
+          <div class="stats-strip">
+            <div class="stat-tile"><span class="stat-val">120+</span><span class="stat-label">Tasks</span></div>
+            <div class="stat-tile"><span class="stat-val">5</span><span class="stat-label">Difficulty Tiers</span></div>
+            <div class="stat-tile"><span class="stat-val">34</span><span class="stat-label">AWS Services</span></div>
+            <div class="stat-tile"><span class="stat-val">8</span><span class="stat-label">Parallel Rollouts</span></div>
+            <div class="stat-tile success"><span class="stat-val">+50pp</span><span class="stat-label">Exact-match Δ
+                (SFT)</span></div>
+            <div class="stat-tile success"><span class="stat-val">100%</span><span class="stat-label">Format Compliance
+                (post-SFT)</span></div>
+          </div>
+          <div class="skills-container" style="margin-top: 1.5rem;">
             <span class="skill-tag">S3</span>
-            <span class="skill-tag">ALB</span>
             <span class="skill-tag">EC2</span>
             <span class="skill-tag">DynamoDB</span>
             <span class="skill-tag">Lambda</span>
             <span class="skill-tag">SQS</span>
             <span class="skill-tag">SNS</span>
             <span class="skill-tag">IAM</span>
+            <span class="skill-tag">RDS</span>
             <span class="skill-tag">API Gateway</span>
             <span class="skill-tag">CloudFormation</span>
             <span class="skill-tag">CloudWatch</span>
@@ -1776,7 +1972,12 @@
             <span class="skill-tag">SES</span>
             <span class="skill-tag">Step Functions</span>
             <span class="skill-tag">Secrets Manager</span>
-            <span class="skill-tag accent">+ 20 more</span>
+            <span class="skill-tag">ELBv2</span>
+            <span class="skill-tag">Route53</span>
+            <span class="skill-tag">Glue</span>
+            <span class="skill-tag">Athena</span>
+            <span class="skill-tag">EFS</span>
+            <span class="skill-tag accent">+ 14 more</span>
           </div>
         </div>
       </div>
@@ -1799,7 +2000,7 @@
             <div class="timeline-item active" style="--dot-color: #137333; --dot-bg: #e6f4ea;">
               <div class="timeline-header">
                 <div class="role-title">Warmup</div>
-                <div class="date-badge">20 tasks</div>
+                <div class="date-badge">25 tasks</div>
               </div>
               <p class="timeline-subtitle">List resources &mdash; single read-only commands</p>
               <ul class="timeline-points">
@@ -1813,7 +2014,7 @@
             <div class="timeline-item active" style="--dot-color: #174ea6; --dot-bg: #e8f0fe;">
               <div class="timeline-header">
                 <div class="role-title">Beginner</div>
-                <div class="date-badge">20 tasks</div>
+                <div class="date-badge">25 tasks</div>
               </div>
               <p class="timeline-subtitle">Create single resources with verification</p>
               <ul class="timeline-points">
@@ -1829,7 +2030,7 @@
             <div class="timeline-item active" style="--dot-color: #b05a00; --dot-bg: #fef7e0;">
               <div class="timeline-header">
                 <div class="role-title">Intermediate</div>
-                <div class="date-badge">20 tasks</div>
+                <div class="date-badge">25 tasks</div>
               </div>
               <p class="timeline-subtitle">Multi-step workflows &mdash; create, configure, connect</p>
               <ul class="timeline-points">
@@ -1844,7 +2045,7 @@
             <div class="timeline-item active" style="--dot-color: #c5221f; --dot-bg: #fce8e6;">
               <div class="timeline-header">
                 <div class="role-title">Advanced</div>
-                <div class="date-badge">20 tasks</div>
+                <div class="date-badge">25 tasks</div>
               </div>
               <p class="timeline-subtitle">Cross-service architectures spanning multiple AWS services</p>
               <ul class="timeline-points">
@@ -1860,7 +2061,7 @@
             <div class="timeline-item active" style="--dot-color: #7627bb; --dot-bg: #f3e8fd;">
               <div class="timeline-header">
                 <div class="role-title">Expert</div>
-                <div class="date-badge">20 tasks</div>
+                <div class="date-badge">24 tasks + 9 drift</div>
               </div>
               <p class="timeline-subtitle">SRE incidents &amp; drift detection &mdash; diagnose and fix</p>
               <ul class="timeline-points">
@@ -1868,7 +2069,7 @@
                 <li>Graded by <strong>state_checks</strong> &mdash; actual CLI commands run against MiniStack at grading
                   time</li>
                 <li>Chaos injection at <strong>30% probability</strong> &mdash; maximum perturbation frequency</li>
-                <li><strong>6 drift detection tasks</strong> &mdash; correct infra is provisioned, then 2-3 random
+                <li><strong>9 drift detection tasks</strong> &mdash; correct infra is provisioned, then 2&ndash;3 random
                   mutations applied from a pool</li>
                 <li>Agent must audit environment, discover which resources drifted, and fix only those</li>
                 <li>Drift is randomized per episode &mdash; prevents memorization of fix sequences</li>
@@ -2179,6 +2380,310 @@
       </div>
     </div>
 
+    <!-- Results & Training -->
+    <div class="section-wrapper" id="results">
+      <div class="left-col">
+        <div class="icon-container">
+          <svg viewBox="0 0 24 24">
+            <path d="M3 3v18h18M7 14l4-4 4 4 6-6" />
+          </svg>
+        </div>
+        <span class="section-title">Results</span>
+      </div>
+      <div class="right-col">
+
+        <!-- Pipeline summary -->
+        <div class="card animate-up">
+          <h3>SFT &rarr; GRPO Training Pipeline</h3>
+          <p>Two-stage training on <code style="background:#f1f3f4;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.9rem;">unsloth/Qwen2.5-Coder-3B-Instruct-bnb-4bit</code> — the
+            base picked from an 11-model benchmark on 27 held-out prompts. Stage 1: LoRA SFT on 1,500 synthetic
+            trajectories spanning 5 shapes. Stage 2: TRL GRPO with multi-turn rollouts, group-relative advantages, KL
+            to SFT reference, and Optuna search over an 8-dim hyperparameter space.</p>
+          <div class="stats-strip">
+            <div class="stat-tile"><span class="stat-val">1,500</span><span class="stat-label">SFT Train Rows</span>
+            </div>
+            <div class="stat-tile"><span class="stat-val">G=8</span><span class="stat-label">Rollouts / Step</span>
+            </div>
+            <div class="stat-tile"><span class="stat-val">200</span><span class="stat-label">Final GRPO Steps</span>
+            </div>
+            <div class="stat-tile"><span class="stat-val">11</span><span class="stat-label">Models Benchmarked</span>
+            </div>
+            <div class="stat-tile success"><span class="stat-val">+66.7pp</span><span class="stat-label">Format
+                Δ (SFT)</span></div>
+            <div class="stat-tile success"><span class="stat-val">+50.0pp</span><span class="stat-label">Exact-match
+                Δ (SFT)</span></div>
+          </div>
+        </div>
+
+        <!-- Base model selection -->
+        <div class="card animate-up">
+          <h3>Base-Model Selection</h3>
+          <p>11 chat models &times; 27 held-out prompts. Qwen2.5-Coder-3B-Instruct wins on every metric that matters:
+            41% exact match, 63% operation match, 3.1 s/call (3&times; faster than the 4B runner-up).</p>
+          <div class="figure-grid full">
+            <div class="figure-card" data-fig="/static/figures/model_eval_chart.png">
+              <div class="figure-img-wrap"><img src="/static/figures/model_eval_chart.png"
+                  alt="Top 4 candidate models on the held-out benchmark"></div>
+              <div class="figure-caption">
+                <strong>Top 4 Candidate Models</strong>
+                <span>Exact match, operation match, latency &mdash; head-to-head on 27 held-out prompts.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Base vs SFT -->
+        <div class="card animate-up">
+          <h3>Base vs SFT &mdash; Eval Delta</h3>
+          <p>After running the SFT pipeline end-to-end, format compliance is now perfect and exact-match jumped from
+            39% to 89%.</p>
+          <table class="results-table">
+            <thead>
+              <tr>
+                <th>Metric</th>
+                <th class="num">Base</th>
+                <th class="num">Post-SFT</th>
+                <th class="num">Δ</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Format</td>
+                <td class="num">33.3%</td>
+                <td class="num">100.0%</td>
+                <td class="num delta-up">+66.7 pp</td>
+              </tr>
+              <tr>
+                <td>Exact match</td>
+                <td class="num">38.9%</td>
+                <td class="num">88.9%</td>
+                <td class="num delta-up">+50.0 pp</td>
+              </tr>
+              <tr>
+                <td>Service match</td>
+                <td class="num">77.8%</td>
+                <td class="num">88.9%</td>
+                <td class="num delta-up">+11.1 pp</td>
+              </tr>
+              <tr>
+                <td>Operation match</td>
+                <td class="num">61.1%</td>
+                <td class="num">88.9%</td>
+                <td class="num delta-up">+27.8 pp</td>
+              </tr>
+              <tr>
+                <td>Latency</td>
+                <td class="num">2.03 s</td>
+                <td class="num">1.40 s</td>
+                <td class="num delta-up">&minus;0.63 s</td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="figure-grid" style="margin-top: 1.25rem;">
+            <div class="figure-card" data-fig="/static/figures/base_vs_sft_success.png">
+              <div class="figure-img-wrap"><img src="/static/figures/base_vs_sft_success.png"
+                  alt="Base vs SFT eval-metrics comparison"></div>
+              <div class="figure-caption">
+                <strong>Base vs SFT &mdash; Eval Metrics</strong>
+                <span>Per-metric comparison on the held-out prompt set.</span>
+              </div>
+            </div>
+            <div class="figure-card" data-fig="/static/figures/compare_dataset.png">
+              <div class="figure-img-wrap"><img src="/static/figures/compare_dataset.png"
+                  alt="Dataset comparison: base vs SFT (per-row scores)"></div>
+              <div class="figure-caption">
+                <strong>Dataset Comparison</strong>
+                <span>Per-row scores: base vs SFT on the SFT validation set.</span>
+              </div>
+            </div>
+            <div class="figure-card" data-fig="/static/figures/compare_rl_env.png">
+              <div class="figure-img-wrap"><img src="/static/figures/compare_rl_env.png"
+                  alt="RL env comparison: base vs SFT"></div>
+              <div class="figure-caption">
+                <strong>Live RL Env Comparison</strong>
+                <span>Per-episode rewards on the live MiniStack-backed environment.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SFT training -->
+        <div class="card animate-up">
+          <h3>SFT Training Curves &amp; Optuna</h3>
+          <p>Best SFT trial (out of 6): <code style="background:#f1f3f4;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.9rem;">lora_r=16, lora_alpha=16, dropout=0.0058, lr=4.03e-4,
+              warmup=0.1</code>.</p>
+          <div class="figure-grid">
+            <div class="figure-card" data-fig="/static/figures/sft_loss_curve.png">
+              <div class="figure-img-wrap"><img src="/static/figures/sft_loss_curve.png"
+                  alt="SFT loss curve over training"></div>
+              <div class="figure-caption">
+                <strong>SFT Loss Curve</strong>
+                <span>Train + validation loss across the SFT run.</span>
+              </div>
+            </div>
+            <div class="figure-card" data-fig="/static/figures/optuna_param_importance.png">
+              <div class="figure-img-wrap"><img src="/static/figures/optuna_param_importance.png"
+                  alt="Optuna parameter importances"></div>
+              <div class="figure-caption">
+                <strong>Optuna Parameter Importances</strong>
+                <span>Which hyperparameters mattered most for the SFT objective.</span>
+              </div>
+            </div>
+            <div class="figure-card" data-fig="/static/figures/optuna_history.png">
+              <div class="figure-img-wrap"><img src="/static/figures/optuna_history.png"
+                  alt="Optuna optimization history"></div>
+              <div class="figure-caption">
+                <strong>Optuna History</strong>
+                <span>Best objective value over the 6-trial TPE search.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- GRPO results -->
+        <div class="card animate-up">
+          <h3>GRPO &mdash; Live Multi-step Env Eval</h3>
+          <p>After 35 GRPO steps on top of the SFT adapter (best Optuna config: <code style="background:#f1f3f4;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.9rem;">lr=1.6e-5, β=0.0021,
+              T=0.99</code>), re-evaluated end-to-end on 100+ episodes.</p>
+          <table class="results-table">
+            <thead>
+              <tr>
+                <th>Metric</th>
+                <th class="num">Base + SFT</th>
+                <th class="num">+ GRPO</th>
+                <th class="num">Δ</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Overall success</td>
+                <td class="num">86.8%</td>
+                <td class="num">86.2%</td>
+                <td class="num delta-flat">&minus;0.5 pp</td>
+              </tr>
+              <tr>
+                <td>Beginner</td>
+                <td class="num">96.2%</td>
+                <td class="num">100.0%</td>
+                <td class="num delta-up">+3.8 pp</td>
+              </tr>
+              <tr>
+                <td>Intermediate</td>
+                <td class="num">81.0%</td>
+                <td class="num">87.0%</td>
+                <td class="num delta-up">+6.0 pp</td>
+              </tr>
+              <tr>
+                <td>Expert</td>
+                <td class="num">22.2%</td>
+                <td class="num">22.2%</td>
+                <td class="num delta-flat">flat</td>
+              </tr>
+              <tr>
+                <td>Drift repair</td>
+                <td class="num">22.2%</td>
+                <td class="num">22.2%</td>
+                <td class="num delta-flat">flat</td>
+              </tr>
+              <tr>
+                <td>Destructive-action fail</td>
+                <td class="num">15.1%</td>
+                <td class="num">14.7%</td>
+                <td class="num delta-up">&minus;0.4 pp</td>
+              </tr>
+            </tbody>
+          </table>
+          <p style="margin-top: 1rem; font-size: 0.95rem;"><strong>Honest reading:</strong> the 35-step GRPO run
+            preserves the SFT gains and modestly improves the middle tiers, but does not crack the expert-tier
+            bottleneck. Longer runs and more curriculum exposure to expert tasks are next.</p>
+          <div class="figure-grid" style="margin-top: 1.25rem;">
+            <div class="figure-card" data-fig="/static/figures/sft_vs_grpo_metrics_grid.png">
+              <div class="figure-img-wrap"><img src="/static/figures/sft_vs_grpo_metrics_grid.png"
+                  alt="SFT vs GRPO metrics grid"></div>
+              <div class="figure-caption">
+                <strong>SFT vs GRPO &mdash; Metrics Grid</strong>
+                <span>Side-by-side eval across all multi-step metrics.</span>
+              </div>
+            </div>
+            <div class="figure-card" data-fig="/static/figures/sft_vs_grpo_by_tier.png">
+              <div class="figure-img-wrap"><img src="/static/figures/sft_vs_grpo_by_tier.png"
+                  alt="SFT vs GRPO by tier"></div>
+              <div class="figure-caption">
+                <strong>SFT vs GRPO &mdash; By Tier</strong>
+                <span>Where GRPO actually moves the needle (and where it doesn&rsquo;t).</span>
+              </div>
+            </div>
+            <div class="figure-card" data-fig="/static/figures/qualitative_rollouts.png">
+              <div class="figure-img-wrap"><img src="/static/figures/qualitative_rollouts.png"
+                  alt="Qualitative rollouts on representative tasks"></div>
+              <div class="figure-caption">
+                <strong>Qualitative Rollouts</strong>
+                <span>One sample episode per tier, post-GRPO.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- GRPO training curves -->
+        <div class="card animate-up">
+          <h3>GRPO Training Curves</h3>
+          <p>Per-step training signals from the final 35-step GRPO run, plus the 4-trial Optuna search that picked the
+            final config.</p>
+          <div class="figure-grid">
+            <div class="figure-card" data-fig="/static/figures/grpo_reward_curve.png">
+              <div class="figure-img-wrap"><img src="/static/figures/grpo_reward_curve.png"
+                  alt="GRPO env reward over training"></div>
+              <div class="figure-caption">
+                <strong>GRPO Env Reward</strong>
+                <span>Mean reward across G=8 rollouts at each training step.</span>
+              </div>
+            </div>
+            <div class="figure-card" data-fig="/static/figures/grpo_per_tier_curve.png">
+              <div class="figure-img-wrap"><img src="/static/figures/grpo_per_tier_curve.png"
+                  alt="GRPO per-tier reward curve"></div>
+              <div class="figure-caption">
+                <strong>Per-Tier Reward Curve</strong>
+                <span>How each curriculum tier responds to GRPO updates.</span>
+              </div>
+            </div>
+            <div class="figure-card" data-fig="/static/figures/grpo_final_per_step.png">
+              <div class="figure-img-wrap"><img src="/static/figures/grpo_final_per_step.png"
+                  alt="GRPO final per-step training signals"></div>
+              <div class="figure-caption">
+                <strong>Final Per-Step Signals</strong>
+                <span>Reward, KL, loss, and policy ratio across the final run.</span>
+              </div>
+            </div>
+            <div class="figure-card" data-fig="/static/figures/grpo_optuna_trials_comparison.png">
+              <div class="figure-img-wrap"><img src="/static/figures/grpo_optuna_trials_comparison.png"
+                  alt="GRPO Optuna trial comparison"></div>
+              <div class="figure-caption">
+                <strong>GRPO Optuna Trials</strong>
+                <span>Reward trajectories across 4 Optuna trials.</span>
+              </div>
+            </div>
+            <div class="figure-card" data-fig="/static/figures/grpo_optuna_importances.png">
+              <div class="figure-img-wrap"><img src="/static/figures/grpo_optuna_importances.png"
+                  alt="GRPO Optuna parameter importances"></div>
+              <div class="figure-caption">
+                <strong>GRPO Param Importances</strong>
+                <span>Which knobs moved GRPO objective the most.</span>
+              </div>
+            </div>
+            <div class="figure-card" data-fig="/static/figures/grpo_optuna_history.png">
+              <div class="figure-img-wrap"><img src="/static/figures/grpo_optuna_history.png"
+                  alt="GRPO Optuna optimization history"></div>
+              <div class="figure-caption">
+                <strong>GRPO Optuna History</strong>
+                <span>Best objective value over the 4-trial search.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
     <!-- API Access -->
     <div class="section-wrapper" id="api">
       <div class="left-col">
@@ -2407,13 +2912,26 @@ asyncio.run(main())
             </a>
             <a href="https://huggingface.co/spaces/Sizzing/aws_rl_env" target="_blank" rel="noopener"
               class="btn-secondary" style="display:inline-flex; align-items:center; gap:0.5rem;">
-              &#129303; Hugging Face Space
+              &#129303; HF Space
+            </a>
+            <a href="https://huggingface.co/Sizzing/aws-rl-sft-qwen25coder3b-adapter" target="_blank" rel="noopener"
+              class="btn-secondary" style="display:inline-flex; align-items:center; gap:0.5rem;">
+              &#129303; SFT Adapter
+            </a>
+            <a href="https://huggingface.co/datasets/Sizzing/aws-rl-sft" target="_blank" rel="noopener"
+              class="btn-secondary" style="display:inline-flex; align-items:center; gap:0.5rem;">
+              &#129303; Dataset
             </a>
           </div>
         </div>
       </div>
     </div>
 
+  </div>
+
+  <!-- Figure Lightbox -->
+  <div id="figure-lightbox">
+    <img id="figure-lightbox-img" src="" alt="">
   </div>
 
   <!-- Feature Detail Modal -->
@@ -2485,6 +3003,7 @@ asyncio.run(main())
           <li><a href="#about">About</a></li>
           <li><a href="#tiers">Tasks</a></li>
           <li><a href="#features">Features</a></li>
+          <li><a href="#results">Results</a></li>
           <li><a href="#api">API Docs</a></li>
           <li><a href="#playground">Playground</a></li>
         </ul>
@@ -2493,6 +3012,11 @@ asyncio.run(main())
         <h4>Resources</h4>
         <ul>
           <li><a href="https://github.com/udaykiranpadhy/aws-rl-env" target="_blank" rel="noopener">GitHub</a></li>
+          <li><a href="https://huggingface.co/spaces/Sizzing/aws_rl_env" target="_blank" rel="noopener">HF Space</a></li>
+          <li><a href="https://huggingface.co/Sizzing/aws-rl-sft-qwen25coder3b-adapter" target="_blank"
+                rel="noopener">SFT Adapter</a></li>
+          <li><a href="https://huggingface.co/datasets/Sizzing/aws-rl-sft" target="_blank" rel="noopener">SFT Dataset</a>
+          </li>
           <li><a href="/docs" target="_blank">API Reference</a></li>
           <li><a href="/redoc" target="_blank">ReDoc</a></li>
         </ul>
@@ -2672,7 +3196,7 @@ asyncio.run(main())
     let stepCount = 0;
 
     // Services that have official AWS SVG files in /static/img/aws/
-    const SVC_IMG_FILES = ['s3', 'sqs', 'sns', 'lambda', 'dynamodb', 'iam', 'ec2', 'rds', 'cloudformation', 'cloudwatch', 'route53', 'apigateway', 'apigateway_v1', 'elasticache', 'elbv2', 'events', 'ssm', 'cognito-idp', 'glue', 'firehose', 'athena', 'emr', 'efs', 'ebs', 'kinesis', 'logs', 'monitoring', 'ses', 'ses_v2', 'acm', 'wafv2', 'states', 'secretsmanager', 'ecs', 'elasticmapreduce', 'elasticloadbalancing', 'elasticfilesystem'];
+    const SVC_IMG_FILES = ['s3', 'sqs', 'sns', 'lambda', 'dynamodb', 'iam', 'ec2', 'rds', 'rds-data', 'cloudformation', 'cloudwatch', 'route53', 'apigateway', 'apigateway_v1', 'elasticache', 'elbv2', 'events', 'ssm', 'cognito-idp', 'cognito-identity', 'glue', 'firehose', 'athena', 'emr', 'efs', 'ebs', 'kinesis', 'logs', 'monitoring', 'ses', 'ses_v2', 'acm', 'wafv2', 'states', 'secretsmanager', 'ecs', 'ecr', 'eks', 'elasticmapreduce', 'elasticloadbalancing', 'elasticfilesystem', 'appconfig', 'appsync', 'autoscaling', 'cloudfront', 'codebuild', 'kms', 'scheduler', 'servicediscovery', 'sts', 'tagging', 'transfer', 's3files'];
 
     const DEFAULT_ICON = '<circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/>';
 
@@ -3806,6 +4330,35 @@ asyncio.run(main())
         openFeatureModal(chip.getAttribute('data-feature-id'));
       });
     });
+
+    // Figure lightbox — click any figure-card to zoom
+    (function () {
+      const lightbox = document.getElementById('figure-lightbox');
+      const lightboxImg = document.getElementById('figure-lightbox-img');
+      if (!lightbox || !lightboxImg) return;
+
+      document.querySelectorAll('.figure-card[data-fig]').forEach(card => {
+        card.addEventListener('click', () => {
+          const src = card.getAttribute('data-fig');
+          if (!src) return;
+          lightboxImg.src = src;
+          const captionEl = card.querySelector('.figure-caption strong');
+          lightboxImg.alt = captionEl ? captionEl.textContent : '';
+          lightbox.classList.add('open');
+          document.body.style.overflow = 'hidden';
+        });
+      });
+
+      function closeLightbox() {
+        lightbox.classList.remove('open');
+        document.body.style.overflow = '';
+      }
+
+      lightbox.addEventListener('click', closeLightbox);
+      document.addEventListener('keydown', e => {
+        if (e.key === 'Escape' && lightbox.classList.contains('open')) closeLightbox();
+      });
+    })();
   </script>
 </body>
 
