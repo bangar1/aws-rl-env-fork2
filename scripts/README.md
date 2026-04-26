@@ -234,24 +234,6 @@ Expected output: 8 simultaneous "connection open" lines, 8 independent reset/ste
 
 The screenshot at [docs/figures/env_init_screenshot.png](../docs/figures/env_init_screenshot.png) captures one such run.
 
----
-
-## 8. Files in this directory
-
-| File                                                  | Purpose                                                                  |
-|-------------------------------------------------------|--------------------------------------------------------------------------|
-| [grpo_pool.py](grpo_pool.py) (139 LOC)                | Async-native `GrpoPool` — N persistent WebSockets, `asyncio.gather`, all-or-nothing connect, group-result aggregation |
-| [grpo_train.py](grpo_train.py) (~430 LOC)             | Alternative training entry point that uses `GrpoPool` directly (vs `train_grpo.py` which embeds `MultiTurnEnvPool`) |
-| [TestMultipleConnects.ipynb](TestMultipleConnects.ipynb) | Hands-on demo proving 8 concurrent WebSockets stay isolated           |
-
-Related code outside this directory:
-
-- [train_grpo.py](../train_grpo.py) — `MultiTurnEnvPool` class, the canonical in-process pool
-- [server/app.py](../server/app.py) — `MiniStackPool`, `make_env_factory`, the server-side pool layer
-- [client.py](../client.py) — `AwsRlEnv` WebSocket client used by both pools
-- [tests/test_pool.py](../tests/test_pool.py), [tests/test_grpo_pool.py](../tests/test_grpo_pool.py) — concurrency tests
-
----
 
 ## See also
 

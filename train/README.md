@@ -498,7 +498,6 @@ Heavy logic referenced from these notebooks:
 
 - [train_grpo.py](../train_grpo.py) — the `MultiTurnEnvPool`, GRPO config, Optuna search, `plot_rewards`, and the `run_training` entry point
 - [aws_rl_env_colab.ipynb](../aws_rl_env_colab.ipynb) — Colab driver that imports from `train_grpo.py`
-- [scripts/grpo_pool.py](../scripts/grpo_pool.py) and [scripts/grpo_train.py](../scripts/grpo_train.py) — alternative client-side pool entry point (covered in [scripts/README.md](../scripts/README.md))
 
 ---
 
