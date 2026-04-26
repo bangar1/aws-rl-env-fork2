@@ -361,7 +361,7 @@ else:
 reward *= 0.85 ** hints_used                  # hint decay applied last
 ```
 
-The agent's loss surface is intentionally narrow: only doing the task earns full reward, and every reward-hacking shortcut we identified during design has a defense layer (full list in [server/README.md §9](server/README.md#9-anti-reward-hacking--8-defense-layers)).
+The agent's loss surface is intentionally narrow: only doing the task earns full reward, and every reward-hacking shortcut we identified during design has a defense layer (full list in [Server's Readme file  section §9](server/README.md#9-anti-reward-hacking--8-defense-layers)).
 
 > ![Curriculum progression: 5 tiers, priority scoring formula, mastery + spaced rep + fast-track](docs/figures/curriculum_progression.png)
 
@@ -391,7 +391,7 @@ The training pipeline runs in two stages, both reproducible on Colab. Full detai
 
 | | |
 |---|---|
-| **Base model** | `unsloth/Qwen2.5-Coder-3B-Instruct-bnb-4bit` — picked via [data/sft/MODEL_EVALUATION.md](data/sft/MODEL_EVALUATION.md) |
+| **Base model** | `unsloth/Qwen2.5-Coder-3B-Instruct-bnb-4bit` — picked via [Through model evaluation](data/sft/MODEL_EVALUATION.md) |
 | **SFT LoRA** | `r ∈ {8,16,32}`, `lora_alpha = r × multiplier`, target = attention only, dropout `[0.005, 0.031]` |
 | **GRPO config** | `G=8`, `β=0.04`, `lr=5e-6`, `T=0.9`, `top_p=0.95`, `max_turns=6`, loss=`dapo` |
 | **Optuna search** | TPE sampler, 6 trials × 30 GRPO steps, frozen 10-task held-out val set |
@@ -434,7 +434,7 @@ GRPO needs `G` rollouts on the same task per training step. We run all G in para
                     8 isolated MiniStack instances :4566..:4573
 ```
 
-Wall-clock impact: an 8-rollout × 6-turn episode runs in ~300 ms of env time vs ~2.4 s sequential. Full mechanics, including the **all-or-nothing connect protocol** that prevents pool-slot leakage on flake, are in **[scripts/README.md](scripts/README.md)**.
+Wall-clock impact: an 8-rollout × 6-turn episode runs in ~300 ms of env time vs ~2.4 s sequential. Full mechanics, including the **all-or-nothing connect protocol** that prevents pool-slot leakage on flake, are in **[Scripts README file](scripts/README.md)**.
 
 > ![Parallel rollout: 3 coordinated pool layers](docs/figures/parallel_rollout_diagram.png)
 
@@ -479,7 +479,6 @@ After running the SFT pipeline end-to-end, the eval delta on the same held-out p
 | `exact_pct`     | 38.9%  | **88.9%**  | **+50.0 pp** |
 | `service_pct`   | 77.8%  | **88.9%**  | +11.1 pp    |
 | `operation_pct` | 61.1%  | **88.9%**  | +27.8 pp    |
-| `avg_latency`   | 2.03s  | **1.40s**  | −0.63s (faster!) |
 | `avg_len`       | 85.8   | 74.7     | −11 chars (tighter) |
 
 > ![Base vs SFT eval-metrics comparison](docs/figures/base_vs_sft_success.png)
@@ -575,12 +574,6 @@ make docker-run-detach     # background
 make docker-health         # liveness probe
 ```
 
-### Local
-
-```bash
-make install-all           # uv sync + install aws_infra (MiniStack) editable
-make run                   # starts MiniStack pool + FastAPI server
-```
 
 ### OpenEnv deployment
 
@@ -701,6 +694,7 @@ These tests double as the source of truth for canonical solutions used by the SF
 
 ## 17. Acknowledgments
 
+- **Meta,HuggingFace,UnslothAndScalar** for Organising hackathon and providing mentors to clarify the doubts.
 - **MiniStack** — vendored at [aws_infra/](aws_infra/). Upstream license preserved. Custom modifications attributable to commits `a648c3a`, `a00e981`; periodic upstream syncs `af2e945`, `579597b`.
 - **OpenEnv** — environment protocol and Python client framework.
 - **TRL** (HuggingFace) — `GRPOTrainer` implementation.
