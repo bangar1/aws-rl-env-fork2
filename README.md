@@ -695,7 +695,6 @@ These tests double as the source of truth for canonical solutions used by the SF
 - **SFT adapter**: [Sizzing/aws-rl-sft-qwen25coder3b-adapter](https://huggingface.co/Sizzing/aws-rl-sft-qwen25coder3b-adapter)
 - **Dataset**: [Sizzing/aws-rl-sft](https://huggingface.co/datasets/Sizzing/aws-rl-sft)
 - **GitHub**: [github.com/udaykiranpadhy/aws-rl-env](https://github.com/udaykiranpadhy/aws-rl-env)
-- **Portfolio**: [portfolio.udaykp.dev](https://portfolio.udaykp.dev)
 - **Colab**: <!-- TODO: paste Colab URL here -->
 
 ---
