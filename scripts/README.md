@@ -40,6 +40,8 @@ The parallelism isn't free: each rollout needs **state isolation**. If two rollo
 
 ## 2. Three coordinated pool layers
 
+> ![Parallel rollout architecture](../docs/figures/parallel_rollout_diagram.png)
+
 The system has **three pools** that work together. They look similar at first glance — all of them deal with N concurrent envs — but each operates at a different layer of the stack:
 
 ```

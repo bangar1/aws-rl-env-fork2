@@ -111,7 +111,7 @@ The dataset is a careful mix of **5 trajectory types** (success, multi-step cont
 
 ### Training graphs
 
-The actual SFT run shipped in [`out/`](../out/) achieved validation loss `0.052` after 188 training steps with the best Optuna trial.
+A reference SFT run achieved validation loss `0.052` after 188 training steps with the best Optuna trial. The plots below were exported from that run into [`docs/figures/`](../docs/figures/).
 
 > ![SFT loss curve](../docs/figures/sft_loss_curve.png)
 
@@ -198,7 +198,7 @@ Full curriculum mechanics (priority scoring, mastery, spaced rep, tier promotion
 
 ### Training graphs
 
-The actual GRPO run shipped in [`out_grpo/`](../out_grpo/) ran 35 steps with the best Optuna config (`lr=1.6e-5`, `β=0.0021`, `T=0.99`). Per-step signals from [`out_grpo/final_grpo/checkpoint-35/trainer_state.json`](../out_grpo/final_grpo/checkpoint-35/trainer_state.json):
+A reference GRPO run trained 35 steps with the best Optuna config (`lr=1.6e-5`, `β=0.0021`, `T=0.99`). Per-step training signals (extracted from the run's `trainer_state.json`) are mirrored into [`docs/figures/`](../docs/figures/):
 
 > ![GRPO final per-step training signals](../docs/figures/grpo_final_per_step.png)
 > ![GRPO env reward over training](../docs/figures/grpo_reward_curve.png)
@@ -214,7 +214,7 @@ Notable signals from the run:
 | `completion_length` | 87 tokens (mean) — agent emits compact AWS CLI commands |
 | Format compliance | **100%** (`format_reward/mean = 1.0` every step) |
 
-Multi-step end-to-end re-eval after GRPO ([out_grpo/grpo_multi_step.json](../out_grpo/grpo_multi_step.json)):
+Multi-step end-to-end re-eval after GRPO:
 
 > ![SFT vs GRPO multi-step metrics grid](../docs/figures/sft_vs_grpo_metrics_grid.png)
 
@@ -259,7 +259,7 @@ Persisted to `outputs/.../optuna.db` (SQLite), so trials can be resumed if a Col
 
 ### SFT-stage Optuna results (6 trials)
 
-The SFT-stage Optuna run shipped in [`out/optuna_study.json`](../out/optuna_study.json) explored a 5-parameter space (`lora_r`, `lora_alpha_mul`, `lora_dropout`, `learning_rate`, `warmup_ratio`). 6 trials, validation loss as objective (lower = better):
+The SFT-stage Optuna run explored a 5-parameter space (`lora_r`, `lora_alpha_mul`, `lora_dropout`, `learning_rate`, `warmup_ratio`). 6 trials, validation loss as objective (lower = better):
 
 | Trial | r  | α  | dropout | lr        | warmup | val_loss |
 |------:|---:|---:|:-------:|:---------:|:------:|:--------:|
@@ -295,7 +295,7 @@ Visualized:
 
 ### GRPO-stage Optuna results (4 trials)
 
-The GRPO-stage Optuna run shipped in [`out_grpo/optuna_best.json`](../out_grpo/optuna_best.json) explored a 3-parameter space (`learning_rate`, `beta`, `temperature`). 4 trials, single-step env reward as objective (higher = better):
+The GRPO-stage Optuna run explored a 3-parameter space (`learning_rate`, `beta`, `temperature`). 4 trials, single-step env reward as objective (higher = better):
 
 | Trial | lr        | β        | T     | env_reward | success |
 |------:|:---------:|:--------:|:-----:|:----------:|:-------:|
@@ -393,47 +393,14 @@ Note: the Colab notebooks expect the env server to be reachable. Two options:
 
 ## 7. Logging and artifacts
 
-### Reference SFT output: [`out/`](../out/)
+### Reference training runs (numbers baked into this documentation)
 
-A complete SFT training run is committed (small files only) at the repo root for reproducibility:
+The headline numbers and plots in this repo come from two reference training runs we performed end-to-end:
 
-```
-out/
-├── baseline_metrics.json     # eval scores BEFORE SFT (33% fmt, 39% exact, ...)
-├── delta_summary.json        # base vs post-SFT delta (the headline numbers)
-├── optuna_study.json         # SFT Optuna study summary (all 6 trials + best)
-├── optuna/                   # per-trial workspaces (trial-0..trial-5)
-├── final_sft/                # final TRL SFT trainer checkpoints (gitignored)
-│   ├── checkpoint-100/       # adapter + optimizer + tokenizer at step 100
-│   ├── checkpoint-150/
-│   └── checkpoint-188/       # last checkpoint (final adapter)
-└── plots/                    # 7 ready PNGs (loss curves, Optuna plots, eval comparison)
-```
+- **SFT reference run** — 188 SFT steps with the best Optuna trial. Achieved val loss 0.052 (best of 6 trials). Post-SFT eval delta: format `33% → 100%`, exact `39% → 89%`, latency `2.03s → 1.40s`. The training curves, Optuna plots, and eval comparisons from this run live in [`docs/figures/`](../docs/figures/) (`sft_loss_curve.png`, `optuna_*.png`, `base_vs_sft_success.png`, …).
+- **GRPO reference run** — 35 GRPO steps with the best Optuna trial. Achieved single-step env reward 0.55 (best of 4 trials). Multi-step eval (n≈108): success `86.8% → 86.2%`, beginner `+3.8 pp`, intermediate `+6.0 pp`, expert flat at 22%. The training signals, by-tier breakdowns, and qualitative rollouts from this run also live in [`docs/figures/`](../docs/figures/) (`grpo_final_per_step.png`, `grpo_reward_curve.png`, `sft_vs_grpo_*.png`, `qualitative_rollouts.png`, …).
 
-The contents of `out/plots/` are mirrored into [`docs/figures/`](../docs/figures/) so the READMEs render them. The full TRL checkpoints in `out/final_sft/` are kept for reproducibility but are gitignored (each is ~50 MB; total ~175 MB).
-
-### Reference GRPO output: [`out_grpo/`](../out_grpo/)
-
-A complete GRPO training run is also committed at the repo root:
-
-```
-out_grpo/
-├── baseline_single_step.json   # post-SFT single-step eval (90% reward, 85% success)
-├── baseline_multi_step.json    # post-SFT multi-step eval (86.8% success, 0.88 reward, by tier)
-├── grpo_multi_step.json        # post-GRPO multi-step eval (86.2% success, 0.88 reward, by tier)
-├── optuna_best.json            # GRPO Optuna best params + resolved config
-├── optuna.db                   # SQLite Optuna study (4 trials)
-├── optuna/trial-0..3/          # per-trial trainer_state.json + single_step_metrics.json
-├── qualitative_rollouts.json   # 5 hand-picked sample rollouts (one per tier, post-GRPO)
-├── final_grpo/                 # final TRL GRPO checkpoints (gitignored)
-│   ├── checkpoint-25/
-│   └── checkpoint-35/          # last checkpoint (final GRPO adapter)
-├── grpo_adapter/               # exported final adapter for HF Hub upload (gitignored)
-├── graphs/                     # 10 ready PNGs (Optuna views, training curves, by-tier breakdowns)
-└── graphs.zip
-```
-
-The 10 graphs from `out_grpo/graphs/` are mirrored into [`docs/figures/`](../docs/figures/) under descriptive names (`grpo_optuna_history.png`, `grpo_reward_curve.png`, `grpo_per_tier_curve.png`, `sft_vs_grpo_scalar.png`, `grpo_reward_by_tier.png`, etc.). The full TRL checkpoints in `out_grpo/final_grpo/` and the exported adapter in `out_grpo/grpo_adapter/` are gitignored (~160 MB total).
+The raw training-output directories (TRL checkpoints, optimizer states, exported adapters totalling ~330 MB) are not committed. The metrics, hyperparameters, and visualizations they produced are preserved inline in this README and as PNGs under [`docs/figures/`](../docs/figures/).
 
 ### GRPO output layout
 
@@ -463,7 +430,7 @@ upload_folder(folder_path=str(OUTPUT_DIR), repo_id="your-org/aws-rl-grpo-qwen25c
 
 ## 8. Reproducing results
 
-### Actual SFT result (committed at [`out/`](../out/))
+### Actual SFT result
 
 ```
 SFT (188 steps, best Optuna trial, ~30 min on A10):
@@ -485,7 +452,7 @@ Held-out eval (post-SFT, same prompts as base):
 
 Every target from [data/sft/MODEL_EVALUATION.md §11](../data/sft/MODEL_EVALUATION.md) is met or exceeded.
 
-### Actual GRPO result (committed at [`out_grpo/`](../out_grpo/))
+### Actual GRPO result
 
 ```
 GRPO (35 steps from best Optuna trial, ~1.5 hr on A10):
@@ -515,7 +482,7 @@ Multi-step end-to-end eval (n≈108 episodes):
 
 **Honest reading.** A 35-step GRPO run from a strong SFT starting point (already 86.8% success) is short by RL standards. It preserves the SFT gains, modestly improves the middle tiers, but does not crack the expert-tier ceiling — the 22% expert / 22% drift-repair numbers stay flat because there are too few expert episodes in 35 GRPO steps × G=8 = 280 rollouts, with the curriculum focusing primarily on warmup/beginner/intermediate.
 
-Variance comes mostly from Optuna trial composition. The published SFT adapter (`Sizzing/aws-rl-sft-qwen25coder3b-adapter`) is the SFT result; the GRPO adapter regenerates per-run from `out_grpo/grpo_adapter/`.
+Variance comes mostly from Optuna trial composition. The published SFT adapter (`Sizzing/aws-rl-sft-qwen25coder3b-adapter`) is the SFT result; the GRPO adapter regenerates per-run from the trainer's output directory.
 
 ---
 

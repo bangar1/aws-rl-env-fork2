@@ -15,9 +15,9 @@ tags:
   <img src="docs/figures/ministack_logo.png" alt="MiniStack logo" height="110"/>
 </p>
 
-# AWS Cloud CLI & SRE — A Reinforcement-Learning Environment + Training Pipeline
+# AWS Cloud Operations — RL Environment & Training Pipeline
 
-> An OpenEnv-compatible RL environment with a curriculum of **120+ AWS tasks** across 5 difficulty tiers, paired with a complete **SFT → GRPO** training pipeline (Qwen2.5-Coder-3B + LoRA + Optuna). Vendored MiniStack simulator means **zero AWS cost**, real CLI semantics, and 8-way parallel rollouts that fit on a single GPU.
+> Cloud agents fail in production not because they don’t know the commands — but because state drifts, services hiccup, and reward signals get gamed. We built an environment that simulates all three: 120+ AWS tasks under chaos and drift, an 8-layer anti-reward-hacking stack, and an adversarial curriculum that targets the agent’s own weak spots. After SFT → GRPO on a single GPU with 8 parallel rollouts, format compliance hit 100%, exact-match jumped 39% → 89%, and intermediate-tier success climbed 81% → 87%.
 
 | | |
 |---|---|
@@ -123,6 +123,8 @@ This is the complete surface area of the project. Each entry links to deeper doc
 
 ## 3. Architecture
 
+> ![System architecture](docs/figures/architecture_diagram.png)
+
 ```
 ┌────────────────────────────────── Docker container ──────────────────────────────────┐
 │                                                                                      │
@@ -146,11 +148,9 @@ This is the complete surface area of the project. Each entry links to deeper doc
                 │                                  │
         ┌───────┴───────────┐              ┌───────┴───────────┐
         │   RL Agent        │              │  AWS CLI commands │
-        │   (client.py)     │              │  the agent emits  │
+        │   the agent emits │              │  (client.py)      │
         └───────────────────┘              └───────────────────┘
 ```
-
-A more visual diagram (architecture + curriculum progression) will live at `docs/figures/architecture_diagram.png` once added.
 
 ### Episode lifecycle
 
@@ -159,7 +159,7 @@ A more visual diagram (architecture + curriculum progression) will live at `docs
 3. **Hint** — agent sends `aws help --task-hint`; intercepted before reaching MiniStack; returns next-level hint, increments `hints_used` (which decays final reward by `0.85^n`).
 4. **Termination** — `task_achieved=True` or `step_count >= MAX_STEPS` (default 15).
 
-Full mechanics in [server/README.md](server/README.md).
+Full mechanics in [At server/README.md file](server/README.md).
 
 ---
 
@@ -169,7 +169,7 @@ Full mechanics in [server/README.md](server/README.md).
 
 The hosted playground lets you click around any task without writing code:
 
-> **[sizzing-aws-rl-env.hf.space/web](https://sizzing-aws-rl-env.hf.space/web)**
+> **[Hugging Face Spaces Playground](https://sizzing-aws-rl-env.hf.space/web#playground)**
 
 ### Python client
 
@@ -228,11 +228,9 @@ The full pipeline is reproducible on a Colab GPU runtime. Drop your token into C
 
 | Notebook                                                                            | What it does                                          | Open in Colab                                |
 |-------------------------------------------------------------------------------------|-------------------------------------------------------|----------------------------------------------|
-| [aws_rl_env_colab.ipynb](aws_rl_env_colab.ipynb)                                    | End-to-end driver: validation, Optuna search, full GRPO training, plotting, optional push-to-Hub | <!-- TODO: paste Colab URL here --> |
 | [train/train_sft_lora.ipynb](train/train_sft_lora.ipynb)                            | Stage 1 — SFT LoRA fine-tuning of Qwen2.5-Coder-3B    | <!-- TODO: paste Colab URL here --> |
 | [train/train_grpo_lora.ipynb](train/train_grpo_lora.ipynb)                          | Stage 2 — GRPO RL training with multi-turn rollouts   | <!-- TODO: paste Colab URL here --> |
 | [compare/compare_base_vs_sft.ipynb](compare/compare_base_vs_sft.ipynb)              | Side-by-side: base model vs SFT adapter (dataset + RL env) | <!-- TODO: paste Colab URL here --> |
-| [scripts/TestMultipleConnects.ipynb](scripts/TestMultipleConnects.ipynb)            | Demo: 8 simultaneous WebSocket sessions stay isolated | <!-- TODO: paste Colab URL here --> |
 
 Replace each `<!-- TODO -->` with the Colab badge URL once published.
 
@@ -365,7 +363,7 @@ reward *= 0.85 ** hints_used                  # hint decay applied last
 
 The agent's loss surface is intentionally narrow: only doing the task earns full reward, and every reward-hacking shortcut we identified during design has a defense layer (full list in [server/README.md §9](server/README.md#9-anti-reward-hacking--8-defense-layers)).
 
-> Curriculum progression visual will live at `docs/figures/curriculum_progression.png`.
+> ![Curriculum progression: 5 tiers, priority scoring formula, mastery + spaced rep + fast-track](docs/figures/curriculum_progression.png)
 
 ---
 
@@ -438,6 +436,8 @@ GRPO needs `G` rollouts on the same task per training step. We run all G in para
 
 Wall-clock impact: an 8-rollout × 6-turn episode runs in ~300 ms of env time vs ~2.4 s sequential. Full mechanics, including the **all-or-nothing connect protocol** that prevents pool-slot leakage on flake, are in **[scripts/README.md](scripts/README.md)**.
 
+> ![Parallel rollout: 3 coordinated pool layers](docs/figures/parallel_rollout_diagram.png)
+
 ---
 
 ## 10. MiniStack: vendored & customized
@@ -471,7 +471,7 @@ We evaluated 11 chat models on 27 held-out prompts. **Qwen2.5-Coder-3B-Instruct*
 
 ### Base vs SFT — actual results
 
-After running the SFT pipeline end-to-end, the eval delta on the same held-out prompts is striking. Numbers from [out/delta_summary.json](out/delta_summary.json):
+After running the SFT pipeline end-to-end, the eval delta on the same held-out prompts is striking:
 
 | Metric          | Base   | Post-SFT | Delta       |
 |-----------------|:------:|:--------:|:-----------:|
@@ -497,14 +497,14 @@ The richer two-mode benchmark (dataset eval + live RL env eval) is in [compare/c
 
 ### Optuna SFT search
 
-The best SFT trial (out of 6) used `lora_r=16, lora_alpha=16, dropout=0.0058, lr=4.03e-4, warmup=0.1`. Full study at [out/optuna_study.json](out/optuna_study.json).
+The best SFT trial (out of 6) used `lora_r=16, lora_alpha=16, dropout=0.0058, lr=4.03e-4, warmup=0.1` — see [train/README.md §3](train/README.md#3-optuna-hyperparameter-search) for the full Optuna study table.
 
 > ![Optuna parameter importances](docs/figures/optuna_param_importance.png)
 > ![Optuna optimization history](docs/figures/optuna_history.png)
 
 ### GRPO results (live multi-step env eval)
 
-After 35 GRPO steps on top of the SFT adapter (config from [out_grpo/optuna_best.json](out_grpo/optuna_best.json) — `lr=1.6e-5, β=0.0021, T=0.99`), we re-evaluated end-to-end on 100+ episodes:
+After 35 GRPO steps on top of the SFT adapter (best Optuna config: `lr=1.6e-5, β=0.0021, T=0.99`), we re-evaluated end-to-end on 100+ episodes:
 
 | Metric                        | Base + SFT | Base + SFT + GRPO | Δ            |
 |-------------------------------|:---------:|:-----------------:|:------------:|
@@ -521,11 +521,11 @@ After 35 GRPO steps on top of the SFT adapter (config from [out_grpo/optuna_best
 > ![SFT vs GRPO metrics grid](docs/figures/sft_vs_grpo_metrics_grid.png)
 > ![SFT vs GRPO by tier](docs/figures/sft_vs_grpo_by_tier.png)
 
-**Honest reading:** the 35-step GRPO run preserves the SFT gains and modestly improves the middle tiers (beginner +3.8 pp, intermediate +6.0 pp) — but does not crack the **expert-tier bottleneck** (22% success on SRE / drift / security-posture tasks). With longer GRPO runs and more curriculum exposure to expert tasks, this is the next gain to chase. The full episode-level data is in [out_grpo/grpo_multi_step.json](out_grpo/grpo_multi_step.json).
+**Honest reading:** the 35-step GRPO run preserves the SFT gains and modestly improves the middle tiers (beginner +3.8 pp, intermediate +6.0 pp) — but does not crack the **expert-tier bottleneck** (22% success on SRE / drift / security-posture tasks). With longer GRPO runs and more curriculum exposure to expert tasks, this is the next gain to chase.
 
 ### GRPO training curves
 
-Per-step training signals from the final 35-step GRPO run ([out_grpo/final_grpo/checkpoint-35/trainer_state.json](out_grpo/final_grpo/checkpoint-35/trainer_state.json)):
+Per-step training signals from the final 35-step GRPO run:
 
 > ![GRPO final per-step training signals](docs/figures/grpo_final_per_step.png)
 > ![GRPO env reward over training](docs/figures/grpo_reward_curve.png)
@@ -538,7 +538,7 @@ Optuna search across 4 trials picked the final config:
 
 ### Qualitative rollouts (post-GRPO)
 
-One sample episode per tier from [out_grpo/qualitative_rollouts.json](out_grpo/qualitative_rollouts.json):
+One sample episode per tier:
 
 > ![Qualitative rollouts on representative tasks](docs/figures/qualitative_rollouts.png)
 
@@ -554,8 +554,6 @@ One sample episode per tier from [out_grpo/qualitative_rollouts.json](out_grpo/q
 | [compare/](compare/)           | Base vs SFT side-by-side benchmark                                | [compare/README.md](compare/README.md)  |
 | [scripts/](scripts/)           | Parallel-rollout architecture + multi-connection demo             | [scripts/README.md](scripts/README.md)  |
 | [aws_infra/](aws_infra/)       | Vendored MiniStack simulator (git subtree)                        | [aws_infra/README.md](aws_infra/README.md) |
-| [out/](out/)                   | Reference SFT training output (Optuna study, baseline + post-train metrics, plots, final adapter checkpoints) | (see [train/README.md §7](train/README.md#7-logging-and-artifacts)) |
-| [out_grpo/](out_grpo/)         | Reference GRPO training output (Optuna study, baseline + post-train multi-step eval, qualitative rollouts, final adapter, 10 ready plots) | (see [train/README.md §7](train/README.md#7-logging-and-artifacts)) |
 | [tests/](tests/), [tests_tasks/](tests_tasks/) | Unit + tier-integration test suites                       | (see [§14](#14-testing))                |
 | [models.py](models.py)         | Pydantic data models for action/observation/task                  | (inline §6)                             |
 | [client.py](client.py)         | OpenEnv HTTP/WebSocket client wrapper                             | —                                       |

@@ -176,7 +176,7 @@ To re-run post-SFT:
     --out data/sft/model_eval_postsft.json
 ```
 
-A successful SFT run should see (predictions from [MODEL_EVALUATION.md §11](sft/MODEL_EVALUATION.md), and **actuals from our SFT run committed at [out/delta_summary.json](../out/delta_summary.json)**):
+A successful SFT run should see (predictions from [MODEL_EVALUATION.md §11](sft/MODEL_EVALUATION.md), and **actuals from our reference SFT run**):
 
 | Metric    | Base  | Target  | **Actual (post-SFT)** |
 |-----------|:-----:|:-------:|:---------------------:|

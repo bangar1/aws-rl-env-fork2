@@ -208,7 +208,7 @@ The deltas above (66.7 pp, 50.0 pp on dataset; 0.82 reward / −2.9 steps on RL 
 
 ### Going further with GRPO
 
-Once the SFT adapter is in hand, the same comparison can be re-run against the GRPO adapter (`out_grpo/grpo_adapter/`). Multi-step results from the GRPO run are documented in the [main README §11](../README.md#11-results--benchmarks); the short version is GRPO@35-steps preserves SFT performance and modestly improves the middle tiers, while the expert tier remains the bottleneck.
+Once the SFT adapter is in hand, the same comparison can be re-run against a GRPO adapter. Multi-step results from our reference GRPO run are documented in the [main README §11](../README.md#11-results--benchmarks); the short version is GRPO@35-steps preserves SFT performance and modestly improves the middle tiers, while the expert tier remains the bottleneck.
 
 ---
 

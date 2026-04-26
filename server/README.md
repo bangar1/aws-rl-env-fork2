@@ -252,6 +252,8 @@ The **client side** of this pool — the `GrpoPool` and `MultiTurnEnvPool` that 
 
 ## 7. Curriculum manager
 
+> ![Curriculum progression — 5 tiers, priority scoring formula, mastery + spaced rep + fast-track](../docs/figures/curriculum_progression.png)
+
 [services/curriculum.py](services/curriculum.py) — 536 LOC. Adaptive task selection with mastery tracking, spaced repetition, and tier promotion.
 
 ### Per-tier configuration
